@@ -106,14 +106,19 @@ markowa baza jest możliwa — patrz „Szersza baza produktów" niżej.
 
 ## Publikacja online
 
-Repozytorium jest publiczne, więc wystarczy GitHub Pages — bez konta, bez
-opłat, bez konfiguracji. Tego kroku nie da się wykonać z kodu, bo GitHub nie
-udostępnia go poza panelem repozytorium:
+Repozytorium jest publiczne, więc GitHub Pages jest darmowe. Publikacja jest
+zautomatyzowana — `.github/workflows/pages.yml` po każdym wejściu na `main`
+**sam włącza Pages** (`configure-pages` z `enablement: true`) i wystawia stronę,
+więc nie trzeba niczego klikać w ustawieniach. Adres to
+`https://<użytkownik>.github.io/<repo>/`.
 
-1. GitHub → **Settings** → **Pages**
-2. *Build and deployment* → Source: **Deploy from a branch**
-3. Branch: **`main`**, folder `/ (root)` → **Save**
-4. Po chwili adres to `https://matko13.github.io/test/`
+Workflow publikuje wyłącznie pliki apki — bez README i bez katalogu `.github`
+— i przerywa z błędem, jeśli któregoś z nich brakuje, zamiast wystawić
+niekompletną stronę.
+
+Gdyby automat się nie udał (np. organizacja blokuje włączanie Pages tokenem
+workflow), zostaje droga ręczna: **Settings** → **Pages** → Source
+*Deploy from a branch* → branch `main`, folder `/ (root)`.
 
 Wszystkie ścieżki w apce są relatywne, więc działa też w podkatalogu, jakim
 jest adres Pages. Co dokłada hosting:
