@@ -1,5 +1,8 @@
 # Makro — licznik kalorii i makro
 
+**https://matko13.github.io/macro-counter/** — działa też offline i da się
+dodać do ekranu głównego telefonu.
+
 Prosty licznik kalorii, białka, węglowodanów i tłuszczu. Zbudowany wokół jednej
 zasady: **jak najmniej wpisywania**. Codzienne logowanie jedzenia ma być
 tapaniem, nie wypełnianiem formularza.
@@ -148,8 +151,8 @@ Jednorazowo:
 3. Uruchom workflow ponownie (Actions → *Publikuj na GitHub Pages* → *Run workflow*)
    albo wypchnij cokolwiek na `main`
 
-Od tej pory każde wejście na `main` publikuje się samo. Adres to
-`https://<użytkownik>.github.io/<repo>/`.
+Od tej pory każde wejście na `main` publikuje się samo. Apka działa pod
+**https://matko13.github.io/macro-counter/**.
 
 Dopóki Pages są wyłączone, workflow **nie udaje, że wdrożył** i nie świeci się
 czerwono bez powodu: sprawdza `GET /repos/{repo}/pages`, a gdy dostanie 404,
