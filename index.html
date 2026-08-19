@@ -1916,7 +1916,7 @@ function startDictation(cb){
   if(!C)return null;
   var r=new C();
   r.lang="pl-PL";r.continuous=true;r.interimResults=true;r.maxAlternatives=1;
-  var done="",stopped=false,fatal=false,restarts=0;
+  var done="",stopped=false,fatal=false,restarts=0,ended=false;
   r.onresult=function(e){
     var interim="";
     for(var i=e.resultIndex;i<e.results.length;i++){
@@ -1934,6 +1934,11 @@ function startDictation(cb){
     /* Safari na iOS kończy sesję po każdej frazie — wracamy do słuchania,
        dopóki użytkownik nie tapnie stop. Limit chroni przed pętlą. */
     if(!stopped&&!fatal&&restarts<60){restarts++;try{r.start();return}catch(err){}}
+    /* Zamknięć sesji może przyjść więcej niż jedno (restart nasłuchu na iOS
+       plus nasze stop) — koniec zgłaszamy dokładnie raz, bo inaczej podgląd
+       otwiera się drugi raz, już po zatwierdzeniu posiłku. */
+    if(ended)return;
+    ended=true;
     cb.onEnd(done.trim());
   };
   try{r.start()}catch(err){return null}
@@ -1946,6 +1951,9 @@ var PARTS=[["¼",0.25],["⅓",1/3],["½",0.5],["⅔",2/3],["¾",0.75],["całoś�
 
 function nlSheet(prefill,autoDictate){
   var text=prefill||"";
+  /* Przepływ przestaje żyć po zatwierdzeniu. Spóźnione wywołanie z
+     rozpoznawania mowy nie ma go prawa wskrzesić. */
+  var live=true;
   ask();
 
   function ask(){
@@ -2014,6 +2022,7 @@ function nlSheet(prefill,autoDictate){
   }
 
   function review(r){
+    if(!live||!sheetEl.classList.contains("on"))return;
     var items=r.items.map(function(x){return {f:x.f,g:x.g,warn:x.warn}});
     var part=r.divisor==null?1:r.divisor;
     var sl=r.slot||slot(Date.now());
@@ -2070,7 +2079,7 @@ function nlSheet(prefill,autoDictate){
             el("button",{class:"rm","aria-label":"Usuń "+it.f.n,onclick:function(){items.splice(ix,1);draw()}},[svg(ICON.x)]),
             el("div",{class:"g"},[
               el("button",{text:"−","aria-label":"Mniej "+it.f.n,onclick:function(){bump(-1)}}),
-              el("span",{class:"v num",text:fmt(it.g)+" g"}),
+              el("span",{class:"v num",text:fmt(it.g)+" "+(it.f.u==="ml"?"ml":"g")}),
               el("button",{text:"+","aria-label":"Więcej "+it.f.n,onclick:function(){bump(1)}})
             ])
           ];
@@ -2129,6 +2138,8 @@ function nlSheet(prefill,autoDictate){
       });
     }
     function commit(){
+      if(!live)return;
+      live=false;
       var added=[];
       items.forEach(function(it,ix){
         added.push(pushEntry(dk,it.f,Math.max(1,Math.round(it.g*part)),sl,ix));

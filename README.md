@@ -87,6 +87,13 @@ nagranie na serwery jej producenta. Wszystko inne — parsowanie, liczenie,
 zapis — zostaje na urządzeniu. Jeśli to nie do przyjęcia, wpisywanie ręczne
 działa dokładnie tak samo i nic nie wysyła.
 
+Rozpoznawanie mowy zgłasza koniec sesji więcej niż raz — iOS zamyka ją po
+każdej frazie, a apka wraca do słuchania — więc koniec dyktowania jest
+raportowany **dokładnie raz**, podgląd nie otwiera się, gdy arkusz jest już
+zamknięty, a zatwierdzenie wykonuje się raz nawet przy zdublowanym tapnięciu.
+Bez tych trzech zamków spóźnione zamknięcie sesji otwierało podgląd drugi raz,
+już po zapisaniu posiłku.
+
 Przeglądarki bez rozpoznawania mowy (m.in. Firefox) nie dostają przycisku
 mikrofonu, tylko wyjaśnienie, dlaczego go nie ma. Odmowa dostępu do
 mikrofonu tłumaczy się po polsku i nie jest zastępowana ogólnikiem. Na iOS
@@ -262,7 +269,7 @@ nie zalecenie medyczne.
   deuteranopia / trytanopia) w obu motywach; kolor nigdy nie jest jedynym
   nośnikiem znaczenia — każdy pasek i słupek ma etykietę tekstową.
 - Cele tapania ≥ 38 px, widoczny focus klawiatury, `prefers-reduced-motion`.
-- Testy: 101 przypadków przez Playwright — 21 na interfejs (dodawanie, cofanie,
+- Testy: 109 przypadków przez Playwright — 21 na interfejs (dodawanie, cofanie,
   szukanie bez polskich znaków, arkusz porcji, zestawy, kalkulator, trwałość po
   odświeżeniu, oba motywy, brak poziomego przewijania) i 19 na opis posiłku
   zdaniem (rozpoznanie składników, gramatura, nazwa dania, część zjedzona,
@@ -285,7 +292,9 @@ nie zalecenie medyczne.
   nie wisi poza `@media (hover:hover)` (na iOS pierwsze tapnięcie na takim
   elemencie tylko „najeżdża", a klika dopiero drugie), a pojedyncze tapnięcie
   na emulowanym iPhonie zatwierdza posiłek i dodaje produkt z listy.
-  Kolejne 10 sprawdza wersję hostowaną na prawdziwym serwerze HTTP pod
+  Kolejne 8 pilnuje, żeby podgląd nie otwierał się drugi raz: spóźnione
+  zamknięcie sesji mowy po zatwierdzeniu, zamknięcie arkusza w trakcie
+  dyktowania i podwójne kliknięcie w „Dodaj". Kolejne 10 sprawdza wersję hostowaną na prawdziwym serwerze HTTP pod
   podkatalogiem: rejestrację i przejęcie kontroli przez service workera,
   zawartość cache, a potem — po **zgaszeniu serwera** — start apki, trwałość
   danych, działanie parsera i zapisywanie bez sieci, także w nowej karcie.
