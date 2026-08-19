@@ -206,6 +206,12 @@ jest adres Pages. Co dokłada hosting:
   z Google, pobierane trybem `cors`, bo odpowiedzi opaque nie da się zapisać
   w Cache API). Po pierwszym wejściu apka wstaje bez sieci: log, parser
   i zapisywanie działają normalnie.
+- **Aktualizacje bez zgadywania** — nowa wersja nie podmienia się pod ręką.
+  Gdy jest gotowa, u dołu pojawia się pasek „Jest nowsza wersja apki" z
+  przyciskiem, a nowy kod wchodzi dopiero po tapnięciu. Warunkiem wykrycia
+  jest zmiana `sw.js` między wdrożeniami, więc workflow wbija w niego skrót
+  commita w miejsce `__BUILD__` i przerywa, gdy podmiana się nie udała.
+  Zainstalowana apka sprawdza wdrożenia przy każdym powrocie na ekran.
 - **Możliwość odpytywania bazy na żywo** — to jest ta różnica względem wersji
   opublikowanej jako Artifact: normalny hosting nie ma jej restrykcyjnej
   polityki bezpieczeństwa, więc droga nr 2 z rozdziału „Szersza baza
@@ -269,7 +275,7 @@ nie zalecenie medyczne.
   deuteranopia / trytanopia) w obu motywach; kolor nigdy nie jest jedynym
   nośnikiem znaczenia — każdy pasek i słupek ma etykietę tekstową.
 - Cele tapania ≥ 38 px, widoczny focus klawiatury, `prefers-reduced-motion`.
-- Testy: 109 przypadków przez Playwright — 21 na interfejs (dodawanie, cofanie,
+- Testy: 122 przypadki przez Playwright — 21 na interfejs (dodawanie, cofanie,
   szukanie bez polskich znaków, arkusz porcji, zestawy, kalkulator, trwałość po
   odświeżeniu, oba motywy, brak poziomego przewijania) i 19 na opis posiłku
   zdaniem (rozpoznanie składników, gramatura, nazwa dania, część zjedzona,
@@ -294,7 +300,12 @@ nie zalecenie medyczne.
   na emulowanym iPhonie zatwierdza posiłek i dodaje produkt z listy.
   Kolejne 8 pilnuje, żeby podgląd nie otwierał się drugi raz: spóźnione
   zamknięcie sesji mowy po zatwierdzeniu, zamknięcie arkusza w trakcie
-  dyktowania i podwójne kliknięcie w „Dodaj". Kolejne 10 sprawdza wersję hostowaną na prawdziwym serwerze HTTP pod
+  dyktowania i podwójne kliknięcie w „Dodaj". Kolejne 13 przechodzi pełną
+  aktualizację na prawdziwym service workerze: brak paska przy pierwszej
+  instalacji, pojawienie się go po podmianie wdrożenia, brak samoczynnej
+  podmiany kodu na ekranie, wejście nowej wersji po tapnięciu, przełączenie
+  cache'u i przetrwanie danych.
+  Kolejne 10 sprawdza wersję hostowaną na prawdziwym serwerze HTTP pod
   podkatalogiem: rejestrację i przejęcie kontroli przez service workera,
   zawartość cache, a potem — po **zgaszeniu serwera** — start apki, trwałość
   danych, działanie parsera i zapisywanie bez sieci, także w nowej karcie.
