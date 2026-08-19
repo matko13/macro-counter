@@ -6,338 +6,361 @@
 <title>Licznik Makro</title>
 <meta name="description" content="Prosty licznik kalorii i makro — dodajesz jedzenie jednym tapnięciem, bez wpisywania.">
 <meta name="color-scheme" content="light dark">
-<meta name="theme-color" content="#F6F5F0" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#14150F" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0C0E11" media="(prefers-color-scheme: dark)">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Makro">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500..700&display=swap">
 <style>
-/* ─────────── tokens: light is the base, both dark states redefine only these ─────────── */
+/* ─────────── system: monochromatyczny interfejs, kolor tylko dla danych ───────────
+   Krój systemowy (bez zewnętrznych fontów), promienie i kontrolki jak w
+   aplikacjach natywnych, kolor niosą wyłącznie makro, wykres i przekroczenie
+   celu. Chrom jest czarno-biały, żeby liczby były jedyną rzeczą, która krzyczy. */
 :root{
-  --ground:#E7E6DD; --surface:#F6F5F0; --sunken:#EFEEE6; --raised:#FFFFFF;
-  --ink:#191B12; --ink-2:#585B4B; --ink-3:#8A8D7B; --line:#DCDBCE; --line-2:#C9C8B8;
-  --p:#04795B; --c:#B5761B; --f:#6B4C9A;
-  --accent:#04795B; --accent-ink:#FFFFFF; --accent-soft:#DDEAE4;
-  --over:#D03B3B; --over-soft:#F7E3E1;
-  --shadow:0 1px 2px rgba(25,27,18,.06), 0 8px 24px -12px rgba(25,27,18,.18);
-  --r:14px; --r-sm:9px; --r-lg:20px;
-  --tap:46px;
+  --ground:#EDEFF2; --bg:#FFFFFF; --sunk:#F3F4F6; --raise:#FFFFFF;
+  --line:#E6E8EB; --line-2:#D5D9DE;
+  --ink:#0B0D10; --ink-2:#596069; --ink-3:#8C949D;
+  --accent:#0B0D10; --accent-ink:#FFFFFF; --tint:#F1F2F4;
+  --p:#04795B; --c:#B5761B; --f:#6B4C9A; --data:#04795B; --over:#D03B3B;
+  --sh:0 1px 2px rgba(11,13,16,.05), 0 10px 24px -14px rgba(11,13,16,.18);
+  --sh-thumb:0 1px 3px rgba(11,13,16,.12);
+  --sh-sheet:0 -10px 44px -14px rgba(11,13,16,.28);
+  --r:18px; --r-sm:12px; --r-lg:26px; --pill:999px; --tap:48px;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
-    --ground:#0B0C07; --surface:#14150F; --sunken:#1C1E15; --raised:#22241A;
-    --ink:#F2F1E6; --ink-2:#B1B4A1; --ink-3:#7E8171; --line:#2B2D22; --line-2:#3B3E30;
-    --p:#22997A; --c:#B8862A; --f:#8A6FC2;
-    --accent:#22997A; --accent-ink:#08110D; --accent-soft:#1B2A23;
-    --over:#D03B3B; --over-soft:#2E1A18;
-    --shadow:0 1px 2px rgba(0,0,0,.5), 0 8px 24px -12px rgba(0,0,0,.7);
+    --ground:#000000; --bg:#0C0E11; --sunk:#171A1F; --raise:#1B1F25;
+    --line:#23272E; --line-2:#333941;
+    --ink:#F4F6F9; --ink-2:#A4ACB6; --ink-3:#717A85;
+    --accent:#F4F6F9; --accent-ink:#0C0E11; --tint:#1B1F25;
+    --p:#22997A; --c:#B8862A; --f:#8A6FC2; --data:#22997A;
+    --sh:none; --sh-thumb:0 1px 3px rgba(0,0,0,.5);
+    --sh-sheet:0 -10px 44px -14px rgba(0,0,0,.7);
   }
 }
 :root[data-theme="dark"]{
-  --ground:#0B0C07; --surface:#14150F; --sunken:#1C1E15; --raised:#22241A;
-  --ink:#F2F1E6; --ink-2:#B1B4A1; --ink-3:#7E8171; --line:#2B2D22; --line-2:#3B3E30;
-  --p:#22997A; --c:#B8862A; --f:#8A6FC2;
-  --accent:#22997A; --accent-ink:#08110D; --accent-soft:#1B2A23;
-  --over:#D03B3B; --over-soft:#2E1A18;
-  --shadow:0 1px 2px rgba(0,0,0,.5), 0 8px 24px -12px rgba(0,0,0,.7);
+  --ground:#000000; --bg:#0C0E11; --sunk:#171A1F; --raise:#1B1F25;
+  --line:#23272E; --line-2:#333941;
+  --ink:#F4F6F9; --ink-2:#A4ACB6; --ink-3:#717A85;
+  --accent:#F4F6F9; --accent-ink:#0C0E11; --tint:#1B1F25;
+  --p:#22997A; --c:#B8862A; --f:#8A6FC2; --data:#22997A;
+  --sh:none; --sh-thumb:0 1px 3px rgba(0,0,0,.5);
+  --sh-sheet:0 -10px 44px -14px rgba(0,0,0,.7);
 }
 
 *{box-sizing:border-box}
 html,body{margin:0;padding:0}
 body{
   background:var(--ground); color:var(--ink);
-  font-family:Archivo,"Helvetica Neue",Arial,sans-serif;
-  font-size:15px; line-height:1.45;
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI Variable Text","Segoe UI",system-ui,Roboto,"Helvetica Neue",Arial,sans-serif;
+  font-size:16px; line-height:1.4; letter-spacing:-.011em;
   -webkit-text-size-adjust:100%; -webkit-tap-highlight-color:transparent;
+  -webkit-font-smoothing:antialiased;
 }
-button,input,select,textarea{font:inherit;color:inherit}
+button,input,select,textarea{font:inherit;color:inherit;letter-spacing:inherit}
 button{background:none;border:0;padding:0;cursor:pointer;text-align:left}
-:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
-h1,h2,h3{margin:0;font-family:Fraunces,Georgia,serif;font-weight:600;text-wrap:balance;letter-spacing:-.01em}
+:focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-radius:8px}
+h1,h2,h3{margin:0;font-weight:700;letter-spacing:-.025em;text-wrap:balance}
 .num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
+/* dotyk zamiast hovera: wgniecenie pod palcem */
+.chip,.addbtn,.btn,.tab,.nav button,.seg button,.dictate,.nlmain,.nlmic,.rm,
+.stepper button,.iconbtn,.cat,.toggle,.entry,.food .body,.day,.update button{
+  transition:transform .09s ease, background-color .15s ease, opacity .15s ease;
+}
+.chip:active,.addbtn:active,.btn:active,.nav button:active,.seg button:active,
+.dictate:active,.nlmain:active,.nlmic:active,.rm:active,.stepper button:active,
+.iconbtn:active,.cat:active,.toggle:active,.update button:active{transform:scale(.965)}
 
-/* ─────────── shell: a paper strip on the counter ─────────── */
+/* ─────────── powłoka ─────────── */
 .app{
   max-width:460px;margin:0 auto;min-height:100vh;min-height:100dvh;
-  background:var(--surface);position:relative;
-  display:flex;flex-direction:column;
-  box-shadow:0 0 0 1px var(--line), 0 0 60px -20px rgba(0,0,0,.25);
+  background:var(--bg);position:relative;display:flex;flex-direction:column;
 }
+@media (min-width:520px){.app{box-shadow:0 0 0 1px var(--line),0 30px 80px -40px rgba(11,13,16,.35)}}
 .topbar{
   display:flex;align-items:center;justify-content:space-between;gap:10px;
-  padding:max(10px,env(safe-area-inset-top)) 16px 10px;
-  border-bottom:1px solid var(--line);
-  position:sticky;top:0;z-index:20;background:var(--surface);
+  padding:max(12px,env(safe-area-inset-top)) 18px 12px;
+  position:sticky;top:0;z-index:20;
+  background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(20px) saturate(180%);
 }
-.brand{display:flex;align-items:baseline;gap:7px}
-.brand b{font-family:Fraunces,Georgia,serif;font-weight:600;font-size:19px;letter-spacing:-.015em}
-.brand span{font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-3)}
+.brand{display:flex;align-items:center;gap:8px;min-width:0}
+.brand b{font-size:17px;font-weight:700;letter-spacing:-.03em}
+.brand span{font-size:13px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .iconbtn{
-  width:38px;height:38px;display:grid;place-items:center;border-radius:11px;
-  color:var(--ink-2);border:1px solid transparent;
+  width:44px;height:44px;flex:none;display:grid;place-items:center;
+  border-radius:var(--pill);background:var(--sunk);color:var(--ink-2);
 }
-main{flex:1;padding:16px 16px 26px;display:flex;flex-direction:column;gap:22px}
+main{flex:1;padding:6px 18px 28px;display:flex;flex-direction:column;gap:26px}
 
-/* ─────────── bottom tabs ─────────── */
+/* ─────────── zakładki ─────────── */
 .tabs{
   position:sticky;bottom:0;z-index:20;display:grid;grid-template-columns:repeat(4,1fr);
-  background:color-mix(in srgb,var(--surface) 92%,transparent);
-  backdrop-filter:blur(12px);border-top:1px solid var(--line);
-  padding-bottom:env(safe-area-inset-bottom);
+  background:color-mix(in srgb,var(--bg) 86%,transparent);backdrop-filter:blur(20px) saturate(180%);
+  border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom);
 }
-.tab{
-  display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 0 8px;
-  color:var(--ink-3);font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;font-weight:500;
+.tab{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 0 9px;color:var(--ink-3);font-size:11px;font-weight:500}
+.tab svg{width:24px;height:24px;stroke-width:1.8}
+.tab[aria-current="page"]{color:var(--ink)}
+.tab[aria-current="page"] svg{stroke-width:2.4}
+.tab[aria-current="page"] span{font-weight:600}
+
+/* ─────────── nagłówek dnia ─────────── */
+.shuttle{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.shuttle h2,main>h2{font-size:30px;line-height:1.1}
+.shuttle .dow{font-size:14px;color:var(--ink-3);margin-top:2px}
+.nav{display:flex;gap:6px}
+.nav button{width:44px;height:44px;display:grid;place-items:center;border-radius:var(--pill);background:var(--sunk);color:var(--ink-2)}
+.nav button:disabled{opacity:.35;cursor:default}
+
+/* ─────────── karta z odczytem i makro ─────────── */
+.readout{
+  display:flex;flex-direction:column;gap:14px;
+  background:var(--raise);border-radius:var(--r-lg);padding:20px 18px 18px;box-shadow:var(--sh);
 }
-.tab svg{width:21px;height:21px;stroke-width:1.7}
-.tab[aria-current="page"]{color:var(--accent)}
-.tab[aria-current="page"] svg{stroke-width:2.1}
-
-/* ─────────── date shuttle ─────────── */
-.shuttle{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.shuttle h2{font-size:22px}
-.shuttle .dow{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);font-family:Archivo,sans-serif;font-weight:500}
-.nav{display:flex;gap:4px}
-.nav button{width:36px;height:36px;display:grid;place-items:center;border:1px solid var(--line);border-radius:10px;color:var(--ink-2)}
-.nav button:disabled{opacity:.32;cursor:default}
-
-/* ─────────── the scale readout ─────────── */
-.readout{display:flex;flex-direction:column;gap:12px}
-.bignum{display:flex;align-items:flex-end;gap:9px;line-height:.9}
-.bignum .v{font-size:56px;font-weight:600;letter-spacing:-.035em}
-.bignum .u{font-size:14px;font-weight:500;color:var(--ink-2);padding-bottom:6px}
-.bignum .cap{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);padding-bottom:8px;margin-left:auto;font-weight:500}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .readout{border:1px solid var(--line)}}
+:root[data-theme="dark"] .readout{border:1px solid var(--line)}
+.bignum{display:flex;align-items:flex-end;gap:8px;line-height:.86}
+.bignum .v{font-size:58px;font-weight:700;letter-spacing:-.045em}
+.bignum .u{font-size:15px;font-weight:600;color:var(--ink-3);padding-bottom:7px}
+.bignum .cap{font-size:13px;color:var(--ink-3);padding-bottom:9px;margin-left:auto}
 .readout.over .bignum .v{color:var(--over)}
-.sub{font-size:13px;color:var(--ink-2);display:flex;gap:6px;flex-wrap:wrap}
-.sub b{font-weight:600;color:var(--ink)}
-
-.gauge{position:relative;height:14px;background:var(--sunken);border-radius:7px;overflow:hidden}
-.gauge .fill{position:absolute;inset:0 auto 0 0;background:var(--accent);border-radius:7px;transition:width .35s cubic-bezier(.2,.7,.3,1)}
+.sub{font-size:14px;color:var(--ink-3);display:flex;gap:6px;flex-wrap:wrap;margin-top:-4px}
+.sub b{font-weight:600;color:var(--ink-2)}
+.gauge{position:relative;height:10px;background:var(--sunk);border-radius:var(--pill);overflow:hidden}
+.gauge .fill{position:absolute;inset:0 auto 0 0;background:var(--data);border-radius:var(--pill);transition:width .45s cubic-bezier(.22,.7,.25,1)}
 .gauge.over .fill{background:var(--over)}
-.gauge .tick{position:absolute;top:0;bottom:0;width:1px;background:var(--surface);opacity:.75}
-.gauge .needle{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--ink);border-radius:2px;box-shadow:0 0 0 2px var(--surface);transition:left .35s cubic-bezier(.2,.7,.3,1)}
-
-/* ─────────── macro bars ─────────── */
-.macros{display:flex;flex-direction:column;gap:11px}
-.macro{display:grid;grid-template-columns:1fr auto;gap:3px 10px;align-items:baseline}
-.macro .k{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:500}
-.macro .dot{width:9px;height:9px;border-radius:3px;background:var(--hue);flex:none}
-.macro .v{font-size:13px;color:var(--ink-2)}
+.macros{display:flex;flex-direction:column;gap:14px;padding-top:6px;margin-top:4px;border-top:1px solid var(--line)}
+.macro{display:grid;grid-template-columns:1fr auto;gap:7px 10px;align-items:baseline}
+.macro .k{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:500;color:var(--ink-2)}
+.macro .dot{width:8px;height:8px;border-radius:var(--pill);background:var(--hue);flex:none}
+.macro .v{font-size:14px;color:var(--ink-3)}
 .macro .v b{color:var(--ink);font-weight:600}
-.macro .track{grid-column:1/-1;height:8px;background:var(--sunken);border-radius:4px;overflow:hidden;display:flex}
-.macro .bar{background:var(--hue);border-radius:4px;transition:width .35s cubic-bezier(.2,.7,.3,1)}
+.macro .track{grid-column:1/-1;height:6px;background:var(--sunk);border-radius:var(--pill);overflow:hidden;display:flex}
+.macro .bar{background:var(--hue);border-radius:var(--pill);transition:width .45s cubic-bezier(.22,.7,.25,1)}
 .macro .bar.spill{background:var(--over);margin-left:2px}
 
-/* ─────────── section furniture ─────────── */
-.sec{display:flex;flex-direction:column;gap:11px}
+/* ─────────── sekcje ─────────── */
+.sec{display:flex;flex-direction:column;gap:12px}
 .sechead{display:flex;align-items:center;justify-content:space-between;gap:10px}
-.sechead h3{font-size:15px}
-.sechead .act{font-size:12px;font-weight:600;color:var(--accent)}
-.eyebrow{font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-3);font-weight:500}
-.rule{height:1px;background:var(--line);border:0;margin:0}
+.sechead h3{font-size:19px}
+/* Sam tekst ma 20 px wysokości, a to za mało na kciuk — pole dotyku
+   rozciągamy do 44 px, nie ruszając wyglądu. */
+.sechead .act{
+  font-size:14px;font-weight:600;color:var(--ink-2);
+  min-height:44px;display:inline-flex;align-items:center;padding:0 2px;margin:-12px -2px;
+}
+.eyebrow{font-size:13px;font-weight:600;color:var(--ink-3)}
+.rule{display:none}
 
-/* ─────────── 7-day strip ─────────── */
-.week{position:relative;padding-top:14px}
-.week .band{position:absolute;left:0;right:0;top:14px;height:62px;pointer-events:none}
-.week .base{position:absolute;left:0;right:0;bottom:0;border-bottom:1px solid var(--line)}
+/* ─────────── wykres 7 dni ─────────── */
+.week{position:relative;padding-top:16px}
+.week .band{position:absolute;left:0;right:0;top:16px;height:64px;pointer-events:none}
 .week .goal{position:absolute;left:0;right:0;height:0;border-top:1px dashed var(--line-2)}
-.week .goal span{position:absolute;right:0;top:-14px;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
-.week .cols{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
-.day{display:block;border-radius:5px;padding:0}
-.day .plot{display:block;position:relative;height:62px}
-.day .bar{position:absolute;left:0;right:0;bottom:0;display:block;background:var(--accent);border-radius:4px 4px 0 0;min-height:2px;transition:height .3s ease}
+.week .goal span{position:absolute;right:0;top:-16px;font-size:11px;color:var(--ink-3)}
+.week .base{display:none}
+.week .cols{display:grid;grid-template-columns:repeat(7,1fr);gap:7px}
+.day{display:block;padding:0;border-radius:var(--r-sm)}
+.day .plot{display:block;position:relative;height:64px}
+.day .bar{position:absolute;left:0;right:0;bottom:0;display:block;background:var(--data);border-radius:6px;min-height:3px;transition:height .4s cubic-bezier(.22,.7,.25,1)}
 .day.over .bar{background:var(--over)}
 .day.nodata .bar{background:var(--line)}
-.day .lbl{display:block;margin-top:5px;font-size:10px;line-height:1.45;text-align:center;color:var(--ink-3);letter-spacing:.04em}
+.day .lbl{display:block;margin-top:8px;font-size:12px;text-align:center;color:var(--ink-3)}
 .day.now .lbl{color:var(--ink);font-weight:700}
-.day.now .bar{box-shadow:0 0 0 2px var(--surface),0 0 0 3px var(--ink)}
-.weekwrap{padding-bottom:2px}
-.wkfoot{display:flex;justify-content:space-between;font-size:12px;color:var(--ink-2);margin-top:9px}
+.day.now .bar{outline:2px solid var(--ink);outline-offset:2px}
+.wkfoot{display:flex;justify-content:space-between;font-size:13px;color:var(--ink-3);margin-top:14px}
+.wkfoot b{color:var(--ink-2);font-weight:600}
 
-/* ─────────── quick chips ─────────── */
-.scroller{display:flex;gap:8px;overflow-x:auto;margin:0 -16px;padding:2px 16px 6px;scrollbar-width:none}
+/* ─────────── kafle szybkiego dodania ─────────── */
+.scroller{display:flex;gap:10px;overflow-x:auto;margin:0 -18px;padding:2px 18px 8px;scrollbar-width:none;scroll-snap-type:x proximity}
 .scroller::-webkit-scrollbar{display:none}
 .chip{
-  flex:none;display:flex;flex-direction:column;gap:2px;padding:9px 13px;min-width:104px;
-  background:var(--sunken);border:1px solid var(--line);border-radius:var(--r);
+  flex:none;display:flex;flex-direction:column;justify-content:center;gap:3px;
+  padding:12px 15px;min-width:132px;background:var(--sunk);border-radius:var(--r);scroll-snap-align:start;
 }
-.chip .n{font-size:13px;font-weight:500;line-height:1.25}
-.chip .m{font-size:11px;color:var(--ink-3)}
-.chip.ghost{background:transparent;border-style:dashed;justify-content:center;align-items:center;min-width:auto;padding:9px 15px}
-.chip.ghost .n{color:var(--accent);font-weight:600}
+.chip .n{font-size:14.5px;font-weight:600;line-height:1.25}
+.chip .m{font-size:12.5px;color:var(--ink-3)}
+.chip.ghost{background:transparent;box-shadow:inset 0 0 0 1.5px var(--line-2);align-items:center;min-width:auto;padding:12px 18px}
+.chip.ghost .n{color:var(--ink-2)}
 
-/* ─────────── entry list ─────────── */
-.group{display:flex;flex-direction:column;gap:2px}
-.grouphead{display:flex;align-items:center;gap:9px;padding:6px 0 5px}
-.grouphead .t{font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-3);font-weight:600}
-.grouphead .k{font-size:11.5px;color:var(--ink-3);margin-left:auto}
-.grouphead .save{font-size:11px;font-weight:600;color:var(--accent);padding:2px 6px;border-radius:6px}
-.entry{display:flex;align-items:center;gap:11px;width:100%;padding:10px 2px;border-bottom:1px solid var(--line);min-height:var(--tap)}
+/* ─────────── log dnia ─────────── */
+.group{display:flex;flex-direction:column}
+.grouphead{display:flex;align-items:center;gap:10px;padding:14px 0 6px}
+.grouphead .t{font-size:15px;font-weight:700;letter-spacing:-.02em}
+.grouphead .k{font-size:13px;color:var(--ink-3);margin-left:auto}
+.grouphead .save{font-size:13px;font-weight:600;color:var(--ink-3)}
+.entry{display:flex;align-items:center;gap:12px;width:100%;padding:12px 0;min-height:var(--tap);border-bottom:1px solid var(--line)}
 .entry:last-child{border-bottom:0}
 .entry .n{flex:1;min-width:0}
-.entry .n b{display:block;font-weight:500;font-size:14.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.entry .n s{display:block;text-decoration:none;font-size:11.5px;color:var(--ink-3)}
-.entry .kc{font-size:14px;font-weight:600;flex:none}
-.entry .kc s{text-decoration:none;font-size:10.5px;color:var(--ink-3);font-weight:500;margin-left:2px}
-.macrodots{display:flex;gap:5px;font-size:10.5px;color:var(--ink-3)}
+.entry .n b{display:block;font-weight:500;font-size:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.entry .n s{display:block;text-decoration:none;font-size:13px;color:var(--ink-3);margin-top:1px}
+.entry .kc{font-size:16px;font-weight:700;flex:none;letter-spacing:-.02em}
+.entry .kc s{text-decoration:none;font-size:11px;color:var(--ink-3);font-weight:500;margin-left:3px}
+.macrodots{display:flex;gap:8px;font-size:12px;color:var(--ink-3)}
 .macrodots i{font-style:normal}
 
-/* ─────────── add view ─────────── */
+/* ─────────── szukanie i lista produktów ─────────── */
 .search{position:relative}
 .search input{
-  width:100%;padding:12px 38px 12px 38px;border:1px solid var(--line-2);border-radius:12px;
-  background:var(--sunken);font-size:15px;
+  width:100%;padding:14px 40px 14px 42px;border:0;border-radius:var(--r-sm);
+  background:var(--sunk);font-size:16px;
 }
 .search input::placeholder{color:var(--ink-3)}
-.search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:17px;height:17px;color:var(--ink-3)}
-.search .clear{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:30px;height:30px;display:grid;place-items:center;color:var(--ink-3);border-radius:8px}
-.cats{display:flex;gap:6px;overflow-x:auto;margin:0 -16px;padding:0 16px 2px;scrollbar-width:none}
+.search input::-webkit-search-cancel-button{display:none}
+.search svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);width:18px;height:18px;color:var(--ink-3)}
+.search .clear{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:28px;height:28px;display:grid;place-items:center;color:var(--ink-3);border-radius:var(--pill);background:var(--tint)}
+.cats{display:flex;gap:8px;overflow-x:auto;margin:0 -18px;padding:0 18px 2px;scrollbar-width:none}
 .cats::-webkit-scrollbar{display:none}
-.cat{flex:none;padding:6px 12px;border:1px solid var(--line);border-radius:999px;font-size:12.5px;color:var(--ink-2);white-space:nowrap}
-.cat[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink);font-weight:500}
-.food{display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--line)}
+.cat{flex:none;display:inline-flex;align-items:center;min-height:44px;padding:0 16px;border-radius:var(--pill);background:var(--sunk);font-size:14px;color:var(--ink-2);white-space:nowrap}
+.cat[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);font-weight:600}
+.food{display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--line)}
 .food:last-child{border-bottom:0}
-.food .body{flex:1;min-width:0;padding:11px 0;min-height:var(--tap)}
-.food .body b{display:block;font-weight:500;font-size:14.5px}
-.food .body s{display:block;text-decoration:none;font-size:11.5px;color:var(--ink-3)}
+.food .body{flex:1;min-width:0;padding:13px 0;min-height:var(--tap)}
+.food .body b{display:block;font-weight:500;font-size:16px}
+.food .body s{display:block;text-decoration:none;font-size:13px;color:var(--ink-3);margin-top:1px}
 .addbtn{
-  flex:none;display:flex;align-items:center;gap:5px;padding:8px 12px;border-radius:10px;
-  background:var(--accent-soft);color:var(--accent);font-size:12.5px;font-weight:600;
-  min-height:38px;
+  flex:none;display:flex;align-items:center;gap:5px;padding:9px 14px;border-radius:var(--pill);
+  background:var(--sunk);color:var(--ink);font-size:14px;font-weight:600;min-height:44px;
 }
-.addbtn svg{width:14px;height:14px;stroke-width:2.6}
-.empty{padding:26px 8px;text-align:center;color:var(--ink-3);font-size:13.5px}
+.addbtn svg{width:14px;height:14px;stroke-width:2.8}
+.empty{padding:34px 8px;text-align:center;color:var(--ink-3);font-size:15px}
 
-/* ─────────── forms / settings ─────────── */
-.card{background:var(--sunken);border:1px solid var(--line);border-radius:var(--r-lg);padding:15px;display:flex;flex-direction:column;gap:13px}
-.field{display:flex;flex-direction:column;gap:6px}
-.field>label{font-size:11px;letter-spacing:.11em;text-transform:uppercase;color:var(--ink-3);font-weight:600}
-.field input,.field textarea{width:100%;padding:10px 12px;border:1px solid var(--line-2);border-radius:10px;background:var(--surface)}
-.field textarea{font-size:12px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;min-height:96px}
-.seg{display:flex;gap:5px;flex-wrap:wrap}
-.seg button{padding:8px 12px;border:1px solid var(--line-2);border-radius:9px;font-size:13px;background:var(--surface);min-height:38px}
-.seg button[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink);font-weight:500}
-.stepper{display:flex;align-items:center;gap:10px}
-.stepper button{width:40px;height:40px;flex:none;display:grid;place-items:center;border:1px solid var(--line-2);border-radius:10px;font-size:19px;background:var(--surface)}
-.stepper .val{flex:1;text-align:center;font-size:19px;font-weight:600}
-.stepper .val s{text-decoration:none;font-size:12px;color:var(--ink-3);font-weight:500;margin-left:3px}
-.btn{display:flex;align-items:center;justify-content:center;gap:7px;padding:13px 16px;border-radius:12px;background:var(--accent);color:var(--accent-ink);font-weight:600;font-size:15px;min-height:var(--tap)}
-.btn.alt{background:var(--sunken);color:var(--ink);border:1px solid var(--line-2)}
-.btn.danger{background:transparent;color:var(--over);border:1px solid var(--over)}
-.note{font-size:12px;color:var(--ink-3);line-height:1.5}
+/* ─────────── formularze, kontrolki, przyciski ─────────── */
+.card{background:var(--sunk);border-radius:var(--r-lg);padding:18px;display:flex;flex-direction:column;gap:16px}
+.field{display:flex;flex-direction:column;gap:8px}
+.field>label{font-size:13px;font-weight:600;color:var(--ink-3)}
+.field input,.field textarea{width:100%;padding:13px 14px;border:0;border-radius:var(--r-sm);background:var(--tint);font-size:16px}
+.field textarea{font-size:15px;min-height:100px;line-height:1.45;resize:vertical}
+.card .field input,.card .field textarea{background:var(--bg)}
+/* przełącznik segmentowy: szary tor, wybrany segment jak biały suwak */
+.seg{display:flex;gap:3px;background:var(--tint);border-radius:var(--pill);padding:3px;overflow-x:auto;scrollbar-width:none}
+.seg::-webkit-scrollbar{display:none}
+.seg button{flex:1 0 auto;white-space:nowrap;padding:9px 14px;border-radius:var(--pill);font-size:14.5px;color:var(--ink-2);text-align:center;min-height:44px}
+.seg button[aria-pressed="true"]{background:var(--bg);color:var(--ink);font-weight:600;box-shadow:var(--sh-thumb)}
+.card .seg{background:var(--bg)}
+.card .seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.stepper{display:flex;align-items:center;gap:12px}
+.stepper button{width:44px;height:44px;flex:none;display:grid;place-items:center;border-radius:var(--pill);background:var(--tint);font-size:22px;font-weight:500}
+.card .stepper button{background:var(--bg)}
+.stepper .val{flex:1;text-align:center;font-size:21px;font-weight:700;letter-spacing:-.03em}
+.stepper .val s{text-decoration:none;font-size:13px;color:var(--ink-3);font-weight:500;margin-left:4px}
+.btn{
+  display:flex;align-items:center;justify-content:center;gap:8px;padding:15px 18px;
+  border-radius:var(--r-sm);background:var(--accent);color:var(--accent-ink);
+  font-weight:600;font-size:16.5px;min-height:52px;letter-spacing:-.015em;
+}
+.btn.alt{background:var(--tint);color:var(--ink)}
+.card .btn.alt{background:var(--bg)}
+.btn.danger{background:transparent;color:var(--over);box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--over) 45%,transparent)}
+.note{font-size:13.5px;color:var(--ink-3);line-height:1.5}
+.toggle{display:flex;align-items:center;gap:12px;padding:14px 0;width:100%;border-top:1px solid var(--line)}
+.toggle .box{flex:none;width:24px;height:24px;border-radius:8px;background:var(--tint);display:grid;place-items:center;color:transparent}
+.toggle[aria-pressed="true"] .box{background:var(--accent);color:var(--accent-ink)}
+.toggle .box svg{width:14px;height:14px;stroke-width:3}
+.toggle .lb{font-size:15px;text-align:left}
 
-/* ─────────── bottom sheet ─────────── */
-.scrim{position:fixed;inset:0;background:rgba(10,11,7,.5);z-index:40;opacity:0;pointer-events:none;transition:opacity .2s}
+/* ─────────── opis / dyktowanie ─────────── */
+.nlcard{background:var(--sunk);border-radius:var(--r-lg);display:flex;align-items:stretch;width:100%;overflow:hidden}
+.nlmain{flex:1;min-width:0;display:flex;align-items:center;gap:14px;padding:16px}
+.nlmic{flex:none;width:64px;display:grid;place-items:center;color:var(--ink)}
+.nlmic svg{width:24px;height:24px}
+.nlcard .ic{flex:none;width:38px;height:38px;border-radius:var(--pill);background:var(--bg);display:grid;place-items:center;color:var(--ink)}
+.nlcard .ic svg{width:19px;height:19px}
+.nlcard .tx{min-width:0}
+.nlcard .tx b{display:block;font-size:16px;font-weight:600;line-height:1.3}
+.nlcard .tx s{display:block;text-decoration:none;font-size:13px;color:var(--ink-3);line-height:1.35;margin-top:2px}
+.dictate{display:flex;align-items:center;gap:14px;width:100%;padding:15px;border-radius:var(--r);background:var(--sunk);margin-bottom:14px}
+.dictate .ic{flex:none;width:40px;height:40px;border-radius:var(--pill);display:grid;place-items:center;background:var(--accent);color:var(--accent-ink)}
+.dictate .ic svg{width:19px;height:19px}
+.dictate .lb{flex:1;min-width:0;font-size:16px;font-weight:600;text-align:left}
+.dictate .lb s{display:block;text-decoration:none;font-size:13px;font-weight:400;color:var(--ink-3);margin-top:2px}
+.dictate.on{background:color-mix(in srgb,var(--over) 12%,var(--sunk))}
+.dictate.on .ic{background:var(--over);color:#fff;animation:pulse 1.5s ease-in-out infinite}
+.dictate[disabled]{opacity:.5}
+.dictate[disabled] .ic{background:var(--line-2);color:var(--ink-3)}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--over) 50%,transparent)}50%{box-shadow:0 0 0 9px color-mix(in srgb,var(--over) 0%,transparent)}}
+.dictnote{font-size:13px;color:var(--ink-3);line-height:1.5;margin-bottom:16px}
+
+/* ─────────── wiersze podglądu ─────────── */
+.nlrow{display:grid;grid-template-columns:1fr auto auto;gap:4px 10px;padding:14px 0;border-bottom:1px solid var(--line);align-items:center}
+.nlrow .n{grid-column:1;min-width:0}
+.nlrow .n b{display:block;font-size:16px;font-weight:500}
+.nlrow .n s{display:block;text-decoration:none;font-size:13px;color:var(--ink-3);margin-top:1px}
+.nlrow .kc{grid-column:2;font-size:15px;font-weight:700;letter-spacing:-.02em}
+.nlrow .rm{grid-column:3;width:44px;height:44px;display:grid;place-items:center;border-radius:var(--pill);background:var(--tint);color:var(--ink-3)}
+.nlrow .rm svg{width:13px;height:13px;stroke-width:2.4}
+.nlrow .g{grid-column:1/-1;display:flex;align-items:center;gap:8px;padding-top:8px}
+.nlrow .g button{width:44px;height:44px;flex:none;border-radius:var(--pill);background:var(--tint);display:grid;place-items:center;font-size:18px;font-weight:500}
+.nlrow .g .v{min-width:68px;text-align:center;font-size:15px;font-weight:600}
+.nlrow .warn{grid-column:1/-1;display:flex;align-items:flex-start;gap:7px;font-size:13px;color:var(--over);line-height:1.45;padding-top:8px}
+.nlrow .warn svg{width:14px;height:14px;flex:none;margin-top:2px}
+.nlrow .warn button{color:var(--over);font-weight:700;text-decoration:underline;font-size:13px}
+.nltot{display:flex;align-items:baseline;gap:10px;padding:20px 0 4px}
+.nltot .v{font-size:36px;font-weight:700;letter-spacing:-.04em}
+.nltot .u{font-size:14px;color:var(--ink-3)}
+.preview{display:flex;align-items:baseline;gap:9px;padding:14px 0 4px}
+.preview .v{font-size:40px;font-weight:700;letter-spacing:-.04em}
+.preview .u{font-size:14px;color:var(--ink-3)}
+.pvmac{display:flex;gap:16px;font-size:13.5px;color:var(--ink-3);padding-bottom:18px}
+.pvmac i{font-style:normal;font-weight:600;color:var(--ink-2)}
+
+/* ─────────── arkusz dolny ─────────── */
+.scrim{position:fixed;inset:0;background:rgba(6,8,10,.45);backdrop-filter:blur(2px);z-index:40;opacity:0;pointer-events:none;transition:opacity .28s ease}
 .scrim.on{opacity:1;pointer-events:auto}
 .sheet{
   position:fixed;left:0;right:0;bottom:0;z-index:41;max-width:460px;margin:0 auto;
-  background:var(--surface);border-radius:var(--r-lg) var(--r-lg) 0 0;
-  box-shadow:var(--shadow);padding:8px 16px calc(18px + env(safe-area-inset-bottom));
-  transform:translateY(101%);transition:transform .26s cubic-bezier(.2,.8,.25,1);
-  max-height:88vh;overflow-y:auto;
+  background:var(--bg);border-radius:var(--r-lg) var(--r-lg) 0 0;box-shadow:var(--sh-sheet);
+  padding:8px 18px calc(20px + env(safe-area-inset-bottom));
+  transform:translateY(101%);transition:transform .38s cubic-bezier(.32,.9,.28,1);
+  max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch;
 }
 .sheet.on{transform:translateY(0)}
-.grab{width:38px;height:4px;border-radius:2px;background:var(--line-2);margin:4px auto 12px}
-.sheet h3{font-size:19px;margin-bottom:2px}
-.sheet .per{font-size:12px;color:var(--ink-3);margin-bottom:14px}
-.sheet .seg{margin-bottom:15px}
-.sheet .field+.field{margin-top:13px}
-.preview{display:flex;align-items:baseline;gap:8px;padding:12px 0 2px}
-.preview .v{font-size:34px;font-weight:600;letter-spacing:-.03em}
-.preview .u{font-size:12px;color:var(--ink-2)}
-.pvmac{display:flex;gap:12px;font-size:12px;color:var(--ink-2);padding-bottom:14px}
-.pvmac i{font-style:normal;font-weight:600;color:var(--ink)}
-.sheetrow{display:flex;gap:8px;padding-top:12px}
+.grab{width:40px;height:5px;border-radius:var(--pill);background:var(--line-2);margin:6px auto 16px}
+.sheet h3{font-size:24px;margin-bottom:4px}
+.sheet .per{font-size:14.5px;color:var(--ink-3);margin-bottom:18px;line-height:1.45}
+.sheet .seg{margin-bottom:18px}
+.sheet .field+.field{margin-top:16px}
+.sheetrow{display:flex;gap:10px;padding-top:16px}
 .sheetrow .btn{flex:1}
 
-/* ─────────── toast ─────────── */
-/* ─────────── nowa wersja do przyjęcia ─────────── */
+/* ─────────── nowa wersja i komunikaty ─────────── */
 .update{
-  position:fixed;left:16px;right:16px;bottom:calc(70px + env(safe-area-inset-bottom));
-  z-index:45;max-width:428px;margin:0 auto;display:flex;align-items:center;gap:12px;
-  background:var(--accent);color:var(--accent-ink);padding:11px 12px 11px 15px;
-  border-radius:12px;box-shadow:var(--shadow);font-size:13.5px;
+  position:fixed;left:18px;right:18px;bottom:calc(74px + env(safe-area-inset-bottom));
+  z-index:45;max-width:424px;margin:0 auto;display:flex;align-items:center;gap:12px;
+  background:var(--accent);color:var(--accent-ink);padding:12px 12px 12px 16px;
+  border-radius:var(--r);box-shadow:var(--sh);font-size:15px;
 }
 .update .tx{flex:1;min-width:0;font-weight:500}
-.update button{flex:none;font-weight:700;font-size:13px;padding:7px 12px;border-radius:9px;background:color-mix(in srgb,var(--accent-ink) 20%,transparent);color:inherit}
+.update button{flex:none;font-weight:600;font-size:14.5px;padding:8px 14px;border-radius:var(--pill);background:color-mix(in srgb,var(--accent-ink) 18%,transparent);color:inherit}
 .update button:disabled{opacity:.6}
-/* gdy pasek jest na ekranie, toast siada wyżej, żeby się nie nakładały */
-body.hasupd .toast{bottom:calc(128px + env(safe-area-inset-bottom))}
-
+body.hasupd .toast{bottom:calc(136px + env(safe-area-inset-bottom))}
 .toast{
-  position:fixed;left:50%;bottom:calc(74px + env(safe-area-inset-bottom));transform:translate(-50%,14px);
-  z-index:50;display:flex;align-items:center;gap:12px;max-width:calc(100% - 32px);
-  background:var(--ink);color:var(--surface);padding:10px 10px 10px 15px;border-radius:12px;
-  font-size:13.5px;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:.2s;
+  position:fixed;left:50%;bottom:calc(78px + env(safe-area-inset-bottom));transform:translate(-50%,16px);
+  z-index:50;display:flex;align-items:center;gap:14px;max-width:calc(100% - 36px);
+  background:var(--ink);color:var(--bg);padding:12px 12px 12px 18px;border-radius:var(--pill);
+  font-size:15px;box-shadow:var(--sh);opacity:0;pointer-events:none;transition:.24s cubic-bezier(.22,.7,.25,1);
 }
 .toast.on{opacity:1;transform:translate(-50%,0);pointer-events:auto}
-.toast button{font-weight:700;font-size:13px;padding:6px 10px;border-radius:8px;background:rgba(255,255,255,.16);color:inherit}
-
-/* ─────────── opis posiłku zdaniem ─────────── */
-.nlcard{background:var(--accent-soft);border-radius:var(--r-lg);display:flex;align-items:stretch;gap:0;width:100%;overflow:hidden}
-.nlmain{flex:1;min-width:0;display:flex;align-items:center;gap:12px;padding:13px 14px}
-.nlmic{flex:none;width:56px;display:grid;place-items:center;border-left:1px solid color-mix(in srgb,var(--accent) 22%,transparent);color:var(--accent)}
-.nlmic svg{width:22px;height:22px}
-.nlcard .ic{flex:none;width:34px;height:34px;border-radius:11px;background:var(--surface);display:grid;place-items:center;color:var(--accent)}
-.nlcard .ic svg{width:18px;height:18px}
-.nlcard .tx b{display:block;font-size:14.5px;font-weight:600;line-height:1.3}
-.nlcard .tx s{display:block;text-decoration:none;font-size:11.5px;color:var(--ink-2);line-height:1.35}
-/* dyktowanie */
-.dictate{display:flex;align-items:center;gap:11px;width:100%;padding:13px 14px;border:1px solid var(--line-2);border-radius:12px;background:var(--sunken);margin-bottom:12px}
-.dictate .ic{flex:none;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--accent);color:var(--accent-ink)}
-.dictate .ic svg{width:18px;height:18px}
-.dictate .lb{flex:1;min-width:0;font-size:14.5px;font-weight:500;text-align:left}
-.dictate .lb s{display:block;text-decoration:none;font-size:11.5px;font-weight:400;color:var(--ink-3)}
-.dictate.on{border-color:var(--accent);background:var(--accent-soft)}
-.dictate.on .ic{background:var(--over);animation:pulse 1.4s ease-in-out infinite}
-.dictate[disabled]{opacity:.55}
-.dictate[disabled] .ic{background:var(--line-2);color:var(--ink-3)}
-@keyframes pulse{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--over) 55%,transparent)}50%{box-shadow:0 0 0 8px color-mix(in srgb,var(--over) 0%,transparent)}}
-.dictnote{font-size:11.5px;color:var(--ink-3);line-height:1.45;margin-bottom:13px}
-.nlrow{display:grid;grid-template-columns:1fr auto auto;gap:3px 9px;padding:11px 0;border-bottom:1px solid var(--line);align-items:center}
-.nlrow .n{grid-column:1;min-width:0}
-.nlrow .n b{display:block;font-size:14.5px;font-weight:500}
-.nlrow .n s{display:block;text-decoration:none;font-size:11.5px;color:var(--ink-3)}
-.nlrow .kc{grid-column:2;font-size:14px;font-weight:600}
-.nlrow .rm{grid-column:3;width:30px;height:30px;display:grid;place-items:center;border-radius:8px;color:var(--ink-3)}
-.nlrow .rm svg{width:14px;height:14px}
-.nlrow .warn{grid-column:1/-1;display:flex;align-items:flex-start;gap:6px;font-size:11.5px;color:var(--over);line-height:1.4;padding-top:4px}
-.nlrow .warn svg{width:13px;height:13px;flex:none;margin-top:2px}
-.nlrow .warn button{color:var(--over);font-weight:700;text-decoration:underline;font-size:11.5px}
-.nlrow .g{grid-column:1/-1;display:flex;align-items:center;gap:6px;padding-top:4px}
-.nlrow .g button{width:30px;height:30px;flex:none;border:1px solid var(--line-2);border-radius:9px;display:grid;place-items:center;font-size:16px;background:var(--surface)}
-.nlrow .g .v{min-width:60px;text-align:center;font-size:13.5px;font-weight:600}
-.nltot{display:flex;align-items:baseline;gap:9px;padding:16px 0 3px}
-.nltot .v{font-size:32px;font-weight:600;letter-spacing:-.03em}
-.nltot .u{font-size:12px;color:var(--ink-2)}
-.toggle{display:flex;align-items:center;gap:10px;padding:11px 0;width:100%;border-top:1px solid var(--line)}
-.toggle .box{flex:none;width:22px;height:22px;border:1.5px solid var(--line-2);border-radius:7px;display:grid;place-items:center;color:transparent}
-.toggle[aria-pressed="true"] .box{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
-.toggle .box svg{width:13px;height:13px;stroke-width:3}
-.toggle .lb{font-size:13.5px}
+.toast button{font-weight:600;font-size:14.5px;min-height:44px;display:inline-flex;align-items:center;padding:0 14px;border-radius:var(--pill);background:color-mix(in srgb,var(--bg) 22%,transparent);color:inherit}
 
 /* Reguły :hover tylko tam, gdzie kursor naprawdę istnieje. Na ekranie
    dotykowym iOS pierwsze tapnięcie na elemencie ze stylem :hover jedynie
-   go "najeżdża", a dopiero drugie klika — stąd konieczność dwóch tapnięć
-   na przycisku zatwierdzenia. */
+   go "najeżdża", a dopiero drugie klika. */
 @media (hover:hover) and (pointer:fine){
-.iconbtn:hover{background:var(--sunken);color:var(--ink)}
-.nav button:hover:not(:disabled){background:var(--sunken);color:var(--ink)}
-.chip:hover{border-color:var(--line-2);background:var(--raised)}
-.entry:hover{background:var(--sunken)}
-.food:hover{background:var(--sunken)}
+.iconbtn:hover{background:var(--tint);color:var(--ink)}
+.nav button:hover:not(:disabled){background:var(--tint);color:var(--ink)}
+.chip:hover{background:var(--tint)}
+.entry:hover{background:var(--sunk)}
+.food:hover{background:var(--sunk)}
 .addbtn:hover{background:var(--accent);color:var(--accent-ink)}
-.stepper button:hover{background:var(--raised)}
-.btn:hover{filter:brightness(1.08)}
-.nlmain:hover{filter:brightness(.97)}
-.nlmic:hover{background:color-mix(in srgb,var(--accent) 12%,transparent)}
-.nlrow .rm:hover{background:var(--sunken);color:var(--over)}
+.btn:hover{opacity:.88}
+.nlmain:hover,.nlmic:hover{background:var(--tint)}
+.stepper button:hover,.nlrow .g button:hover{background:var(--line)}
+.nlrow .rm:hover{background:var(--over);color:#fff}
+.cat:hover{background:var(--tint)}
+.seg button:hover:not([aria-pressed="true"]){color:var(--ink)}
 }
 
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
@@ -736,7 +759,289 @@ var RAW=[
 ["Precle","slodycze",380,10,72,4,30,"g"],
 ["Guma do żucia bez cukru","slodycze",160,0,60,0.5,2,"szt"],
 ["Syrop klonowy","slodycze",260,0,67,0,20,"łyżka"],
-["Izolat białka (WPI)","supl",370,85,3,2,30,"miarka"]
+["Izolat białka (WPI)","supl",370,85,3,2,30,"miarka"],
+["Mleko 1,5%","nabial",46,3.3,4.8,1.5,250,"ml"],
+["Mleko zsiadłe","nabial",55,3.4,4.4,2.5,250,"ml"],
+["Kefir 0%","nabial",38,3.5,4.5,0.1,250,"ml"],
+["Napój jogurtowy","nabial",70,3,11,1.5,250,"ml"],
+["Jogurt grecki 0%","nabial",57,10,4,0.4,150,"g"],
+["Śmietanka do kawy 10%","nabial",118,2.8,4,10,10,"łyżka"],
+["Śmietana 22%","nabial",220,2.5,3.5,22,30,"g"],
+["Mleko w proszku","nabial",496,26,38,26,10,"łyżka"],
+["Kajmak","nabial",315,6,55,8,20,"łyżka"],
+["Twaróg tłusty","nabial",175,17,3.5,10,100,"g"],
+["Twarożek śniadaniowy","nabial",140,11,4,9,100,"g"],
+["Serek typu Almette","nabial",250,6,3,24,30,"g"],
+["Ser edamski","nabial",320,26,1.5,23,30,"g"],
+["Ser emmentaler","nabial",380,27,1.5,29,30,"g"],
+["Ser lazur (pleśniowy)","nabial",353,20,1,29,30,"g"],
+["Oscypek","nabial",350,24,1,27,40,"g"],
+["Bryndza","nabial",260,17,2,20,40,"g"],
+["Halloumi","nabial",321,22,2,25,60,"g"],
+["Burrata","nabial",290,17,2,24,60,"g"],
+["Feta light","nabial",200,17,2,14,50,"g"],
+["Mozzarella light","nabial",190,25,1.5,9,30,"g"],
+["Jajko na twardo","nabial",155,13,1.1,11,55,"szt"],
+["Jajko sadzone","nabial",196,13.6,0.8,15,60,"szt"],
+["Jaja przepiórcze","nabial",158,13,0.4,11,10,"szt"],
+["Deser ryżowy","nabial",110,3,20,2,200,"g"],
+["Polędwica wołowa","mieso",143,21,0,6,200,"g"],
+["Wołowina gulaszowa","mieso",185,19,0,12,200,"g"],
+["Cielęcina","mieso",172,20,0,10,150,"g"],
+["Baranina","mieso",258,17,0,21,150,"g"],
+["Sarnina","mieso",120,22,0,3,150,"g"],
+["Kaczka pieczona","mieso",337,19,0,28,150,"g"],
+["Gęś pieczona","mieso",305,25,0,22,150,"g"],
+["Udko z indyka","mieso",150,20,0,7,150,"g"],
+["Serca drobiowe","mieso",130,17,0,7,150,"g"],
+["Żołądki drobiowe","mieso",105,18,0,3,150,"g"],
+["Szynka konserwowa","mieso",180,15,2,12,50,"g"],
+["Polędwica sopocka","mieso",130,20,1,5,50,"g"],
+["Baleron","mieso",200,17,1,14,50,"g"],
+["Mortadela","mieso",300,12,3,27,30,"g"],
+["Kiszka pasztetowa","mieso",320,11,3,29,30,"g"],
+["Kiełbasa krakowska sucha","mieso",380,20,1,33,30,"g"],
+["Kiełbasa biała surowa","mieso",290,14,1,26,100,"g"],
+["Kiełbasa podwawelska","mieso",250,13,1,21,100,"g"],
+["Frankfurterki","mieso",260,11,2,23,100,"g"],
+["Boczek surowy","mieso",380,11,0,37,30,"g"],
+["Salceson","mieso",260,15,1,21,50,"g"],
+["Flaki","mieso",90,12,4,3,300,"ml"],
+["Sandacz","mieso",84,19,0,0.7,150,"g"],
+["Karp","mieso",127,18,0,5.6,150,"g"],
+["Szczupak","mieso",88,19,0,0.7,150,"g"],
+["Halibut","mieso",105,21,0,2.3,150,"g"],
+["Dorada","mieso",96,20,0,1.6,150,"g"],
+["Sola","mieso",86,17,0,1.5,150,"g"],
+["Tuńczyk świeży","mieso",130,23,0,4,150,"g"],
+["Tuńczyk w oleju","mieso",190,25,0,9,120,"g"],
+["Pstrąg wędzony","mieso",180,22,0,10,100,"g"],
+["Śledź matias","mieso",220,17,0,17,100,"g"],
+["Anchois","mieso",210,29,0,10,20,"g"],
+["Węgorz wędzony","mieso",330,18,0,28,100,"g"],
+["Ośmiornica","mieso",82,15,2,1,150,"g"],
+["Małże","mieso",86,12,4,2,150,"g"],
+["Kawior","mieso",260,25,4,17,20,"g"],
+["Dorsz panierowany","mieso",200,14,15,10,150,"g"],
+["Chleb wieloziarnisty","zboza",265,9,42,6,40,"kromka"],
+["Chleb słonecznikowy","zboza",280,9,40,8,40,"kromka"],
+["Chleb owsiany","zboza",255,9,44,4,40,"kromka"],
+["Chleb graham","zboza",250,8,46,2,40,"kromka"],
+["Chleb z dynią","zboza",270,10,40,8,40,"kromka"],
+["Bułka wrocławska","zboza",285,9,55,2,60,"szt"],
+["Bułka maślana","zboza",320,8,52,8,60,"szt"],
+["Obwarzanek","zboza",280,9,54,3,80,"szt"],
+["Chałka","zboza",330,8,58,7,60,"g"],
+["Ciabatta","zboza",270,9,52,2,70,"g"],
+["Focaccia","zboza",300,8,45,10,80,"g"],
+["Chlebek naan","zboza",300,9,50,7,90,"szt"],
+["Tortilla pełnoziarnista","zboza",300,10,45,8,60,"szt"],
+["Bułka tarta","zboza",380,12,72,4,20,"łyżka"],
+["Ciasto francuskie","zboza",380,6,36,24,100,"g"],
+["Racuchy","zboza",250,5,35,10,100,"g"],
+["Kluski leniwe","zboza",190,10,25,6,200,"g"],
+["Pyzy ziemniaczane","zboza",160,3,34,1,200,"g"],
+["Knedle ze śliwkami","zboza",180,4,38,2,200,"g"],
+["Makaron soba","zboza",130,5,25,0.5,200,"g"],
+["Makaron udon","zboza",140,4,30,0.3,200,"g"],
+["Ryż jaśminowy (ugotowany)","zboza",135,3,29,0.3,150,"g"],
+["Ryż do sushi","zboza",150,3,33,0.3,150,"g"],
+["Kasza kukurydziana","zboza",110,2.5,23,0.5,150,"g"],
+["Amarantus","zboza",371,14,65,7,50,"g"],
+["Otręby owsiane","zboza",320,17,50,7,20,"łyżka"],
+["Otręby pszenne","zboza",216,16,27,4,20,"łyżka"],
+["Zarodki pszenne","zboza",360,27,40,10,15,"łyżka"],
+["Mąka pszenna","zboza",364,10,76,1,100,"g"],
+["Mąka żytnia","zboza",350,8,73,1.7,100,"g"],
+["Mąka owsiana","zboza",380,13,60,7,100,"g"],
+["Cebula czerwona","warzywa",40,1,9,0.1,50,"g"],
+["Czosnek","warzywa",149,6.4,33,0.5,5,"ząbek"],
+["Imbir","warzywa",80,1.8,18,0.8,5,"g"],
+["Pietruszka korzeń","warzywa",75,2.5,17,0.6,80,"g"],
+["Natka pietruszki","warzywa",36,3,6,0.8,10,"g"],
+["Koperek","warzywa",43,3.5,7,1.1,10,"g"],
+["Szczypiorek","warzywa",30,3,4,0.7,10,"g"],
+["Sałata rzymska","warzywa",17,1.2,3.3,0.3,80,"g"],
+["Roszponka","warzywa",21,2,3.6,0.4,40,"g"],
+["Cykoria","warzywa",17,0.9,4,0.1,80,"g"],
+["Jarmuż","warzywa",49,4.3,9,0.9,80,"g"],
+["Papryka żółta","warzywa",27,1,6.3,0.2,100,"g"],
+["Papryka konserwowa","warzywa",30,1,6,0.2,100,"g"],
+["Pieczarki marynowane","warzywa",25,2,3,0.4,100,"g"],
+["Ogórek konserwowy","warzywa",20,0.6,4,0.1,100,"g"],
+["Kapusta czerwona","warzywa",31,1.4,7,0.2,150,"g"],
+["Kapusta włoska","warzywa",27,2,6,0.1,150,"g"],
+["Seler korzeniowy","warzywa",42,1.5,9,0.3,100,"g"],
+["Karczochy","warzywa",47,3.3,10,0.2,100,"g"],
+["Kukurydza z kolby","warzywa",96,3.4,21,1.5,150,"szt"],
+["Podgrzybki","warzywa",22,3,3,0.4,100,"g"],
+["Boczniaki","warzywa",33,3.3,6,0.4,100,"g"],
+["Rzodkiew biała","warzywa",18,0.6,4,0.1,100,"g"],
+["Kiełki","warzywa",30,3,4,0.5,30,"g"],
+["Surówka z marchwi","warzywa",90,1,12,4,100,"g"],
+["Surówka coleslaw","warzywa",130,1.5,10,9,100,"g"],
+["Cytryna","owoce",29,1.1,9,0.3,60,"szt"],
+["Limonka","owoce",30,0.7,11,0.2,60,"szt"],
+["Pomelo","owoce",38,0.8,10,0.1,200,"g"],
+["Papaja","owoce",43,0.5,11,0.3,150,"g"],
+["Marakuja","owoce",97,2.2,23,0.7,40,"szt"],
+["Liczi","owoce",66,0.8,17,0.4,100,"g"],
+["Kaki","owoce",70,0.6,18,0.2,150,"szt"],
+["Rabarbar","owoce",21,0.9,4.5,0.2,100,"g"],
+["Aronia","owoce",47,1.4,11,0.5,100,"g"],
+["Kokos świeży","owoce",354,3.3,15,33,50,"g"],
+["Banany suszone","owoce",519,2.3,58,34,25,"g"],
+["Mango suszone","owoce",320,2,80,0.5,25,"g"],
+["Morele suszone","owoce",241,3.4,63,0.5,30,"g"],
+["Jabłka suszone","owoce",243,1,65,0.3,30,"g"],
+["Brzoskwinie z puszki","owoce",60,0.5,15,0.1,100,"g"],
+["Koktajl owocowy z puszki","owoce",70,0.4,17,0.1,100,"g"],
+["Mus owocowy w tubce","owoce",60,0.4,14,0.2,90,"szt"],
+["Dżem truskawkowy","owoce",250,0.4,62,0.1,20,"łyżka"],
+["Dżem niskosłodzony","owoce",130,0.5,30,0.1,20,"łyżka"],
+["Powidła śliwkowe","owoce",240,1,58,0.3,20,"łyżka"],
+["Olej słonecznikowy","tluszcze",884,0,0,100,10,"łyżka"],
+["Olej lniany","tluszcze",884,0,0,100,10,"łyżka"],
+["Olej sezamowy","tluszcze",884,0,0,100,10,"łyżka"],
+["Masło klarowane","tluszcze",900,0,0,100,10,"łyżka"],
+["Masło light 60%","tluszcze",540,1,1,60,10,"g"],
+["Masło migdałowe","tluszcze",614,21,19,56,20,"łyżka"],
+["Masło z nerkowców","tluszcze",580,18,27,49,20,"łyżka"],
+["Orzechy pekan","tluszcze",690,9,14,72,25,"garść"],
+["Orzeszki piniowe","tluszcze",673,14,13,68,20,"g"],
+["Nasiona konopne","tluszcze",553,31,8,48,15,"łyżka"],
+["Sezam","tluszcze",573,17,23,50,15,"łyżka"],
+["Mak","tluszcze",525,18,28,42,15,"łyżka"],
+["Majonez light","tluszcze",350,1,8,35,15,"łyżka"],
+["Sos tatarski","tluszcze",480,2,10,48,20,"łyżka"],
+["Dressing jogurtowy","tluszcze",90,3,6,5,30,"g"],
+["Sos barbecue","tluszcze",170,1,40,0.5,20,"łyżka"],
+["Sos słodko-kwaśny","tluszcze",150,0.5,36,0.2,20,"łyżka"],
+["Sriracha","tluszcze",100,1,20,0.5,10,"łyżeczka"],
+["Ocet balsamiczny","tluszcze",88,0.5,17,0,10,"łyżka"],
+["Fasola czarna (ugotowana)","straczkowe",132,8.9,24,0.5,150,"g"],
+["Fasola pinto (ugotowana)","straczkowe",143,9,26,0.6,150,"g"],
+["Fasola mung (ugotowana)","straczkowe",105,7,19,0.4,150,"g"],
+["Soja (ugotowana)","straczkowe",172,18,8.4,9,150,"g"],
+["Ciecierzyca prażona","straczkowe",400,20,55,7,30,"g"],
+["Kotlety sojowe (suche)","straczkowe",320,50,20,3,50,"g"],
+["Tofu jedwabiste","straczkowe",62,7,2.4,3,100,"g"],
+["Fasolka w sosie pomidorowym","straczkowe",90,4.7,13,0.6,200,"g"],
+["Burger z ciecierzycy","straczkowe",200,8,25,7,110,"szt"],
+["Pasztet z soczewicy","straczkowe",220,8,20,12,50,"g"],
+["Kotlet z kaszy jaglanej","straczkowe",180,5,28,5,100,"szt"],
+["Hummus z buraka","straczkowe",170,6,18,9,50,"g"],
+["Krem z brokułów","gotowe",60,2,6,3,300,"ml"],
+["Zupa cebulowa","gotowe",50,1.5,6,2,300,"ml"],
+["Zupa grzybowa","gotowe",70,2,6,4,300,"ml"],
+["Zupa koperkowa","gotowe",60,2,6,3,300,"ml"],
+["Zupa szczawiowa","gotowe",65,3,5,3.5,300,"ml"],
+["Kapuśniak","gotowe",60,3,6,2.5,300,"ml"],
+["Krupnik","gotowe",65,2,10,1.5,300,"ml"],
+["Chłodnik litewski","gotowe",60,2,7,2.5,300,"ml"],
+["Zupa miso","gotowe",40,3,4,1.5,250,"ml"],
+["Ramen","gotowe",120,6,15,4,400,"porcja"],
+["Pho","gotowe",90,7,10,2,400,"porcja"],
+["Tom yum","gotowe",100,5,8,5,300,"porcja"],
+["Poke bowl","gotowe",150,10,18,4,350,"porcja"],
+["Burrito","gotowe",220,10,25,8,300,"szt"],
+["Taco","gotowe",230,10,22,11,120,"szt"],
+["Quesadilla","gotowe",280,13,25,14,200,"szt"],
+["Nachos z serem","gotowe",350,10,35,19,200,"porcja"],
+["Kurczak słodko-kwaśny","gotowe",160,10,15,6,300,"porcja"],
+["Kurczak tikka masala","gotowe",170,12,8,10,300,"porcja"],
+["Makaron carbonara","gotowe",260,10,28,12,300,"porcja"],
+["Makaron z serem","gotowe",250,10,28,11,300,"porcja"],
+["Paella","gotowe",160,8,20,5,350,"porcja"],
+["Pierogi z truskawkami","gotowe",150,3,32,1,250,"porcja"],
+["Pierogi z jagodami","gotowe",155,3,33,1,250,"porcja"],
+["Uszka","gotowe",180,6,28,5,150,"porcja"],
+["Pieczeń rzymska","gotowe",230,15,8,16,150,"g"],
+["Klopsiki w sosie","gotowe",160,12,7,9,250,"porcja"],
+["Zrazy","gotowe",200,20,5,11,200,"szt"],
+["Wątróbka z cebulą","gotowe",180,20,5,9,150,"porcja"],
+["Ryba w cieście","gotowe",230,14,18,12,200,"porcja"],
+["Placki po węgiersku","gotowe",200,7,22,10,300,"porcja"],
+["Zapiekanka ziemniaczana","gotowe",150,5,15,8,300,"porcja"],
+["Kanapka z pastą jajeczną","gotowe",230,9,20,13,120,"szt"],
+["Tosty francuskie","gotowe",220,8,25,9,150,"porcja"],
+["Shakshuka","gotowe",120,7,7,7,300,"porcja"],
+["Owsianka na mleku","gotowe",110,4,16,3,300,"porcja"],
+["Jaglanka","gotowe",100,3,18,2,300,"porcja"],
+["Sałatka jarzynowa","gotowe",180,3,12,13,150,"porcja"],
+["Sałatka ziemniaczana","gotowe",150,3,15,8,150,"porcja"],
+["Śledź w śmietanie","gotowe",230,13,4,18,100,"porcja"],
+["Tatar wołowy","gotowe",190,20,1,12,150,"porcja"],
+["Bruschetta","gotowe",200,6,25,9,100,"szt"],
+["Kisiel","gotowe",60,0,15,0,200,"g"],
+["Baton typu Bounty","slodycze",470,4,58,25,57,"szt"],
+["Baton typu Milky Way","slodycze",450,3,70,17,40,"szt"],
+["Baton typu Lion","slodycze",490,5,64,23,42,"szt"],
+["Baton typu Kinder Bueno","slodycze",570,8,49,37,43,"szt"],
+["Beza","slodycze",380,4,90,0,40,"g"],
+["Makowiec","slodycze",350,7,45,15,100,"g"],
+["Ciasto marchewkowe","slodycze",350,4,45,17,100,"g"],
+["Babka piaskowa","slodycze",380,5,55,15,80,"g"],
+["Keks","slodycze",360,5,55,13,80,"g"],
+["Tort śmietanowy","slodycze",300,4,35,16,120,"g"],
+["Rurki z kremem","slodycze",400,4,40,25,60,"szt"],
+["Eklerka","slodycze",330,6,35,18,80,"szt"],
+["Ptysie","slodycze",320,7,30,19,70,"szt"],
+["Kremówka","slodycze",350,5,35,21,120,"szt"],
+["Pierniczki","slodycze",380,5,72,8,30,"g"],
+["Mazurek","slodycze",420,6,55,20,60,"g"],
+["Sękacz","slodycze",420,7,55,20,50,"g"],
+["Sezamki","slodycze",500,12,50,28,30,"g"],
+["Marcepan","slodycze",460,9,50,26,30,"g"],
+["Toffi","slodycze",430,2,70,16,25,"g"],
+["Karmelki","slodycze",380,0,95,0,20,"g"],
+["Żelki bez cukru","slodycze",190,6,60,0.1,50,"g"],
+["Czekolada ryżowa","slodycze",520,7,60,29,25,"g",6],
+["Draże czekoladowe","slodycze",490,4,70,21,45,"g"],
+["Popcorn karmelowy","slodycze",430,4,80,10,30,"g"],
+["Chipsy z batatów","slodycze",500,4,55,28,30,"g"],
+["Orzeszki w cukrze","slodycze",500,15,40,32,30,"g"],
+["Lody włoskie","slodycze",200,4,25,9,80,"g"],
+["Gofr","slodycze",290,6,40,12,100,"szt"],
+["Churros","slodycze",400,5,45,22,80,"g"],
+["Panna cotta","slodycze",250,4,25,15,100,"g"],
+["Crème brûlée","slodycze",280,4,25,18,100,"g"],
+["Herbata zielona","napoje",1,0,0,0,250,"ml"],
+["Herbata z miodem","napoje",40,0,10,0,250,"ml"],
+["Yerba mate","napoje",2,0,0,0,250,"ml"],
+["Kakao na mleku","napoje",90,4,12,3,250,"ml"],
+["Czekolada do picia","napoje",150,4,22,5,250,"ml"],
+["Mleko z miodem","napoje",80,3.3,10,2,250,"ml"],
+["Frappe","napoje",120,2,20,3,300,"ml"],
+["Kawa mrożona","napoje",90,2,15,2,300,"ml"],
+["Sok marchwiowy","napoje",40,0.9,9,0.2,250,"ml"],
+["Sok wielowarzywny","napoje",30,1,6,0.2,250,"ml"],
+["Sok grejpfrutowy","napoje",39,0.5,9,0.1,250,"ml"],
+["Sok z czarnej porzeczki","napoje",55,0.4,13,0.1,250,"ml"],
+["Lemonada","napoje",40,0,10,0,330,"ml"],
+["Ice tea","napoje",30,0,7.5,0,330,"ml"],
+["Woda kokosowa","napoje",19,0.7,3.7,0.2,330,"ml"],
+["Kombucha","napoje",30,0,7,0,330,"ml"],
+["Piwo pszeniczne","napoje",48,0.6,4,0,500,"ml"],
+["Piwo ciemne","napoje",75,0.7,7,0,500,"ml"],
+["Wino białe półsłodkie","napoje",90,0.1,5,0,150,"ml"],
+["Aperol spritz","napoje",120,0,12,0,200,"ml"],
+["Mojito","napoje",150,0,18,0,250,"ml"],
+["Piña colada","napoje",200,1,25,8,250,"ml"],
+["Rum","napoje",231,0,0,0,50,"ml"],
+["Gin","napoje",263,0,0,0,50,"ml"],
+["Tequila","napoje",231,0,0,0,50,"ml"],
+["Likier kremowy","napoje",330,3,25,15,50,"ml"],
+["Nalewka","napoje",250,0,25,0,50,"ml"],
+["Napój proteinowy","napoje",60,10,2,1,330,"ml"],
+["Odżywka białkowa roślinna","supl",380,75,8,6,30,"miarka"],
+["Kazeina","supl",360,75,6,3,30,"miarka"],
+["Gainer","supl",380,20,65,4,100,"g"],
+["Kreatyna monohydrat","supl",0,0,0,0,5,"miarka"],
+["BCAA","supl",40,10,0,0,10,"g"],
+["Kolagen w proszku","supl",360,88,0,0,10,"łyżka"],
+["Chipsy proteinowe","supl",400,35,25,17,30,"g"],
+["Budyń proteinowy","supl",90,10,8,2,200,"g"]
 ];
 
 function slug(s){return norm(s).replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")}
@@ -1034,10 +1339,8 @@ function viewToday(){
   var pct=G.k?Math.min(100,t.k/G.k*100):0;
   var gauge=el("div",{class:"gauge"+(over?" over":"")},[el("div",{class:"fill"})]);
   gauge.firstChild.style.width=pct+"%";
-  [25,50,75].forEach(function(x){var tk=el("div",{class:"tick"});tk.style.left=x+"%";gauge.appendChild(tk)});
-  var nd=el("div",{class:"needle"});nd.style.left="calc("+pct+"% - 1px)";gauge.appendChild(nd);
 
-  wrap.appendChild(el("div",{class:"readout"+(over?" over":"")},[
+  var readout=el("div",{class:"readout"+(over?" over":"")},[
     el("div",{class:"bignum"},[
       el("span",{class:"v num",text:fmt(Math.abs(left))}),
       el("span",{class:"u",text:"kcal"}),
@@ -1045,7 +1348,8 @@ function viewToday(){
     ]),
     el("div",{class:"sub",html:"<b class='num'>"+fmt(t.k)+"</b> z <b class='num'>"+fmt(G.k)+"</b> kcal"+(entries(day).length?" · "+entries(day).length+" "+plural(entries(day).length,"pozycja","pozycje","pozycji"):"")}),
     gauge
-  ]));
+  ]);
+  wrap.appendChild(readout);
 
   /* makro */
   var mac=el("div",{class:"macros"});
@@ -1064,8 +1368,7 @@ function viewToday(){
     row.style.setProperty("--hue","var("+x[2]+")");
     mac.appendChild(row);
   });
-  wrap.appendChild(mac);
-  wrap.appendChild(el("hr",{class:"rule"}));
+  readout.appendChild(mac);
 
   /* szybkie dodawanie */
   var quick=ranked().slice(0,10);
@@ -1153,7 +1456,7 @@ function weekStrip(){
   var strip=el("div",{class:"week"});
   var gl=el("div",{class:"goal"},[el("span",{text:"cel "+fmt(goal)})]);
   gl.style.bottom=(goal/max*100)+"%";
-  strip.appendChild(el("div",{class:"band"},[gl,el("div",{class:"base"})]));
+  strip.appendChild(el("div",{class:"band"},[gl]));
   var cols=el("div",{class:"cols"});
   strip.appendChild(cols);
   days.forEach(function(k,i){
@@ -1211,7 +1514,7 @@ function saveSet(name,list){
 var q="",activeCat="all";
 function viewAdd(){
   var wrap=document.createDocumentFragment();
-  wrap.appendChild(el("h2",{text:"Dodaj jedzenie",style:"font-size:22px"}));
+  wrap.appendChild(el("h2",{text:"Dodaj jedzenie"}));
   wrap.appendChild(nlCard());
   wrap.appendChild(el("div",{class:"eyebrow",text:"albo pojedynczy produkt"}));
 
@@ -1306,7 +1609,7 @@ function customSheet(opts){
 /* ═══════════════════════ 8. widok: Zestawy ═══════════════════════ */
 function viewSets(){
   var wrap=document.createDocumentFragment();
-  wrap.appendChild(el("h2",{text:"Zestawy",style:"font-size:22px"}));
+  wrap.appendChild(el("h2",{text:"Zestawy"}));
   wrap.appendChild(el("p",{class:"note",text:"Zestaw to zapisany posiłek — cała owsianka albo cały obiad. Jedno tapnięcie i wszystko wpada do dnia. Zapisujesz je z listy „Zjedzone” na ekranie Dziś."}));
   if(!S.sets.length){
     wrap.appendChild(el("div",{class:"empty",text:"Brak zestawów. Dodaj posiłek na ekranie Dziś, a potem tapnij „zapisz zestaw” przy jego nagłówku."}));
@@ -1356,7 +1659,7 @@ function viewSets(){
 var SPLITS={bal:{n:"Zbalansowany",p:.30,c:.40,f:.30},hp:{n:"Więcej białka",p:.40,c:.35,f:.25},lc:{n:"Mniej węgli",p:.30,c:.20,f:.50}};
 function viewMe(){
   var wrap=document.createDocumentFragment();
-  wrap.appendChild(el("h2",{text:"Ja i cele",style:"font-size:22px"}));
+  wrap.appendChild(el("h2",{text:"Ja i cele"}));
 
   var P=S.profile||{sex:"m",age:30,w:75,h:178,act:1.55,aim:0};
   function stepper(label,key,step,unit,min,max){
@@ -1599,11 +1902,27 @@ var ALIAS={
 "kostka-rosolowa":"bulion|rosolowa kostka",
 "guma-do-zucia-bez-cukru":"guma|gumy",
 "bita-smietana":"smietana bita",
+"piers-z-kurczaka-grill":"piers z kurczaka z grilla|kurczak z grilla|grillowany kurczak|piers grillowana",
 "burger-roslinny":"burger wege|burger wegetarianski",
+"parowki-weganskie":"parowki wege|parowki roslinne|kielbaski wege",
 "izolat-bialka-wpi":"izolat|wpi",
 "syrop-klonowy":"syrop",
 "kotlet-z-kurczaka-panierowany":"kurczak panierowany|panierowany kurczak|filet panierowany",
-"kanapka-z-szynka-i-serem":"kanapka|kanapke|kanapki|kanapek|kanapka z serem|kanapka z szynka"
+"kanapka-z-szynka-i-serem":"kanapka|kanapke|kanapki|kanapek|kanapka z serem|kanapka z szynka",
+"czosnek":"czosnku|zabek czosnku",
+"maka-pszenna":"maka|maki|maka bialaa",
+"dzem-truskawkowy":"dzem|dzemu|konfitura",
+"kaczka-pieczona":"kaczka|kaczki",
+"jajko-na-twardo":"jajka na twardo|jajko twarde",
+"kakao-na-mleku":"kakao",
+"tatar-wolowy":"tatar|tatara",
+"sok-marchwiowy":"sok z marchwi",
+"otreby-owsiane":"otreby",
+"lody-wloskie":"gałka lodow|galka lodow",
+"makowiec":"makowca",
+"kluski-leniwe":"leniwe|leniwych",
+"ramen":"ramenu",
+"chleb-wieloziarnisty":"chleb wieloziarnisty|wieloziarnisty"
 };
 
 var NUMW={jeden:1,jedna:1,jedno:1,jednego:1,poltora:1.5,poltorej:1.5,
@@ -1640,7 +1959,7 @@ szczypta:{gram:2},szczypte:{gram:2},kostka:{own:"pc",gram:200},kostki:{own:"pc",
 /* Słowa, które nie są jedzeniem — nie próbujemy ich dopasowywać ani
    raportować jako pominiętych. */
 var STOP={};
-("na w we z ze i oraz a do po przy dla o od plus tez tego to te tym ta ten tam byl byla bylo byly jest sa mam mialem "+
+("na w we z ze i oraz a bez do po przy dla o od plus tez tego to te tym ta ten tam byl byla bylo byly jest sa mam mialem "+
  "zrobilem zrobilam zrobil zrobila zrobilismy zjadlem zjadlam zjadl zjadla zjedlem zjedlismy jadlem jadlam wypilem "+
  "wypilam wypil dodalem dodalam dalem mialam bylem bylam sobie siebie potem jeszcze tylko okolo mniej wiecej jakies "+
  "jakis jaka jakie ok razem lacznie gora gorze gore wierzchu wierzch srodku srodka spodu posypane posypana polane "+
@@ -1670,16 +1989,27 @@ function wmatch(a,b){
   if(i<3)return 0;
   var mn=Math.min(a.length,b.length),d=Math.abs(a.length-b.length);
   if(i<mn-1)return 0;
+  /* Gdy słowa rozjeżdżają się w środku (żadne nie jest przedrostkiem
+     drugiego), na dwuznakową różnicę długości musi zapracować długi wspólny
+     rdzeń: "suszonych"≈"suszone" i "suchego"≈"suchy" tak, ale "solone"≉"sola"
+     i "wege"≉"węgorz" nie. */
+  if(i<mn&&d>1&&i<4)return 0;
   if(d>2&&!(d<=4&&i>=5))return 0;
   return i;
 }
 var JOIN={z:1,ze:1,i:1,w:1,we:1,na:1,po:1,do:1,oraz:1};
-var IDX=null,IDXn=0;
+var IDX=null,IDXn=0,PCTV=null;
 function buildIdx(){
   if(IDX&&IDXn===S.custom.length)return;
-  IDX=[];IDXn=S.custom.length;
+  IDX=[];IDXn=S.custom.length;PCTV=null;
   allFoods().forEach(function(f){
     var phr=[f.n.replace(/\([^)]*\)/g," ").replace(/[\/,]/g," ")];
+    /* Bez tego "Ryż biały (suchy)" i "(ugotowany)" mają tę samą frazę, więc
+       "ryż suchy" dawał ugotowany — a to różnica 350 do 130 kcal. */
+    if(f.n.indexOf("(")>-1)phr.push(f.n.replace(/[()\/,]/g," "));
+    /* Tokenizer rozbija "pszenno-żytni" na dwa wyrazy, więc nazwa musi
+       być rozbita tak samo — inaczej chleb pszenno-żytni był nieosiągalny. */
+    phr=phr.map(function(x){return x.replace(/[-\u2011\u2013]/g," ")});
     if(ALIAS[f.id])ALIAS[f.id].split("|").forEach(function(a){phr.push(a)});
     var seen={};
     phr.forEach(function(x){
@@ -1690,6 +2020,37 @@ function buildIdx(){
       seen[k]=1;IDX.push({f:f,w:w});
     });
   });
+}
+/* Wersja tłusta czy chuda: "mleko 3,2%", "śmietana 30%", "jogurt grecki 0%".
+   Bez tego wszystkie warianty spłaszczały się do jednego (pierwszego w bazie),
+   a między śmietaną 18% a 30% jest 180 kcal różnicy na 100 g. */
+function pctBase(n){
+  var m=/^(.*?)[ ]*([0-9]+(?:[.,][0-9]+)?)[ ]*%$/.exec(n);
+  return m?{base:norm(m[1]).trim(),pct:parseFloat(m[2].replace(",","."))}:null;
+}
+function buildPct(){
+  if(PCTV)return;
+  PCTV={};
+  allFoods().forEach(function(f){
+    var b=pctBase(f.n);if(!b)return;
+    (PCTV[b.base]=PCTV[b.base]||[]).push({pct:b.pct,f:f});
+  });
+}
+function pctPick(f,toks,i){
+  var b=pctBase(f.n);if(!b)return null;
+  buildPct();
+  var list=PCTV[b.base];if(!list||list.length<2)return null;
+  for(var j=i;j<toks.length&&j<i+3;j++){
+    var t=toks[j];
+    if(!t||t.used)continue;
+    if(t.brk)return null;
+    if(t.num==null||String(t.raw).slice(-1)!=="%")continue;
+    var want=t.num*100,best=null;
+    list.forEach(function(e){if(!best||Math.abs(e.pct-want)<Math.abs(best.pct-want))best=e});
+    if(best&&Math.abs(best.pct-want)<=0.6){t.used=true;return best.f}
+    return null;
+  }
+  return null;
 }
 /* Najlepszy produkt zaczynający się na pozycji i. Dłuższa fraza wygrywa
    z krótszą ("pomidorki koktajlowe" bije "pomidor"). */
@@ -1704,7 +2065,9 @@ function matchAt(toks,i){
       var sc=0,ok=true;
       for(var q=0;q<j;q++){
         var t=toks[i+q];
-        if(!t.n||t.used||t.brk||t.num!=null||t.unit){ok=false;break}
+        /* "puszki" to i miara, i człon nazwy ("Pomidory z puszki") — wewnątrz
+           nazwy liczy się, ale tylko przy dokładnym trafieniu w słowo. */
+        if(!t.n||t.used||t.brk||t.num!=null||(t.unit&&t.n!==w[q])){ok=false;break}
         var m=wmatch(t.n,w[q]);
         if(!m){ok=false;break}
         sc+=m;
@@ -1715,7 +2078,7 @@ function matchAt(toks,i){
          drugi raz do dania, które już go zawiera. */
       if(j<k&&JOIN[w[j-1]])continue;
       var total=10*j+sc-3*(k-j);
-      if(!best||total>best.score||(total===best.score&&k<best.k))best={f:e.f,len:j,score:total,k:k};
+      if(!best||total>best.score||(total===best.score&&k<best.k))best={f:e.f,len:j,score:total,k:k,w0:w[0]};
       break;
     }
   }
@@ -1763,7 +2126,7 @@ function qtyGrams(food,q){
   return food.s;
 }
 function tokenize(text){
-  var out=[],re=/[0-9]+(?:[.,][0-9]+)?(?:\/[0-9]+)?%?|[a-ząćęłńóśźż]+|[,.;:!?]/g,m;
+  var out=[],re=/[0-9]+(?:[.,][0-9]+)?(?:\/[0-9]+)?%?|\p{L}+|[,.;:!?]/gu,m;
   text=String(text||"").toLowerCase();
   while((m=re.exec(text))){
     var raw=m[0],t={raw:raw};
@@ -1776,7 +2139,7 @@ function tokenize(text){
       if(!isFinite(v))continue;
       if(pct)v=v/100;
       t.num=v;t.frac=pct||raw.indexOf("/")>-1||(v>0&&v<1);
-    }else if(/^[a-ząćęłńóśźż]/.test(raw)){
+    }else if(/^\p{L}/u.test(raw)){
       t.n=norm(raw);
       if(NUMW[t.n]!=null)t.num=NUMW[t.n];
       else if(FRACW[t.n]!=null){t.num=FRACW[t.n];t.frac=true}
@@ -1820,15 +2183,29 @@ function parseMeal(text){
     if(!t.n){continue}
     /* "jogurt bez cukru" nie może dodać cukru jako składnika */
     if(toks[a-1]&&toks[a-1].n==="bez"){t.qual=1;t.neg=1;if(pend){age++;if(age>3)pend=null}continue}
-    var m=STOP[t.n]?null:matchAt(toks,a);
+    /* "sos" czy "deser" same są słowami funkcyjnymi, ale zaczynają nazwy
+       produktów. Dopuszczamy je tylko jako początek dłuższej frazy — inaczej
+       "sos sojowy" gubił się i doliczał napój sojowy, a "sos czosnkowy" czosnek. */
+    var m=matchAt(toks,a);
+    if(m&&STOP[t.n]&&m.len<2)m=null;
+    /* Przymiotnik nie może sam z siebie stać się produktem: "ser wędzony"
+       dopisywał łososia, "marchewka surowa" surówkę, "kotlet wege" węgorza.
+       Liczy się tylko wtedy, gdy trafia w nazwę dokładnie ("bezalkoholowe")
+       albo jest częścią dłuższej frazy ("kurczak panierowany"). */
+    if(m&&m.len===1&&QUAL[t.n]&&!(m.k===1&&m.w0===t.n))m=null;
     if(m){
+      var pv=pctPick(m.f,toks,a+m.len);
+      if(pv)m={f:pv,len:m.len,score:m.score,k:m.k,w0:m.w0};
       var q=pend;
       if(!q){
         /* ilość podana po produkcie: "ryż 200 g" — ale tylko z liczbą,
            żeby "jajka, garść migdałów" nie przypisało garści do jajek */
-        var j=a+m.len,fw={num:null,unit:null,toks:[]},got=false;
-        while(j<toks.length&&j<a+m.len+2){
+        var j=a+m.len,fw={num:null,unit:null,toks:[]},got=false,lim=a+m.len+2;
+        while(j<toks.length&&j<lim){
           var u=toks[j];
+          /* Token z procentem został już zużyty na wybór wariantu ("0%"),
+             ale nie może zjadać miejsca w okienku, w którym szukamy gramów. */
+          if(u.used&&String(u.raw).slice(-1)==="%"){j++;lim++;continue}
           if(u.brk||u.used)break;
           if(u.num!=null&&!u.frac&&fw.num==null){fw.num=u.num;fw.toks.push(u);got=true;j++;continue}
           if(u.unit&&got){fw.unit=u.unit;fw.toks.push(u);j++;continue}
@@ -2231,7 +2608,7 @@ document.getElementById("themeBtn").addEventListener("click",function(){
 
 /* uchwyt dla testów — parser bywa jedyną częścią, którą warto sprawdzić
    bez klikania po ekranach */
-window.MAKRO={parse:parseMeal,alias:ALIAS,foods:allFoods,byId:byId,scale:scale};
+window.MAKRO={parse:parseMeal,alias:ALIAS,foods:allFoods,byId:byId,scale:scale,cats:CATS,dbg:{STOP:STOP,QUAL:QUAL}};
 
 /* Offline. Rejestrujemy service workera tylko wtedy, gdy strona jest
    hostowana i ma manifest — wersja jednoplikowa (Artifact, file://) nie ma

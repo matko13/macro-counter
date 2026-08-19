@@ -17,7 +17,7 @@ hostingu dokłada instalację na ekranie głównym i pracę offline — patrz
 | Zamiast wpisywać | Robisz to |
 | --- | --- |
 | cały złożony posiłek | **mówisz albo piszesz zdaniem** — patrz niżej |
-| nazwę i wartości produktu | ~370 gotowych produktów z polskiej kuchni w bazie |
+| nazwę i wartości produktu | 651 gotowych produktów z polskiej kuchni w bazie |
 | gramaturę | każdy produkt ma domyślną porcję — tapnięcie w `+ 1 szt` / `+ 150 g` i gotowe |
 | ciągle to samo śniadanie | sekcja **Twoje najczęstsze** sama wypycha na wierzch to, co jesz realnie |
 | cały posiłek po kawałku | **zestawy** — raz zapisany posiłek dodajesz jednym tapnięciem |
@@ -124,6 +124,34 @@ Pominięty składnik nie znika po cichu — podgląd pisze „nie doliczyłem os
 wołowina — to jest już w «Burger»", więc widać decyzję i można ją odwrócić,
 podając ilość.
 
+### Wariant produktu, czyli skąd biorą się największe pomyłki
+
+Ta sama nazwa potrafi znaczyć dwie bardzo różne liczby, a różnica jest większa
+niż między produktami:
+
+| zdanie | trafia w | zamiast | różnica |
+| --- | --- | --- | --- |
+| `100 g ryżu białego suchego` | Ryż biały (suchy), 355 kcal | ugotowany, 130 kcal | 2,7× |
+| `2 łyżki śmietany 30%` | Śmietana 30% | 18% | +60% |
+| `szklanka mleka 3,2%` | Mleko 3,2% | 2% | +20% |
+| `150 g piersi z kurczaka z grilla` | wersja z grilla | surowa | +50% |
+
+Rozstrzyga to, co jest w zdaniu, a nie kolejność w bazie:
+
+- **procent tłuszczu** wybiera wariant o najbliższej wartości (`mleko 3,2%`,
+  `jogurt grecki 0%`, `śmietana 22%`); gdy takiego procentu nie ma w bazie,
+  produkt zostaje bez podmiany, zamiast trafić w losowy wariant
+- **wariant z nawiasu** jest normalnym słowem do trafienia — `Ryż biały (suchy)`
+  i `Ryż biały (ugotowany)` miały wcześniej tę samą frazę, więc `ryż suchy`
+  dawał ugotowany; bez tego liczby były niższe o 225 kcal na 100 g
+- **nazwa zaczynająca się słowem funkcyjnym** też się liczy: `sos` i `deser`
+  same w sobie są słowami do pominięcia, ale `sos sojowy`, `sos czosnkowy`
+  i `deser mleczny` to produkty. Wcześniej `sos sojowy` dawał napój sojowy,
+  a `sos czosnkowy` — ząbek czosnku
+- **łącznik i obce znaki**: `chleb pszenno-żytni`, `crème brûlée`, `piña colada`
+- **słowo, które jest zarazem miarą**: `pomidory z puszki` to produkt,
+  `puszka pomidorów` to miara — jedno nie psuje drugiego
+
 ### Przymiotniki, które zmieniają liczby
 
 „Piwo zero" to nie „piwo". Zignorowany przymiotnik daje wynik gorszy niż brak
@@ -138,6 +166,12 @@ wędzony, smażony* są traktowane osobno:
   poprawienia wartości; poprawiony produkt zostaje w bazie na stałe
 - `bez X` nigdy nie dodaje X jako składnika — `jogurt bez cukru` to jogurt
   z ostrzeżeniem, nie jogurt plus cukier
+- **przymiotnik nie może sam zostać produktem.** Im większa baza, tym łatwiej
+  o produkt, który wygląda jak zwykłe słowo z opisu: `ser wędzony` dokładał
+  łososia wędzonego, `marchewka surowa` — surówkę, `kotlet wege` — węgorza,
+  a `bez cukru` — bezę. Takie trafienie jest gorsze niż brak trafienia, bo
+  dolicza kalorie, których nikt nie zjadł, więc przymiotnik liczy się tylko
+  wtedy, gdy naprawdę jest częścią nazwy
 
 Wyszukiwanie idzie po nazwach **i aliasach**, słowo po słowie, więc `piwo zero`
 zwraca wynik. Gdy naprawdę nic nie pasuje, apka mówi to wprost i proponuje
@@ -161,14 +195,33 @@ markowa baza jest możliwa — patrz „Szersza baza produktów" niżej.
 
 ## Co jest w środku
 
-- **Odczyt dnia** — ile kcal zostało do celu, listwa z podziałką jak na wadze
-  kuchennej, pod nią trzy paski makro z osobnym kolorem dla każdego składnika.
-  Przekroczenie celu ma własny kolor i własny segment na pasku.
+- **Odczyt dnia** — ile kcal zostało do celu jedną wielką liczbą, pod nią
+  pasek postępu dnia i trzy paski makro, każdy z własnym kolorem.
+  Przekroczenie celu ma własny kolor.
 - **Ostatnie 7 dni** — słupki z linią celu; tapnięcie przeskakuje na ten dzień.
 - **Log dnia** — pogrupowany po posiłkach, z makro przy każdej pozycji.
   Tapnięcie pozycji otwiera zmianę gramatury albo usunięcie.
 - **Dowolny dzień** — strzałkami wstecz, więc można uzupełnić wczoraj.
 - **Jasny i ciemny motyw** — automatycznie z systemu albo ręcznie.
+
+## Wygląd
+
+Zasada jest jedna: **interfejs jest monochromatyczny, kolor należy wyłącznie do
+danych.** Nagłówki, zakładki, przyciski i karty są w skali szarości, a zieleń,
+ochra i fiolet występują tylko tam, gdzie znaczą białko, węglowodany i tłuszcz.
+Dzięki temu kolor cokolwiek mówi: jeśli coś świeci, to jest liczba, nie ozdoba.
+
+Reszta wynika z tego samego:
+
+- **hierarchia rozmiarem, nie ozdobami** — najważniejsza liczba dnia jest wielka
+  i czarna, wszystko inne wyraźnie mniejsze i szare
+- **krój systemowy** (SF Pro na iOS, Roboto na Androidzie) — apka wygląda jak
+  część telefonu, a nie jak strona, i nie ściąga niczego z sieci
+- **jedna rodzina zaokrągleń i jeden cień**; żadnych gradientów, obwódek na
+  wszystkim ani ikon-emoji
+- **cele tapania ≥ 48 px** i zakładki na dole, w zasięgu kciuka
+- **oba motywy pełnoprawne** — ciemny nie jest przyciemnionym jasnym: ma własne
+  wartości kolorów danych, sprawdzone pod kątem daltonizmu tak samo jak jasny
 
 ## Publikacja online
 
@@ -202,10 +255,10 @@ jest adres Pages. Co dokłada hosting:
 
 - **Instalacja na ekranie głównym** — `manifest.webmanifest` z ikonami, tryb
   `standalone`, więc otwiera się bez paska przeglądarki, jak zwykła apka.
-- **Praca offline** — `sw.js` trzyma w cache cały szkielet apki (i fonty
-  z Google, pobierane trybem `cors`, bo odpowiedzi opaque nie da się zapisać
-  w Cache API). Po pierwszym wejściu apka wstaje bez sieci: log, parser
-  i zapisywanie działają normalnie.
+- **Praca offline** — `sw.js` trzyma w cache cały szkielet apki. Apka nie
+  ściąga niczego z zewnątrz: krój pisma jest systemowy, więc nie ma zapytań do
+  Google Fonts ani żadnego innego hosta. Po pierwszym wejściu wstaje bez sieci:
+  log, parser i zapisywanie działają normalnie.
 - **Aktualizacje bez zgadywania** — nowa wersja nie podmienia się pod ręką.
   Gdy jest gotowa, u dołu pojawia się pasek „Jest nowsza wersja apki" z
   przyciskiem, a nowy kod wchodzi dopiero po tapnięciu. Warunkiem wykrycia
@@ -240,7 +293,7 @@ i działa jak zwykła apka.
 
 ## Szersza baza produktów
 
-Wbudowane ~370 pozycji to produkty ogólne. Konkretny jogurt konkretnej marki
+Wbudowane 651 pozycji to produkty ogólne. Konkretny jogurt konkretnej marki
 dodaje się raz ręcznie i zostaje na stałe. Jeśli to za mało, są dwie drogi —
 różnią się nie ilością pracy, a tym, co się przy nich traci:
 
@@ -274,39 +327,27 @@ nie zalecenie medyczne.
 - Paleta makro przechodzi testy odróżnialności przy daltonizmie (protanopia /
   deuteranopia / trytanopia) w obu motywach; kolor nigdy nie jest jedynym
   nośnikiem znaczenia — każdy pasek i słupek ma etykietę tekstową.
-- Cele tapania ≥ 38 px, widoczny focus klawiatury, `prefers-reduced-motion`.
-- Testy: 122 przypadki przez Playwright — 21 na interfejs (dodawanie, cofanie,
-  szukanie bez polskich znaków, arkusz porcji, zestawy, kalkulator, trwałość po
-  odświeżeniu, oba motywy, brak poziomego przewijania) i 19 na opis posiłku
-  zdaniem (rozpoznanie składników, gramatura, nazwa dania, część zjedzona,
-  posiłek i dzień ze zdania, korekta i usuwanie pozycji w podglądzie, zapis
-  zestawu, cofnięcie całego posiłku, uczciwy komunikat przy zerowym wyniku).
-  Dodatkowe 12 pilnuje bazy i przymiotników: unikalność identyfikatorów, spójność
-  aliasów, „piwo zero" i „mleko odtłuszczone" trafiające w wariant, ostrzeżenie
-  przy braku wariantu, „bez cukru" nie dodające cukru, brak fałszywych trafień na
-  zwykłych słowach („resztki z lodówki"), szukanie po aliasach.
-  Kolejne 18 pokrywa dyktowanie, ze podstawioną atrapą `SpeechRecognition`
-  (mikrofonu w środowisku testowym nie ma, ale cała instalacja wokół niego
-  jest sprawdzalna): język i tryb nasłuchu, tekst częściowy wchodzący na żywo
-  do pola, przejście prosto do podglądu po zatrzymaniu, zdanie bez przecinków,
-  odmowa mikrofonu z komunikatem po polsku i bez pętli ponowień, samoczynny
-  koniec frazy wracający do słuchania (iOS), wygaszenie mikrofonu przy
-  zamknięciu arkusza oraz zachowanie w przeglądarce bez rozpoznawania mowy.
-  Kolejne 11 pilnuje rozróżnienia dania od składnika (burger z wołowiną kontra
-  chleb z masłem kontra przepis z ilościami), dopasowania nazw pięciowyrazowych
-  i porcji jadalnych owoców. Kolejne 10 dotyczy dotyku: żadna reguła `:hover`
-  nie wisi poza `@media (hover:hover)` (na iOS pierwsze tapnięcie na takim
-  elemencie tylko „najeżdża", a klika dopiero drugie), a pojedyncze tapnięcie
-  na emulowanym iPhonie zatwierdza posiłek i dodaje produkt z listy.
-  Kolejne 8 pilnuje, żeby podgląd nie otwierał się drugi raz: spóźnione
-  zamknięcie sesji mowy po zatwierdzeniu, zamknięcie arkusza w trakcie
-  dyktowania i podwójne kliknięcie w „Dodaj". Kolejne 13 przechodzi pełną
-  aktualizację na prawdziwym service workerze: brak paska przy pierwszej
-  instalacji, pojawienie się go po podmianie wdrożenia, brak samoczynnej
-  podmiany kodu na ekranie, wejście nowej wersji po tapnięciu, przełączenie
-  cache'u i przetrwanie danych.
-  Kolejne 10 sprawdza wersję hostowaną na prawdziwym serwerze HTTP pod
-  podkatalogiem: rejestrację i przejęcie kontroli przez service workera,
-  zawartość cache, a potem — po **zgaszeniu serwera** — start apki, trwałość
-  danych, działanie parsera i zapisywanie bez sieci, także w nowej karcie.
-  Osobny zestaw kontrolny przepuszcza dziesięć realnych zdań przez sam parser.
+- Cele tapania ≥ 44 px (minimum z wytycznych Apple, pilnowane testem), widoczny focus klawiatury, `prefers-reduced-motion`.
+- Testy: **165 przypadków** przez Playwright (headless Chromium, część na
+  emulowanym iPhone 13), w jedenastu zestawach:
+
+  | zestaw | ile | co pilnuje |
+  | --- | --- | --- |
+  | interfejs | 21 | dodawanie, cofanie, szukanie bez polskich znaków, arkusz porcji, zestawy, kalkulator, trwałość po odświeżeniu, oba motywy, brak poziomego przewijania |
+  | opis posiłku zdaniem | 19 | rozpoznanie składników, gramatura, nazwa dania, część zjedzona, posiłek i dzień ze zdania, korekta i usuwanie pozycji, zapis zestawu, cofnięcie całego posiłku, uczciwy komunikat przy zerowym wyniku |
+  | przymiotniki i aliasy | 18 | „piwo zero" i „mleko odtłuszczone" trafiające w wariant, ostrzeżenie przy braku wariantu, „bez cukru" bez cukru, brak fałszywych trafień na zwykłych słowach, oraz przypadki, w których przymiotnik nie może sam zostać produktem (`ser wędzony`, `marchewka surowa`, `solone orzeszki`) |
+  | warianty produktu | 18 | procent tłuszczu, warianty z nawiasu (suchy / ugotowany, grill / surowy), nazwy zaczynające się słowem pomijanym (`sos sojowy`), łącznik, obce znaki diakrytyczne, słowo będące zarazem miarą, całe zdanie z trzema wariantami naraz |
+  | spójność bazy | 18 | 651 produktów: unikalne identyfikatory i nazwy, znane kategorie i jednostki, porcje > 0, brak liczb ujemnych, **kcal zgodne z makro w regule 4/4/9**, alkohol liczony z 7 kcal/g, porcja poniżej 1100 kcal, owoce jako część jadalna, aliasy wskazujące na istniejące produkty i — najważniejsze — **każdy produkt osiągalny własną nazwą** |
+  | dyktowanie | 18 | język i tryb nasłuchu, tekst częściowy na żywo, przejście do podglądu po stopie, zdanie bez przecinków, odmowa mikrofonu po polsku i bez pętli ponowień, samoczynny koniec frazy (iOS), wygaszenie mikrofonu przy zamknięciu arkusza, przeglądarka bez rozpoznawania mowy |
+  | danie a składnik | 11 | burger z wołowiną kontra chleb z masłem kontra przepis z ilościami, nazwy pięciowyrazowe, porcje jadalne owoców |
+  | dotyk | 11 | żadna reguła `:hover` poza `@media (hover:hover)` (na iOS pierwsze tapnięcie na takim elemencie tylko „najeżdża", a klika dopiero drugie), pojedyncze tapnięcie zatwierdza posiłek i dodaje produkt, **każdy element dotykowy ma ≥44 px** na wszystkich ekranach |
+  | podgląd bez dubli | 8 | spóźnione zamknięcie sesji mowy po zatwierdzeniu, zamknięcie arkusza w trakcie dyktowania, podwójne kliknięcie w „Dodaj" |
+  | aktualizacja (prawdziwy SW) | 13 | brak paska przy pierwszej instalacji, pojawienie się po podmianie wdrożenia, brak samoczynnej podmiany kodu, wejście nowej wersji po tapnięciu, przełączenie cache'u, przetrwanie danych |
+  | offline na serwerze HTTP | 10 | rejestracja i przejęcie kontroli przez SW, zawartość cache, a potem — po **zgaszeniu serwera** — start apki, trwałość danych, parser i zapisywanie bez sieci, także w nowej karcie |
+
+  Zestaw „spójność bazy" powstał po tym, jak baza spuchła z 369 do 651 pozycji.
+  Okazało się, że samo rozszerzanie bazy psuje parser w sposób, którego nie
+  widać po liczbie produktów: nowy „Sos sojowy" był nieosiągalny (bo `sos` to
+  słowo pomijane), nowa „Beza" przechwytywała `bez cukru`, a nowy „Węgorz" —
+  `wege`. Reguła „każdy produkt musi trafić sam w siebie po nazwie" wyłapała
+  30 takich przypadków naraz; teraz jest ich zero.

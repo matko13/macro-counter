@@ -8,7 +8,6 @@ var BUILD = "__BUILD__";
 var V = "makro-" + BUILD;
 var SHELL = ["./", "index.html", "manifest.webmanifest", "icon.svg",
              "icon-192.png", "icon-512.png", "apple-touch-icon.png"];
-var FONTS = /^https:\/\/fonts\.(googleapis|gstatic)\.com\//;
 
 self.addEventListener("install", function (e) {
   /* Bez skipWaiting: nowa wersja czeka, aż użytkownik ją przyjmie. Podmiana
@@ -31,20 +30,6 @@ self.addEventListener("activate", function (e) {
 self.addEventListener("fetch", function (e) {
   var req = e.request;
   if (req.method !== "GET") return;
-
-  /* Fonty z Google trzeba pobrać trybem cors — odpowiedź opaque nie da się
-     zapisać w Cache API, a bez nich offline traci typografię. */
-  if (FONTS.test(req.url)) {
-    e.respondWith(caches.open(V).then(function (c) {
-      return c.match(req).then(function (hit) {
-        if (hit) return hit;
-        return fetch(new Request(req.url, { mode: "cors", credentials: "omit" }))
-          .then(function (res) { if (res.ok) c.put(req, res.clone()); return res; })
-          .catch(function () { return new Response("", { status: 504 }); });
-      });
-    }));
-    return;
-  }
 
   if (new URL(req.url).origin !== self.location.origin) return;
 
