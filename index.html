@@ -82,7 +82,6 @@ h1,h2,h3{margin:0;font-family:Fraunces,Georgia,serif;font-weight:600;text-wrap:b
   width:38px;height:38px;display:grid;place-items:center;border-radius:11px;
   color:var(--ink-2);border:1px solid transparent;
 }
-.iconbtn:hover{background:var(--sunken);color:var(--ink)}
 main{flex:1;padding:16px 16px 26px;display:flex;flex-direction:column;gap:22px}
 
 /* ─────────── bottom tabs ─────────── */
@@ -106,7 +105,6 @@ main{flex:1;padding:16px 16px 26px;display:flex;flex-direction:column;gap:22px}
 .shuttle .dow{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);font-family:Archivo,sans-serif;font-weight:500}
 .nav{display:flex;gap:4px}
 .nav button{width:36px;height:36px;display:grid;place-items:center;border:1px solid var(--line);border-radius:10px;color:var(--ink-2)}
-.nav button:hover:not(:disabled){background:var(--sunken);color:var(--ink)}
 .nav button:disabled{opacity:.32;cursor:default}
 
 /* ─────────── the scale readout ─────────── */
@@ -169,7 +167,6 @@ main{flex:1;padding:16px 16px 26px;display:flex;flex-direction:column;gap:22px}
   flex:none;display:flex;flex-direction:column;gap:2px;padding:9px 13px;min-width:104px;
   background:var(--sunken);border:1px solid var(--line);border-radius:var(--r);
 }
-.chip:hover{border-color:var(--line-2);background:var(--raised)}
 .chip .n{font-size:13px;font-weight:500;line-height:1.25}
 .chip .m{font-size:11px;color:var(--ink-3)}
 .chip.ghost{background:transparent;border-style:dashed;justify-content:center;align-items:center;min-width:auto;padding:9px 15px}
@@ -183,7 +180,6 @@ main{flex:1;padding:16px 16px 26px;display:flex;flex-direction:column;gap:22px}
 .grouphead .save{font-size:11px;font-weight:600;color:var(--accent);padding:2px 6px;border-radius:6px}
 .entry{display:flex;align-items:center;gap:11px;width:100%;padding:10px 2px;border-bottom:1px solid var(--line);min-height:var(--tap)}
 .entry:last-child{border-bottom:0}
-.entry:hover{background:var(--sunken)}
 .entry .n{flex:1;min-width:0}
 .entry .n b{display:block;font-weight:500;font-size:14.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .entry .n s{display:block;text-decoration:none;font-size:11.5px;color:var(--ink-3)}
@@ -208,7 +204,6 @@ main{flex:1;padding:16px 16px 26px;display:flex;flex-direction:column;gap:22px}
 .food{display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--line)}
 .food:last-child{border-bottom:0}
 .food .body{flex:1;min-width:0;padding:11px 0;min-height:var(--tap)}
-.food:hover{background:var(--sunken)}
 .food .body b{display:block;font-weight:500;font-size:14.5px}
 .food .body s{display:block;text-decoration:none;font-size:11.5px;color:var(--ink-3)}
 .addbtn{
@@ -216,7 +211,6 @@ main{flex:1;padding:16px 16px 26px;display:flex;flex-direction:column;gap:22px}
   background:var(--accent-soft);color:var(--accent);font-size:12.5px;font-weight:600;
   min-height:38px;
 }
-.addbtn:hover{background:var(--accent);color:var(--accent-ink)}
 .addbtn svg{width:14px;height:14px;stroke-width:2.6}
 .empty{padding:26px 8px;text-align:center;color:var(--ink-3);font-size:13.5px}
 
@@ -231,11 +225,9 @@ main{flex:1;padding:16px 16px 26px;display:flex;flex-direction:column;gap:22px}
 .seg button[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink);font-weight:500}
 .stepper{display:flex;align-items:center;gap:10px}
 .stepper button{width:40px;height:40px;flex:none;display:grid;place-items:center;border:1px solid var(--line-2);border-radius:10px;font-size:19px;background:var(--surface)}
-.stepper button:hover{background:var(--raised)}
 .stepper .val{flex:1;text-align:center;font-size:19px;font-weight:600}
 .stepper .val s{text-decoration:none;font-size:12px;color:var(--ink-3);font-weight:500;margin-left:3px}
 .btn{display:flex;align-items:center;justify-content:center;gap:7px;padding:13px 16px;border-radius:12px;background:var(--accent);color:var(--accent-ink);font-weight:600;font-size:15px;min-height:var(--tap)}
-.btn:hover{filter:brightness(1.08)}
 .btn.alt{background:var(--sunken);color:var(--ink);border:1px solid var(--line-2)}
 .btn.danger{background:transparent;color:var(--over);border:1px solid var(--over)}
 .note{font-size:12px;color:var(--ink-3);line-height:1.5}
@@ -277,9 +269,7 @@ main{flex:1;padding:16px 16px 26px;display:flex;flex-direction:column;gap:22px}
 /* ─────────── opis posiłku zdaniem ─────────── */
 .nlcard{background:var(--accent-soft);border-radius:var(--r-lg);display:flex;align-items:stretch;gap:0;width:100%;overflow:hidden}
 .nlmain{flex:1;min-width:0;display:flex;align-items:center;gap:12px;padding:13px 14px}
-.nlmain:hover{filter:brightness(.97)}
 .nlmic{flex:none;width:56px;display:grid;place-items:center;border-left:1px solid color-mix(in srgb,var(--accent) 22%,transparent);color:var(--accent)}
-.nlmic:hover{background:color-mix(in srgb,var(--accent) 12%,transparent)}
 .nlmic svg{width:22px;height:22px}
 .nlcard .ic{flex:none;width:34px;height:34px;border-radius:11px;background:var(--surface);display:grid;place-items:center;color:var(--accent)}
 .nlcard .ic svg{width:18px;height:18px}
@@ -303,7 +293,6 @@ main{flex:1;padding:16px 16px 26px;display:flex;flex-direction:column;gap:22px}
 .nlrow .n s{display:block;text-decoration:none;font-size:11.5px;color:var(--ink-3)}
 .nlrow .kc{grid-column:2;font-size:14px;font-weight:600}
 .nlrow .rm{grid-column:3;width:30px;height:30px;display:grid;place-items:center;border-radius:8px;color:var(--ink-3)}
-.nlrow .rm:hover{background:var(--sunken);color:var(--over)}
 .nlrow .rm svg{width:14px;height:14px}
 .nlrow .warn{grid-column:1/-1;display:flex;align-items:flex-start;gap:6px;font-size:11.5px;color:var(--over);line-height:1.4;padding-top:4px}
 .nlrow .warn svg{width:13px;height:13px;flex:none;margin-top:2px}
@@ -319,6 +308,24 @@ main{flex:1;padding:16px 16px 26px;display:flex;flex-direction:column;gap:22px}
 .toggle[aria-pressed="true"] .box{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 .toggle .box svg{width:13px;height:13px;stroke-width:3}
 .toggle .lb{font-size:13.5px}
+
+/* Reguły :hover tylko tam, gdzie kursor naprawdę istnieje. Na ekranie
+   dotykowym iOS pierwsze tapnięcie na elemencie ze stylem :hover jedynie
+   go "najeżdża", a dopiero drugie klika — stąd konieczność dwóch tapnięć
+   na przycisku zatwierdzenia. */
+@media (hover:hover) and (pointer:fine){
+.iconbtn:hover{background:var(--sunken);color:var(--ink)}
+.nav button:hover:not(:disabled){background:var(--sunken);color:var(--ink)}
+.chip:hover{border-color:var(--line-2);background:var(--raised)}
+.entry:hover{background:var(--sunken)}
+.food:hover{background:var(--sunken)}
+.addbtn:hover{background:var(--accent);color:var(--accent-ink)}
+.stepper button:hover{background:var(--raised)}
+.btn:hover{filter:brightness(1.08)}
+.nlmain:hover{filter:brightness(.97)}
+.nlmic:hover{background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.nlrow .rm:hover{background:var(--sunken);color:var(--over)}
+}
 
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
 </style>
@@ -423,11 +430,11 @@ var RAW=[
 ["Pomidorki koktajlowe","warzywa",18,0.9,3.9,0.2,90,"garść",8],
 ["Pomidory suszone (w oleju)","warzywa",213,5,23,14,30,"garść",6],
 ["Banan","owoce",89,1.1,23,0.3,120,"szt"],
-["Jabłko","owoce",52,0.3,14,0.2,180,"szt"],
-["Pomarańcza","owoce",47,0.9,12,0.1,150,"szt"],
-["Mandarynka","owoce",53,0.8,13,0.3,80,"szt"],
-["Gruszka","owoce",57,0.4,15,0.1,170,"szt"],
-["Kiwi","owoce",61,1.1,15,0.5,75,"szt"],
+["Jabłko","owoce",52,0.3,14,0.2,150,"szt"],
+["Pomarańcza","owoce",47,0.9,12,0.1,130,"szt"],
+["Mandarynka","owoce",53,0.8,13,0.3,70,"szt"],
+["Gruszka","owoce",57,0.4,15,0.1,150,"szt"],
+["Kiwi","owoce",61,1.1,15,0.5,70,"szt"],
 ["Truskawki","owoce",32,0.7,7.7,0.3,150,"g"],
 ["Maliny","owoce",52,1.2,12,0.7,100,"g"],
 ["Borówki","owoce",57,0.7,14,0.3,100,"g"],
@@ -610,10 +617,10 @@ var RAW=[
 ["Surówka z białej kapusty","warzywa",60,1,7,3,100,"g"],
 ["Mizeria","warzywa",45,1,3,3,100,"g"],
 ["Buraczki zasmażane","warzywa",70,1.5,10,2.5,100,"g"],
-["Brzoskwinia","owoce",39,0.9,10,0.3,150,"szt"],
-["Nektarynka","owoce",44,1.1,11,0.3,140,"szt"],
-["Morela","owoce",48,1.4,11,0.4,40,"szt"],
-["Grejpfrut","owoce",42,0.8,11,0.1,200,"szt"],
+["Brzoskwinia","owoce",39,0.9,10,0.3,130,"szt"],
+["Nektarynka","owoce",44,1.1,11,0.3,130,"szt"],
+["Morela","owoce",48,1.4,11,0.4,35,"szt"],
+["Grejpfrut","owoce",42,0.8,11,0.1,130,"szt"],
 ["Melon","owoce",34,0.8,8,0.2,200,"g"],
 ["Granat","owoce",83,1.7,19,1.2,150,"g"],
 ["Porzeczki","owoce",56,1.4,13,0.4,100,"g"],
@@ -1489,8 +1496,8 @@ var ALIAS={
 "twarog-chudy":"twarog|twarogu|twarogiem|ser bialy|bialy ser|bialego sera",
 "twarog-poltlusty":"twarog poltlusty",
 "serek-wiejski":"serkow wiejskich|serki wiejskie|serka wiejskiego|cottage|cottage cheese",
-"ser-zolty-gouda":"ser zolty|zolty ser|gouda|sera zoltego|zoltego sera",
-"feta":"ser feta|serem feta",
+"ser-zolty-gouda":"ser|sera|serem|sery|ser zolty|zolty ser|gouda|sera zoltego|zoltego sera",
+"feta":"ser feta",
 "piers-z-kurczaka-grill":"kurczak|kurczaka|kurczakiem|kurczaki|piersi z kurczaka|filet z kurczaka|filet",
 "piers-z-kurczaka-surowa":"piers surowa",
 "piers-z-indyka":"indyk|indyka|indykiem",
@@ -1574,7 +1581,8 @@ var ALIAS={
 "burger-roslinny":"burger wege|burger wegetarianski",
 "izolat-bialka-wpi":"izolat|wpi",
 "syrop-klonowy":"syrop",
-"kotlet-z-kurczaka-panierowany":"kurczak panierowany|panierowany kurczak|filet panierowany"
+"kotlet-z-kurczaka-panierowany":"kurczak panierowany|panierowany kurczak|filet panierowany",
+"kanapka-z-szynka-i-serem":"kanapka|kanapke|kanapki|kanapek|kanapka z serem|kanapka z szynka"
 };
 
 var NUMW={jeden:1,jedna:1,jedno:1,jednego:1,poltora:1.5,poltorej:1.5,
@@ -1644,6 +1652,7 @@ function wmatch(a,b){
   if(d>2&&!(d<=4&&i>=5))return 0;
   return i;
 }
+var JOIN={z:1,ze:1,i:1,w:1,we:1,na:1,po:1,do:1,oraz:1};
 var IDX=null,IDXn=0;
 function buildIdx(){
   if(IDX&&IDXn===S.custom.length)return;
@@ -1667,7 +1676,9 @@ function matchAt(toks,i){
   var best=null;
   for(var x=0;x<IDX.length;x++){
     var e=IDX[x],w=e.w,k=w.length;
-    for(var j=Math.min(k,4);j>=1;j--){
+    /* Najdłuższa nazwa w bazie ma 5 słów ("Kanapka z szynką i serem");
+       ucięcie na 4 zostawiało ostatni wyraz, który dopasowywał się osobno. */
+    for(var j=Math.min(k,6);j>=1;j--){
       if(i+j>toks.length)continue;
       var sc=0,ok=true;
       for(var q=0;q<j;q++){
@@ -1678,6 +1689,10 @@ function matchAt(toks,i){
         sc+=m;
       }
       if(!ok)continue;
+      /* Częściowe dopasowanie kończące się spójnikiem zjadałoby przyimek,
+         po którym poznajemy "danie z czegoś" — wtedy składnik doliczał się
+         drugi raz do dania, które już go zawiera. */
+      if(j<k&&JOIN[w[j-1]])continue;
       var total=10*j+sc-3*(k-j);
       if(!best||total>best.score||(total===best.score&&k<best.k))best={f:e.f,len:j,score:total,k:k};
       break;
@@ -1705,6 +1720,10 @@ function searchHit(f,qt){
   }
   return true;
 }
+/* Danie złożone: jego kalorie zawierają już wsad, więc wymieniony składnik
+   jest opisem, a nie dodatkiem. */
+var DISHY={"burger-roslinny":1,"parowki-weganskie":1};
+function isDish(f){return f.cat==="gotowe"||!!DISHY[f.id]}
 function unitGrams(u,food){
   if(u.own==="*")return pieceWeight(food);
   if(u.own==="pc")return food.pc||u.gram;
@@ -1809,12 +1828,30 @@ function parseMeal(text){
     }
     if(pend){age++;if(age>3)pend=null}
   }
-  /* "zapiekanka z 4 jaj, 2 serków…" — pierwszy produkt przed "z" i długą
-     listą składników jest nazwą dania, nie składnikiem */
-  if(res.items.length>=3&&!res.items[0].qty){
-    var after=toks[res.items[0].at+res.items[0].len];
-    if(after&&after.n&&(after.n==="z"||after.n==="ze")){
-      res.dish=res.items[0].f.n;res.items.shift();
+  /* "X z Y" znaczy dwie różne rzeczy i trzeba je rozróżnić, bo inaczej
+     kalorie liczą się podwójnie:
+       "burger z wołowiną"      — wołowina JEST w burgerze, opis dania
+       "zapiekanka z 4 jaj…"    — lista składników, danie to tylko nazwa
+       "chleb z masłem"         — dwa osobne składniki, oba się liczą
+     Rozstrzyga to, czy pierwszy produkt jest daniem złożonym, ile rzeczy
+     wymieniono po "z" i czy podano dla nich ilości. */
+  if(res.items.length>=2){
+    var head=res.items[0];
+    var nx=toks[head.at+head.len];
+    if(nx&&nx.n&&(nx.n==="z"||nx.n==="ze")){
+      var rest=res.items.slice(1);
+      var qtys=0;
+      rest.forEach(function(x){if(x.qty)qtys++});
+      var composite=isDish(head.f);
+      var descriptive=composite&&(head.qty||rest.length===1||(rest.length===2&&qtys===0));
+      var recipe=composite&&!descriptive&&!head.qty&&rest.length>=2;
+      if(descriptive){
+        /* nie gubimy tego po cichu — podgląd pokaże, co pominięto i dlaczego */
+        res.inside=rest.map(function(x){return x.f.n});
+        res.items=[head];
+      }else if(recipe){
+        res.dish=head.f.n;res.items=rest;
+      }
     }
   }
   /* kwalifikator przylegający do produktu, którego nie ma w jego nazwie:
@@ -2069,6 +2106,10 @@ function nlSheet(prefill,autoDictate){
           "<span style='color:var(--c);font-weight:700'>W</span> <i class='num'>"+fmt(t.c)+" g</i>"+
           "<span style='color:var(--f);font-weight:700'>T</span> <i class='num'>"+fmt(t.f)+" g</i>"}));
 
+        /* Decyzja "to jest w środku dania" musi być widoczna, bo inaczej
+           wygląda jak zgubiony składnik. */
+        if(r.inside&&r.inside.length)root.appendChild(el("div",{class:"note",
+          text:"Nie doliczyłem osobno: "+r.inside.join(", ")+" — to jest już w „"+items[0].f.n+"”. Jeśli dodawałeś to sam, wpisz z ilością, np. „100 g wołowiny”."}));
         if(r.skipped.length)root.appendChild(el("div",{class:"note",text:"Pominięte słowa: "+r.skipped.join(", ")+". Jeśli któreś z nich to jedzenie, dopisz je prościej albo dodaj jako własny produkt."}));
 
         if(items.length>1){

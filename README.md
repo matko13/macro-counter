@@ -95,6 +95,28 @@ dopóki nie tapniesz stop. Strona osadzona w innej (np. podgląd) zwykle nie
 ma prawa do mikrofonu; w takim wypadku apka mówi, że zadziała pod własnym
 adresem, zamiast sugerować, że to Ty czegoś nie zezwoliłeś.
 
+### Danie a jego składnik
+
+`X z Y` znaczy w polszczyźnie dwie różne rzeczy i pomylenie ich liczy kalorie
+podwójnie:
+
+| zdanie | wynik | dlaczego |
+| --- | --- | --- |
+| `burger z wołowiną` | sam burger | wołowina jest w burgerze, to opis |
+| `pizza z pieczarkami` | sama pizza | dodatek jest na pizzy |
+| `chleb z masłem` | chleb **i** masło | dwa osobne składniki |
+| `zapiekanka z 4 jaj, 2 serków i 8 oliwek` | trzy składniki, „Zapiekanka" jako nazwa | przepis własny |
+| `kanapka z 2 kromek chleba i 50 g szynki` | chleb i szynka, „Kanapka" jako nazwa | podane ilości = przepis |
+
+Rozstrzygają trzy rzeczy: czy pierwszy produkt jest **daniem złożonym** (kategoria
+„Dania gotowe" — jego kalorie zawierają już wsad), ile rzeczy wymieniono po `z`
+i czy podano dla nich **ilości**. Jeden składnik bez ilości albo dwa bez ilości to
+opis dania; trzy albo podane gramatury to przepis, który się rozbija.
+
+Pominięty składnik nie znika po cichu — podgląd pisze „nie doliczyłem osobno:
+wołowina — to jest już w «Burger»", więc widać decyzję i można ją odwrócić,
+podając ilość.
+
 ### Przymiotniki, które zmieniają liczby
 
 „Piwo zero" to nie „piwo". Zignorowany przymiotnik daje wynik gorszy niż brak
@@ -119,6 +141,13 @@ zapytań do sieci. Opis posiłku to dana zdrowotna i nigdzie nie wychodzi
 z Twojego urządzenia; apka nadal jest jednym plikiem, który zadziała offline.
 Ceną jest zamknięty słownik: parser rozpoznaje to, co jest w bazie, plus Twoje
 własne produkty. Czego nie zna — pominie i o tym powie.
+
+Porcje domyślne dla owoców na sztuki to **waga części jadalnej**, nie całego
+owocu z ogryzkiem czy skórką: jabłko 150 g (78 kcal), gruszka 150 g, pomarańcza
+130 g. Tabele amerykańskie liczą „średnie jabłko" jako 182 g z gniazdem
+nasiennym, co dawało 94 kcal i wyglądało absurdalnie wysoko przy znajomym
+„jabłko ≈ 50 kcal na 100 g" — sama wartość na 100 g była poprawna, przesadzona
+była porcja.
 
 Baza wbudowana to produkty **ogólne**, bez marek i kodów kreskowych. Szersza,
 markowa baza jest możliwa — patrz „Szersza baza produktów" niżej.
@@ -233,7 +262,7 @@ nie zalecenie medyczne.
   deuteranopia / trytanopia) w obu motywach; kolor nigdy nie jest jedynym
   nośnikiem znaczenia — każdy pasek i słupek ma etykietę tekstową.
 - Cele tapania ≥ 38 px, widoczny focus klawiatury, `prefers-reduced-motion`.
-- Testy: 80 przypadków przez Playwright — 21 na interfejs (dodawanie, cofanie,
+- Testy: 101 przypadków przez Playwright — 21 na interfejs (dodawanie, cofanie,
   szukanie bez polskich znaków, arkusz porcji, zestawy, kalkulator, trwałość po
   odświeżeniu, oba motywy, brak poziomego przewijania) i 19 na opis posiłku
   zdaniem (rozpoznanie składników, gramatura, nazwa dania, część zjedzona,
@@ -250,6 +279,12 @@ nie zalecenie medyczne.
   odmowa mikrofonu z komunikatem po polsku i bez pętli ponowień, samoczynny
   koniec frazy wracający do słuchania (iOS), wygaszenie mikrofonu przy
   zamknięciu arkusza oraz zachowanie w przeglądarce bez rozpoznawania mowy.
+  Kolejne 11 pilnuje rozróżnienia dania od składnika (burger z wołowiną kontra
+  chleb z masłem kontra przepis z ilościami), dopasowania nazw pięciowyrazowych
+  i porcji jadalnych owoców. Kolejne 10 dotyczy dotyku: żadna reguła `:hover`
+  nie wisi poza `@media (hover:hover)` (na iOS pierwsze tapnięcie na takim
+  elemencie tylko „najeżdża", a klika dopiero drugie), a pojedyncze tapnięcie
+  na emulowanym iPhonie zatwierdza posiłek i dodaje produkt z listy.
   Kolejne 10 sprawdza wersję hostowaną na prawdziwym serwerze HTTP pod
   podkatalogiem: rejestrację i przejęcie kontroli przez service workera,
   zawartość cache, a potem — po **zgaszeniu serwera** — start apki, trwałość
