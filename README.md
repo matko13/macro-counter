@@ -12,7 +12,7 @@ Otwórz go w przeglądarce (także z dysku, `file://`) i działa.
 | Zamiast wpisywać | Robisz to |
 | --- | --- |
 | cały złożony posiłek | **opisujesz go zdaniem** — patrz niżej |
-| nazwę i wartości produktu | ~150 gotowych produktów z polskiej kuchni w bazie |
+| nazwę i wartości produktu | ~370 gotowych produktów z polskiej kuchni w bazie |
 | gramaturę | każdy produkt ma domyślną porcję — tapnięcie w `+ 1 szt` / `+ 150 g` i gotowe |
 | ciągle to samo śniadanie | sekcja **Twoje najczęstsze** sama wypycha na wierzch to, co jesz realnie |
 | cały posiłek po kawałku | **zestawy** — raz zapisany posiłek dodajesz jednym tapnięciem |
@@ -63,11 +63,33 @@ Słowa, których nie rozpoznał, wypisuje pod podglądem („Pominięte słowa:
 zrobiłem, topping"), więc widać, czy nie zgubił czegoś jadalnego. Jeśli nie
 rozpoznał niczego, mówi to wprost, zamiast zapisać puste zero.
 
+### Przymiotniki, które zmieniają liczby
+
+„Piwo zero" to nie „piwo". Zignorowany przymiotnik daje wynik gorszy niż brak
+wyniku: cichą, zawyżoną liczbę, której nikt nie zauważy. Dlatego wyrazy w rodzaju
+*zero, light, bezalkoholowe, odtłuszczone, bez cukru, wegański, panierowany,
+wędzony, smażony* są traktowane osobno:
+
+- jeśli w bazie jest wariant — trafia w niego (`piwo zero` → Piwo bezalkoholowe,
+  `mleko odtłuszczone` → Mleko 0%, `kurczak panierowany` → kotlet panierowany)
+- jeśli wariantu nie ma — pozycja dostaje **widoczne ostrzeżenie** w podglądzie
+  („nie mam wersji «light» — liczby są dla zwykłej") razem ze skrótem do
+  poprawienia wartości; poprawiony produkt zostaje w bazie na stałe
+- `bez X` nigdy nie dodaje X jako składnika — `jogurt bez cukru` to jogurt
+  z ostrzeżeniem, nie jogurt plus cukier
+
+Wyszukiwanie idzie po nazwach **i aliasach**, słowo po słowie, więc `piwo zero`
+zwraca wynik. Gdy naprawdę nic nie pasuje, apka mówi to wprost i proponuje
+dodanie szukanej frazy jako własnego produktu — z nazwą już wpisaną.
+
 **To działa lokalnie i deterministycznie** — żadnego modelu językowego ani
 zapytań do sieci. Opis posiłku to dana zdrowotna i nigdzie nie wychodzi
 z Twojego urządzenia; apka nadal jest jednym plikiem, który zadziała offline.
 Ceną jest zamknięty słownik: parser rozpoznaje to, co jest w bazie, plus Twoje
 własne produkty. Czego nie zna — pominie i o tym powie.
+
+Baza wbudowana to produkty **ogólne**, bez marek i kodów kreskowych. Szersza,
+markowa baza jest możliwa — patrz „Szersza baza produktów" niżej.
 
 ## Co jest w środku
 
@@ -91,6 +113,26 @@ warto dodać stronę do ekranu głównego (Safari: *Udostępnij → Do ekranu
 początkowego*; Chrome: *menu → Dodaj do ekranu głównego*) — wtedy wygląda
 i działa jak zwykła apka.
 
+## Szersza baza produktów
+
+Wbudowane ~370 pozycji to produkty ogólne. Konkretny jogurt konkretnej marki
+dodaje się raz ręcznie i zostaje na stałe. Jeśli to za mało, są dwie drogi —
+różnią się nie ilością pracy, a tym, co się przy nich traci:
+
+1. **Paczka offline z Open Food Facts** — otwarta baza produktów spożywczych
+   z markami i kodami kreskowymi. Wycinek dla rynku polskiego (kilka–kilkanaście
+   tysięcy pozycji z nazwą, marką i wartościami na 100 g) to rzędu 0,4–1,5 MB,
+   po kompresji ok. 120–400 KB, więc apka zostaje jednym plikiem działającym
+   offline i nadal nic nie wysyła. Koszty: dane są współtworzone przez
+   użytkowników, więc jakość jest nierówna, a licencja **ODbL** wymaga podania
+   źródła i utrzymania tej samej licencji dla pochodnej bazy.
+2. **Zapytanie na żywo, gdy lokalnie nie ma trafienia** — pełne pokrycie
+   i zawsze aktualne dane. Koszty: potrzebna sieć w momencie użycia, każde
+   zapytanie mówi obcemu serwerowi, co jesz, i **nie zadziała w wersji
+   opublikowanej jako Artifact** — jej polityka bezpieczeństwa blokuje
+   połączenia do zewnętrznych hostów. Działałoby tylko w kopii uruchamianej
+   lokalnie.
+
 ## Wartości odżywcze
 
 Baza to typowe wartości dla produktów ogólnych (tabele składu żywności),
@@ -108,10 +150,14 @@ nie zalecenie medyczne.
   deuteranopia / trytanopia) w obu motywach; kolor nigdy nie jest jedynym
   nośnikiem znaczenia — każdy pasek i słupek ma etykietę tekstową.
 - Cele tapania ≥ 38 px, widoczny focus klawiatury, `prefers-reduced-motion`.
-- Testy: 40 przypadków przez Playwright — 21 na interfejs (dodawanie, cofanie,
+- Testy: 52 przypadki przez Playwright — 21 na interfejs (dodawanie, cofanie,
   szukanie bez polskich znaków, arkusz porcji, zestawy, kalkulator, trwałość po
   odświeżeniu, oba motywy, brak poziomego przewijania) i 19 na opis posiłku
   zdaniem (rozpoznanie składników, gramatura, nazwa dania, część zjedzona,
   posiłek i dzień ze zdania, korekta i usuwanie pozycji w podglądzie, zapis
   zestawu, cofnięcie całego posiłku, uczciwy komunikat przy zerowym wyniku).
+  Dodatkowe 12 pilnuje bazy i przymiotników: unikalność identyfikatorów, spójność
+  aliasów, „piwo zero" i „mleko odtłuszczone" trafiające w wariant, ostrzeżenie
+  przy braku wariantu, „bez cukru" nie dodające cukru, brak fałszywych trafień na
+  zwykłych słowach („resztki z lodówki"), szukanie po aliasach.
   Osobny zestaw kontrolny przepuszcza dziesięć realnych zdań przez sam parser.
