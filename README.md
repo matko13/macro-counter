@@ -106,19 +106,30 @@ markowa baza jest możliwa — patrz „Szersza baza produktów" niżej.
 
 ## Publikacja online
 
-Repozytorium jest publiczne, więc GitHub Pages jest darmowe. Publikacja jest
-zautomatyzowana — `.github/workflows/pages.yml` po każdym wejściu na `main`
-**sam włącza Pages** (`configure-pages` z `enablement: true`) i wystawia stronę,
-więc nie trzeba niczego klikać w ustawieniach. Adres to
+Wdrażanie jest zautomatyzowane: `.github/workflows/pages.yml` po każdym wejściu
+na `main` pakuje stronę i publikuje ją. Ale **samo włączenie Pages trzeba zrobić
+raz ręcznie** — token workflow tego nie potrafi i dostaje
+`Create Pages site failed: Resource not accessible by integration`, bo
+utworzenie strony wymaga uprawnienia `administration`, którego domyślny
+`GITHUB_TOKEN` nie ma.
+
+Jednorazowo:
+
+1. Repozytorium musi być **publiczne** — Pages dla prywatnych wymagają planu
+   płatnego (Settings → General → Change visibility)
+2. **Settings** → **Pages** → *Build and deployment* → Source: **GitHub Actions**
+3. Uruchom workflow ponownie (Actions → *Publikuj na GitHub Pages* → *Run workflow*)
+   albo wypchnij cokolwiek na `main`
+
+Od tej pory każde wejście na `main` publikuje się samo. Adres to
 `https://<użytkownik>.github.io/<repo>/`.
 
-Workflow publikuje wyłącznie pliki apki — bez README i bez katalogu `.github`
-— i przerywa z błędem, jeśli któregoś z nich brakuje, zamiast wystawić
-niekompletną stronę.
-
-Gdyby automat się nie udał (np. organizacja blokuje włączanie Pages tokenem
-workflow), zostaje droga ręczna: **Settings** → **Pages** → Source
-*Deploy from a branch* → branch `main`, folder `/ (root)`.
+Dopóki Pages są wyłączone, workflow **nie udaje, że wdrożył** i nie świeci się
+czerwono bez powodu: sprawdza `GET /repos/{repo}/pages`, a gdy dostanie 404,
+kończy zielono z ostrzeżeniem i instrukcją w podsumowaniu runu. Publikuje
+wyłącznie pliki apki — bez README i bez katalogu `.github` — i przerywa
+z błędem, jeśli któregoś brakuje, zamiast wystawić stronę bez service workera
+albo bez ikon.
 
 Wszystkie ścieżki w apce są relatywne, więc działa też w podkatalogu, jakim
 jest adres Pages. Co dokłada hosting:
