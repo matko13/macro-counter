@@ -70,7 +70,7 @@ const b=await chromium.launch();
     return out;
   });
   ok('każdy element dotykowy ma ≥44 px wysokości  ['+(tapz.join(', ')||'wszystkie ok')+']', tapz.length===0);
-  ok('brak błędów JS na dotyku', errs.length===0);
+  ok('brak błędów JS na dotyku  ['+(errs.join(' | ')||'brak')+']', errs.length===0);
   await ctx.close();
 }
 

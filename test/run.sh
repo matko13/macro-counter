@@ -11,7 +11,7 @@ cd "$(dirname "$0")"
 ROOT="$(cd .. && pwd)"
 WORK="$(mktemp -d)"
 LOCAL=(test nl qual wariant db dict dish mobile reopen)
-SERVED=(updbar offline)
+SERVED=(updbar ratunek offline)
 HTTP="$(command -v http-server || echo /opt/node22/lib/node_modules/http-server/bin/http-server)"
 
 want=("$@")
@@ -66,6 +66,16 @@ if run_it updbar; then
   printf '%-10s %3d PASS %3d FAIL\n' updbar "$p" "$f"; grep '^FAIL' <<<"$out"
 fi
 
+if run_it ratunek; then
+  stage "$WORK/rescue/app" aaaaaaa
+  serve "$WORK/rescue" 8215
+  out="$(node ratunek.mjs "$WORK" 2>&1)"
+  p=$(grep -c '^PASS' <<<"$out"); f=$(grep -c '^FAIL' <<<"$out")
+  pass=$((pass+p)); fail=$((fail+f)); ran=$((ran+1))
+  printf '%-10s %3d PASS %3d FAIL\n' ratunek "$p" "$f"; grep '^FAIL' <<<"$out"
+  grep -i 'błędy JS' <<<"$out" | grep -v brak
+fi
+
 if run_it offline; then
   # offline.mjs sam gasi ten serwer — na tym polega dowód pracy bez sieci
   stage "$WORK/serve/test" aaaaaaa
@@ -77,7 +87,7 @@ if run_it offline; then
 fi
 
 # to, co jeszcze żyje w katalogu roboczym, gasimy po sobie
-for d in "$WORK/serve" "$WORK/upd"; do
+for d in "$WORK/serve" "$WORK/upd" "$WORK/rescue"; do
   for pid in /proc/[0-9]*; do
     [ "$(readlink "$pid/cwd" 2>/dev/null)" = "$d" ] && kill -9 "${pid#/proc/}" 2>/dev/null
   done

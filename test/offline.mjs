@@ -24,8 +24,12 @@ ok('service worker aktywny  [state='+st.state+']', st.state==='activated');
 ok('SW kontroluje stronę  [controller='+st.controller+']', st.controller);
 
 const cached = await p.evaluate(async () => {
-  const ks=await caches.keys(); if(!ks.length) return [];
-  const c=await caches.open(ks[0]);
+  /* Cache'ów jest dwa: szkielet wersji i osobny z migawką danych. Interesuje
+     nas szkielet, więc wybieramy go po nazwie, a nie po kolejności. */
+  const ks=await caches.keys();
+  const shell=ks.filter(k=>k!=='makro-dane')[0];
+  if(!shell) return [];
+  const c=await caches.open(shell);
   return (await c.keys()).map(r=>r.url.replace(/^.*\/test\//,'')||'./');
 });
 ok('app shell w cache  ['+cached.length+' plików]', cached.length>=6);

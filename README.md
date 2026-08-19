@@ -291,6 +291,35 @@ warto dodać stronę do ekranu głównego (Safari: *Udostępnij → Do ekranu
 początkowego*; Chrome: *menu → Dodaj do ekranu głównego*) — wtedy wygląda
 i działa jak zwykła apka.
 
+### Ikonka na iOS ma osobną pamięć niż Safari
+
+To nie jest drobiazg, bo wygląda dokładnie jak utrata danych: dodajesz apkę do
+ekranu głównego, otwierasz ikonkę i dzień jest pusty. Na iOS apka uruchomiona
+z ekranu głównego dostaje **własny worek danych** — localStorage, ciasteczka
+i service worker nie są wspólne z Safari. Wpisy nie zginęły, tylko zostały
+w przeglądarce.
+
+Apka radzi z tym sobie sama, na ile platforma pozwala:
+
+- przy każdym zapisie odkłada migawkę stanu do **Cache Storage** — to jedyna
+  pamięć, którą Safari i apka z ekranu głównego na iOS mają wspólną
+- gdy wstaje pusta, a migawka istnieje, **pyta**, czy przenieść dane: pokazuje
+  ile jest wpisów i z kiedy jest ostatni zapis. Nigdy nie wczytuje sama —
+  po „Wyczyść wszystko” dane mają zostać wyczyszczone (to samo „Wyczyść”
+  usuwa więc i migawkę)
+- gdy migawki nie ma, a apka działa z ekranu głównego, **tłumaczy sytuację
+  i podaje drogę**: w Safari *Ja → Kopia zapasowa → Kopiuj*, tutaj to samo
+  miejsce → wklej. Schowak na iOS jest wspólny, więc to działa zawsze.
+  Komunikat pokazuje się raz
+
+Sprzątanie po starych wdrożeniach **nie rusza** cache'u z danymi — inaczej
+pierwsza aktualizacja zabrałaby migawkę razem ze starym szkieletem apki.
+Pilnuje tego test, który to sprawdza na prawdziwym service workerze.
+
+Dodatkowo Safari usuwa dane stron nieodwiedzanych przez 7 dni; apki dodane do
+ekranu głównego są z tego wyjęte, więc ikonka jest bezpieczniejszym miejscem
+na historię niż zakładka.
+
 ## Szersza baza produktów
 
 Wbudowane 651 pozycji to produkty ogólne. Konkretny jogurt konkretnej marki
@@ -328,8 +357,8 @@ nie zalecenie medyczne.
   deuteranopia / trytanopia) w obu motywach; kolor nigdy nie jest jedynym
   nośnikiem znaczenia — każdy pasek i słupek ma etykietę tekstową.
 - Cele tapania ≥ 44 px (minimum z wytycznych Apple, pilnowane testem), widoczny focus klawiatury, `prefers-reduced-motion`.
-- Testy: **165 przypadków** przez Playwright (headless Chromium, część na
-  emulowanym iPhone 13), w jedenastu zestawach. Całość leży w `test/`
+- Testy: **187 przypadków** przez Playwright (headless Chromium, część na
+  emulowanym iPhone 13), w dwunastu zestawach. Całość leży w `test/`
   i uruchamia się jednym poleceniem:
 
   ```
@@ -357,7 +386,8 @@ nie zalecenie medyczne.
   | danie a składnik | 11 | burger z wołowiną kontra chleb z masłem kontra przepis z ilościami, nazwy pięciowyrazowe, porcje jadalne owoców |
   | dotyk | 11 | żadna reguła `:hover` poza `@media (hover:hover)` (na iOS pierwsze tapnięcie na takim elemencie tylko „najeżdża", a klika dopiero drugie), pojedyncze tapnięcie zatwierdza posiłek i dodaje produkt, **każdy element dotykowy ma ≥44 px** na wszystkich ekranach |
   | podgląd bez dubli | 8 | spóźnione zamknięcie sesji mowy po zatwierdzeniu, zamknięcie arkusza w trakcie dyktowania, podwójne kliknięcie w „Dodaj" |
-  | aktualizacja (prawdziwy SW) | 13 | brak paska przy pierwszej instalacji, pojawienie się po podmianie wdrożenia, brak samoczynnej podmiany kodu, wejście nowej wersji po tapnięciu, przełączenie cache'u, przetrwanie danych |
+  | ratunek danych | 20 | migawka w Cache Storage, propozycja przeniesienia przy pustym starcie (i to, że nic nie wczytuje się samo), „Nie teraz" nieusuwające migawki, „Wyczyść wszystko" usuwające ją naprawdę, wyjaśnienie w trybie z ekranu głównego pokazywane raz, brak zaczepki w zwykłej karcie, oraz uszkodzony zapis odkładany na bok zamiast nadpisania |
+  | aktualizacja (prawdziwy SW) | 15 | brak paska przy pierwszej instalacji, pojawienie się po podmianie wdrożenia, brak samoczynnej podmiany kodu, wejście nowej wersji po tapnięciu, przełączenie cache'u, przetrwanie danych, **nietykalność cache'u z migawką** |
   | offline na serwerze HTTP | 10 | rejestracja i przejęcie kontroli przez SW, zawartość cache, a potem — po **zgaszeniu serwera** — start apki, trwałość danych, parser i zapisywanie bez sieci, także w nowej karcie |
 
   Zestaw „spójność bazy" powstał po tym, jak baza spuchła z 369 do 651 pozycji.

@@ -50,6 +50,16 @@ ok('i są widoczne w logu  ['+(await p.locator('.entry').count())+']', await p.l
 const cache=await p.evaluate(async()=>(await caches.keys()).join(','));
 ok('cache przełączony na nową wersję  ['+cache+']', /bbbbbbb/.test(cache)&&!/aaaaaaa/.test(cache));
 
+/* Sprzątanie po starym wdrożeniu nie może zabrać cache'u z danymi — to w nim
+   leży migawka, dzięki której apka z ekranu głównego odnajduje dane z Safari. */
+ok('cache z danymi przeżył aktualizację  ['+(/makro-dane/.test(cache)?'jest':'ZNIKNĄŁ')+']',
+   /makro-dane/.test(cache));
+const snapAfter = await p.evaluate(async()=>{
+  const c=await caches.open('makro-dane');const r=await c.match('./__dane.json');
+  return r?(await r.json()):null;});
+ok('i migawka nadal ma wpisy  ['+(snapAfter?Object.values(snapAfter.data.log).flat().length:0)+']',
+   !!snapAfter && Object.values(snapAfter.data.log).flat().length===before);
+
 console.log('\n'+T.filter(t=>t.startsWith('PASS')).length+'/'+T.length+' PASS');
 console.log(errs.length?'BŁĘDY: '+errs.join('\n'):'błędy JS: brak');
 await b.close();

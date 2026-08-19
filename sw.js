@@ -20,9 +20,14 @@ self.addEventListener("message", function (e) {
   if (e.data && e.data.type === "skip") self.skipWaiting();
 });
 
+/* Cache z danymi użytkownika NIE jest cache'em wersji: apka odkłada tam
+   migawkę stanu, bo na iOS to jedyna pamięć wspólna dla Safari i apki
+   z ekranu głównego. Sprzątanie po starych wdrożeniach nie może go ruszyć. */
+var DANE = "makro-dane";
+
 self.addEventListener("activate", function (e) {
   e.waitUntil(caches.keys().then(function (keys) {
-    return Promise.all(keys.filter(function (k) { return k !== V; })
+    return Promise.all(keys.filter(function (k) { return k !== V && k !== DANE; })
       .map(function (k) { return caches.delete(k); }));
   }).then(function () { return self.clients.claim(); }));
 });
