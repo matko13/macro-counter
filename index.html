@@ -275,12 +275,28 @@ main{flex:1;padding:16px 16px 26px;display:flex;flex-direction:column;gap:22px}
 .toast button{font-weight:700;font-size:13px;padding:6px 10px;border-radius:8px;background:rgba(255,255,255,.16);color:inherit}
 
 /* ─────────── opis posiłku zdaniem ─────────── */
-.nlcard{background:var(--accent-soft);border-radius:var(--r-lg);padding:13px 14px;display:flex;align-items:center;gap:12px;width:100%}
-.nlcard:hover{filter:brightness(.97)}
+.nlcard{background:var(--accent-soft);border-radius:var(--r-lg);display:flex;align-items:stretch;gap:0;width:100%;overflow:hidden}
+.nlmain{flex:1;min-width:0;display:flex;align-items:center;gap:12px;padding:13px 14px}
+.nlmain:hover{filter:brightness(.97)}
+.nlmic{flex:none;width:56px;display:grid;place-items:center;border-left:1px solid color-mix(in srgb,var(--accent) 22%,transparent);color:var(--accent)}
+.nlmic:hover{background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.nlmic svg{width:22px;height:22px}
 .nlcard .ic{flex:none;width:34px;height:34px;border-radius:11px;background:var(--surface);display:grid;place-items:center;color:var(--accent)}
 .nlcard .ic svg{width:18px;height:18px}
 .nlcard .tx b{display:block;font-size:14.5px;font-weight:600;line-height:1.3}
 .nlcard .tx s{display:block;text-decoration:none;font-size:11.5px;color:var(--ink-2);line-height:1.35}
+/* dyktowanie */
+.dictate{display:flex;align-items:center;gap:11px;width:100%;padding:13px 14px;border:1px solid var(--line-2);border-radius:12px;background:var(--sunken);margin-bottom:12px}
+.dictate .ic{flex:none;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--accent);color:var(--accent-ink)}
+.dictate .ic svg{width:18px;height:18px}
+.dictate .lb{flex:1;min-width:0;font-size:14.5px;font-weight:500;text-align:left}
+.dictate .lb s{display:block;text-decoration:none;font-size:11.5px;font-weight:400;color:var(--ink-3)}
+.dictate.on{border-color:var(--accent);background:var(--accent-soft)}
+.dictate.on .ic{background:var(--over);animation:pulse 1.4s ease-in-out infinite}
+.dictate[disabled]{opacity:.55}
+.dictate[disabled] .ic{background:var(--line-2);color:var(--ink-3)}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--over) 55%,transparent)}50%{box-shadow:0 0 0 8px color-mix(in srgb,var(--over) 0%,transparent)}}
+.dictnote{font-size:11.5px;color:var(--ink-3);line-height:1.45;margin-bottom:13px}
 .nlrow{display:grid;grid-template-columns:1fr auto auto;gap:3px 9px;padding:11px 0;border-bottom:1px solid var(--line);align-items:center}
 .nlrow .n{grid-column:1;min-width:0}
 .nlrow .n b{display:block;font-size:14.5px;font-weight:500}
@@ -761,7 +777,9 @@ var ICON={
   repeat:'<path d="M4 12a8 8 0 0 1 8-8c3 0 5.4 1.6 6.8 4M20 12a8 8 0 0 1-8 8c-3 0-5.4-1.6-6.8-4"/><path d="M18.8 4v4h-4M5.2 20v-4h4"/>',
   pen:'<path d="M5 19h3.4L20 7.4a2.1 2.1 0 0 0-3-3L5 16.6V19z"/><path d="M15.4 6 18 8.6"/>',
   check:'<path d="M5 12.5 9.5 17 19 7"/>',
-  alert:'<path d="M12 4.2 21.2 19.8H2.8L12 4.2z"/><path d="M12 9.6v4.2M12 16.6v.2"/>'
+  alert:'<path d="M12 4.2 21.2 19.8H2.8L12 4.2z"/><path d="M12 9.6v4.2M12 16.6v.2"/>',
+  mic:'<path d="M12 4.2a3 3 0 0 1 3 3v5a3 3 0 0 1-6 0v-5a3 3 0 0 1 3-3z"/><path d="M5.5 11.2a6.5 6.5 0 0 0 13 0M12 17.7V20.5M9 20.5h6"/>',
+  stop:'<rect x="6.5" y="6.5" width="11" height="11" rx="2.5"/>'
 };
 
 /* ═══════════════════════ 3. stan ═══════════════════════ */
@@ -879,7 +897,10 @@ function openSheet(build){
   build(sheetEl);
   sheetEl.classList.add("on");scrimEl.classList.add("on");
 }
-function closeSheet(){sheetEl.classList.remove("on");scrimEl.classList.remove("on")}
+function closeSheet(){
+  if(DICT){DICT.stop();DICT=null}
+  sheetEl.classList.remove("on");scrimEl.classList.remove("on");
+}
 scrimEl.addEventListener("click",closeSheet);
 document.addEventListener("keydown",function(e){if(e.key==="Escape")closeSheet()});
 
@@ -1837,26 +1858,121 @@ function parseMeal(text){
   return res;
 }
 
+/* ═══════════════════════ 12a. dyktowanie ═══════════════════════
+   Jedyny fragment apki, który może wyjść z urządzenia: Web Speech API
+   w Chrome i Edge wysyła nagranie do usługi producenta przeglądarki.
+   Mówimy o tym w arkuszu, a nie w dokumentacji, której nikt nie czyta.
+   Sam parser i zapis zostają lokalne. */
+var DICT=null;
+function speechCtor(){return window.SpeechRecognition||window.webkitSpeechRecognition||null}
+var SPEECH_ERR={
+  "not-allowed":"Brak zgody na mikrofon — zezwól na dostęp dla tej strony.",
+  "service-not-allowed":"Przeglądarka nie pozwala tu na rozpoznawanie mowy.",
+  "audio-capture":"Nie widzę mikrofonu.",
+  "network":"Rozpoznawanie mowy potrzebuje sieci, a jej nie ma.",
+  "no-speech":"Nic nie usłyszałem.",
+  "aborted":""
+};
+var SPEECH_FATAL={"not-allowed":1,"service-not-allowed":1,"audio-capture":1,"network":1};
+function startDictation(cb){
+  var C=speechCtor();
+  if(!C)return null;
+  var r=new C();
+  r.lang="pl-PL";r.continuous=true;r.interimResults=true;r.maxAlternatives=1;
+  var done="",stopped=false,fatal=false,restarts=0;
+  r.onresult=function(e){
+    var interim="";
+    for(var i=e.resultIndex;i<e.results.length;i++){
+      var t=e.results[i][0].transcript;
+      if(e.results[i].isFinal)done+=t+" ";else interim+=t;
+    }
+    cb.onText(done,interim);
+  };
+  r.onerror=function(e){
+    if(SPEECH_FATAL[e.error])fatal=true;
+    var m=SPEECH_ERR[e.error];
+    cb.onError(m==null?"Rozpoznawanie mowy nie zadziałało.":m);
+  };
+  r.onend=function(){
+    /* Safari na iOS kończy sesję po każdej frazie — wracamy do słuchania,
+       dopóki użytkownik nie tapnie stop. Limit chroni przed pętlą. */
+    if(!stopped&&!fatal&&restarts<60){restarts++;try{r.start();return}catch(err){}}
+    cb.onEnd(done.trim());
+  };
+  try{r.start()}catch(err){return null}
+  return {stop:function(){stopped=true;try{r.stop()}catch(e){}}};
+}
+
 /* ═══════════════════════ 12. arkusz: opis posiłku ═══════════════════════ */
 var NLPH="np. na śniadanie zapiekanka z 4 jaj, 2 serków wiejskich, garści pomidorków koktajlowych i 8 oliwek, na górze feta — zjadłem połowę";
 var PARTS=[["¼",0.25],["⅓",1/3],["½",0.5],["⅔",2/3],["¾",0.75],["całość",1]];
 
-function nlSheet(prefill){
+function nlSheet(prefill,autoDictate){
   var text=prefill||"";
   ask();
 
   function ask(){
     openSheet(function(root){
       root.appendChild(el("h3",{id:"sheetTitle",text:"Opisz posiłek"}));
-      root.appendChild(el("div",{class:"per",text:"Zwykłym zdaniem — z czego się składał i ile z tego zjadłeś. Rozpoznawanie liczy się na Twoim urządzeniu, opis nigdzie nie wychodzi."}));
+      root.appendChild(el("div",{class:"per",text:"Powiedz albo napisz zwykłym zdaniem — z czego się składał i ile z tego zjadłeś."}));
+
       var ta=el("textarea",{spellcheck:"false",placeholder:NLPH,style:"min-height:112px"});
       ta.value=text;
+
+      var ic=el("span",{class:"ic"}),lb=el("span",{class:"lb"});
+      var mic=el("button",{class:"dictate",onclick:function(){toggle()}},[ic,lb]);
+      var supported=!!speechCtor();
+      function paint(on,note){
+        ic.innerHTML="";ic.appendChild(svg(on?ICON.stop:ICON.mic));
+        lb.innerHTML="";
+        lb.appendChild(el("span",{text:on?"Słucham — tapnij, gdy skończysz":"Dyktuj"}));
+        if(note)lb.appendChild(el("s",{text:note}));
+        mic.className="dictate"+(on?" on":"");
+      }
+      var lastErr=null;
+      function toggle(){
+        if(DICT){DICT.stop();return}
+        lastErr=null;
+        var h=startDictation({
+          onText:function(fin,interim){ta.value=(fin+interim).replace(/\s+/g," ").trim();text=ta.value},
+          onError:function(msg){if(msg){lastErr=msg;paint(!!DICT,msg)}},
+          onEnd:function(fin){
+            DICT=null;
+            text=ta.value.trim();
+            /* Po zakończeniu dyktowania od razu podgląd — o to chodzi, żeby
+               nie tapać więcej niż trzeba. Poprawić można w podglądzie. */
+            if(text)review(parseMeal(text));
+            /* Konkretny powód ("brak zgody na mikrofon") jest użyteczniejszy
+               niż ogólne "nic nie usłyszałem" — nie nadpisujemy go. */
+            else paint(false,lastErr||"Nic nie zapisałem — spróbuj jeszcze raz.");
+          }
+        });
+        if(!h){paint(false,"Nie udało się uruchomić mikrofonu.");return}
+        DICT=h;paint(true);
+      }
+      if(supported){
+        paint(false);
+        root.appendChild(mic);
+        var note="Dyktowanie korzysta z rozpoznawania mowy przeglądarki — w Chrome i Edge nagranie idzie na serwery jej producenta. To jedyna część apki, która wychodzi z urządzenia; liczenie i zapis zostają u Ciebie.";
+        /* Strona osadzona w innej (podgląd) zwykle nie ma prawa do mikrofonu —
+           bez tego zdania odmowa wygląda na winę użytkownika. */
+        try{if(window.self!==window.top)note+=" Tu strona jest osadzona w innej, więc mikrofon może być zablokowany — wtedy zadziała pod własnym adresem.";}catch(e){
+          note+=" Tu strona jest osadzona w innej, więc mikrofon może być zablokowany — wtedy zadziała pod własnym adresem.";
+        }
+        root.appendChild(el("div",{class:"dictnote",text:note}));
+      }else{
+        paint(false,"Ta przeglądarka nie ma rozpoznawania mowy — wpisz opis poniżej.");
+        mic.setAttribute("disabled","");
+        root.appendChild(mic);
+      }
+
       root.appendChild(el("div",{class:"field"},[el("label",{text:"Opis"}),ta]));
       root.appendChild(el("div",{class:"sheetrow"},[
         el("button",{class:"btn alt",text:"Anuluj",onclick:closeSheet}),
         el("button",{class:"btn",text:"Rozpoznaj",onclick:function(){text=ta.value;review(parseMeal(text))}})
       ]));
-      setTimeout(function(){ta.focus()},280);
+      if(autoDictate&&supported)toggle();
+      else setTimeout(function(){ta.focus()},280);
     });
   }
 
@@ -1994,13 +2110,17 @@ function nlSheet(prefill){
   }
 }
 function nlCard(){
-  return el("button",{class:"nlcard",onclick:function(){nlSheet()}},[
+  var kids=[el("button",{class:"nlmain",onclick:function(){nlSheet()}},[
     el("span",{class:"ic"},[svg(ICON.pen)]),
     el("span",{class:"tx"},[
-      el("b",{text:"Opisz posiłek zdaniem"}),
+      el("b",{text:speechCtor()?"Opisz albo podyktuj posiłek":"Opisz posiłek zdaniem"}),
       el("s",{text:"„zapiekanka z 4 jaj, 2 serków i 8 oliwek — zjadłem połowę”"})
     ])
-  ]);
+  ])];
+  /* Dyktowanie zaczyna się jednym tapnięciem, bez przechodzenia przez opis. */
+  if(speechCtor())kids.push(el("button",{class:"nlmic","aria-label":"Podyktuj posiłek",
+    onclick:function(){nlSheet(null,true)}},[svg(ICON.mic)]));
+  return el("div",{class:"nlcard"},kids);
 }
 
 /* ═══════════════════════ 10. render ═══════════════════════ */

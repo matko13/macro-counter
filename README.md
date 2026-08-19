@@ -13,7 +13,7 @@ hostingu dokłada instalację na ekranie głównym i pracę offline — patrz
 
 | Zamiast wpisywać | Robisz to |
 | --- | --- |
-| cały złożony posiłek | **opisujesz go zdaniem** — patrz niżej |
+| cały złożony posiłek | **mówisz albo piszesz zdaniem** — patrz niżej |
 | nazwę i wartości produktu | ~370 gotowych produktów z polskiej kuchni w bazie |
 | gramaturę | każdy produkt ma domyślną porcję — tapnięcie w `+ 1 szt` / `+ 150 g` i gotowe |
 | ciągle to samo śniadanie | sekcja **Twoje najczęstsze** sama wypycha na wierzch to, co jesz realnie |
@@ -64,6 +64,33 @@ Co parser rozumie:
 Słowa, których nie rozpoznał, wypisuje pod podglądem („Pominięte słowa:
 zrobiłem, topping"), więc widać, czy nie zgubił czegoś jadalnego. Jeśli nie
 rozpoznał niczego, mówi to wprost, zamiast zapisać puste zero.
+
+### Dyktowanie
+
+Zamiast pisać, można powiedzieć. Mikrofon jest jednym tapnięciem od ekranu
+Dziś: tapiesz, mówisz „na kolację usmażyłem 3 jajka z boczkiem i zjadłem
+kromkę chleba", tapiesz stop — i od razu jesteś w podglądzie z gotowymi
+pozycjami. Tekst pojawia się na żywo w trakcie mówienia, więc widać, co
+zostało usłyszane.
+
+Mowa nie ma przecinków, a parser ich nie potrzebuje: `4 jaj 2 serków
+wiejskich i 8 oliwek zjadłem połowę` rozkłada się tak samo jak wersja
+z przestankowaniem. Liczby działają zarówno cyfrą, jak i słowem, bo
+rozpoznawanie mowy zapisuje je różnie w zależności od przeglądarki.
+
+**Tu jest wyjątek od prywatności całej reszty apki i mówi o tym wprost sam
+ekran dyktowania:** rozpoznawanie mowy w przeglądarce (Chrome, Edge) wysyła
+nagranie na serwery jej producenta. Wszystko inne — parsowanie, liczenie,
+zapis — zostaje na urządzeniu. Jeśli to nie do przyjęcia, wpisywanie ręczne
+działa dokładnie tak samo i nic nie wysyła.
+
+Przeglądarki bez rozpoznawania mowy (m.in. Firefox) nie dostają przycisku
+mikrofonu, tylko wyjaśnienie, dlaczego go nie ma. Odmowa dostępu do
+mikrofonu tłumaczy się po polsku i nie jest zastępowana ogólnikiem. Na iOS
+Safari kończy sesję po każdej frazie — dyktowanie samo wraca do słuchania,
+dopóki nie tapniesz stop. Strona osadzona w innej (np. podgląd) zwykle nie
+ma prawa do mikrofonu; w takim wypadku apka mówi, że zadziała pod własnym
+adresem, zamiast sugerować, że to Ty czegoś nie zezwoliłeś.
 
 ### Przymiotniki, które zmieniają liczby
 
@@ -203,7 +230,7 @@ nie zalecenie medyczne.
   deuteranopia / trytanopia) w obu motywach; kolor nigdy nie jest jedynym
   nośnikiem znaczenia — każdy pasek i słupek ma etykietę tekstową.
 - Cele tapania ≥ 38 px, widoczny focus klawiatury, `prefers-reduced-motion`.
-- Testy: 62 przypadki przez Playwright — 21 na interfejs (dodawanie, cofanie,
+- Testy: 80 przypadków przez Playwright — 21 na interfejs (dodawanie, cofanie,
   szukanie bez polskich znaków, arkusz porcji, zestawy, kalkulator, trwałość po
   odświeżeniu, oba motywy, brak poziomego przewijania) i 19 na opis posiłku
   zdaniem (rozpoznanie składników, gramatura, nazwa dania, część zjedzona,
@@ -213,6 +240,13 @@ nie zalecenie medyczne.
   aliasów, „piwo zero" i „mleko odtłuszczone" trafiające w wariant, ostrzeżenie
   przy braku wariantu, „bez cukru" nie dodające cukru, brak fałszywych trafień na
   zwykłych słowach („resztki z lodówki"), szukanie po aliasach.
+  Kolejne 18 pokrywa dyktowanie, ze podstawioną atrapą `SpeechRecognition`
+  (mikrofonu w środowisku testowym nie ma, ale cała instalacja wokół niego
+  jest sprawdzalna): język i tryb nasłuchu, tekst częściowy wchodzący na żywo
+  do pola, przejście prosto do podglądu po zatrzymaniu, zdanie bez przecinków,
+  odmowa mikrofonu z komunikatem po polsku i bez pętli ponowień, samoczynny
+  koniec frazy wracający do słuchania (iOS), wygaszenie mikrofonu przy
+  zamknięciu arkusza oraz zachowanie w przeglądarce bez rozpoznawania mowy.
   Kolejne 10 sprawdza wersję hostowaną na prawdziwym serwerze HTTP pod
   podkatalogiem: rejestrację i przejęcie kontroli przez service workera,
   zawartość cache, a potem — po **zgaszeniu serwera** — start apki, trwałość
