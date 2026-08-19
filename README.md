@@ -107,12 +107,13 @@ markowa baza jest możliwa — patrz „Szersza baza produktów" niżej.
 ## Publikacja online
 
 Repozytorium jest publiczne, więc wystarczy GitHub Pages — bez konta, bez
-opłat, bez konfiguracji:
+opłat, bez konfiguracji. Tego kroku nie da się wykonać z kodu, bo GitHub nie
+udostępnia go poza panelem repozytorium:
 
 1. GitHub → **Settings** → **Pages**
 2. *Build and deployment* → Source: **Deploy from a branch**
-3. Branch: `claude/calorie-macro-counter-app-xg5mu3`, folder `/ (root)` → **Save**
-4. Po chwili adres to `https://<użytkownik>.github.io/test/`
+3. Branch: **`main`**, folder `/ (root)` → **Save**
+4. Po chwili adres to `https://matko13.github.io/test/`
 
 Wszystkie ścieżki w apce są relatywne, więc działa też w podkatalogu, jakim
 jest adres Pages. Co dokłada hosting:
