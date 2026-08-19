@@ -257,6 +257,19 @@ main{flex:1;padding:16px 16px 26px;display:flex;flex-direction:column;gap:22px}
 .sheetrow .btn{flex:1}
 
 /* ─────────── toast ─────────── */
+/* ─────────── nowa wersja do przyjęcia ─────────── */
+.update{
+  position:fixed;left:16px;right:16px;bottom:calc(70px + env(safe-area-inset-bottom));
+  z-index:45;max-width:428px;margin:0 auto;display:flex;align-items:center;gap:12px;
+  background:var(--accent);color:var(--accent-ink);padding:11px 12px 11px 15px;
+  border-radius:12px;box-shadow:var(--shadow);font-size:13.5px;
+}
+.update .tx{flex:1;min-width:0;font-weight:500}
+.update button{flex:none;font-weight:700;font-size:13px;padding:7px 12px;border-radius:9px;background:color-mix(in srgb,var(--accent-ink) 20%,transparent);color:inherit}
+.update button:disabled{opacity:.6}
+/* gdy pasek jest na ekranie, toast siada wyżej, żeby się nie nakładały */
+body.hasupd .toast{bottom:calc(128px + env(safe-area-inset-bottom))}
+
 .toast{
   position:fixed;left:50%;bottom:calc(74px + env(safe-area-inset-bottom));transform:translate(-50%,14px);
   z-index:50;display:flex;align-items:center;gap:12px;max-width:calc(100% - 32px);
@@ -803,12 +816,20 @@ function load(){
   }catch(e){}
 }
 var saveT=null;
+function flush(){
+  if(!saveT)return;
+  clearTimeout(saveT);saveT=null;
+  try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){toast("Nie udało się zapisać danych")}
+}
 function save(){
   clearTimeout(saveT);
-  saveT=setTimeout(function(){
-    try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){toast("Nie udało się zapisać danych")}
-  },80);
+  saveT=setTimeout(flush,80);
 }
+/* Zapis jest opóźniony o 80 ms, żeby seria zmian nie pisała po każdej z nich.
+   Gdy strona znika — przeładowanie po aktualizacji, przełączenie apki, zamknięcie
+   karty — trzeba dopisać natychmiast, inaczej ostatnia zmiana przepada. */
+window.addEventListener("pagehide",flush);
+document.addEventListener("visibilitychange",function(){if(document.hidden)flush()});
 function allFoods(){return DB.concat(S.custom)}
 function byId(id){
   var a=allFoods();
@@ -2215,11 +2236,56 @@ window.MAKRO={parse:parseMeal,alias:ALIAS,foods:allFoods,byId:byId,scale:scale};
 /* Offline. Rejestrujemy service workera tylko wtedy, gdy strona jest
    hostowana i ma manifest — wersja jednoplikowa (Artifact, file://) nie ma
    tych plików, więc nie ma czego rejestrować. */
+/* Przeładowanie robimy tylko wtedy, gdy użytkownik o nie poprosił.
+   Przy PIERWSZEJ instalacji clients.claim() też zmienia controllera, a wtedy
+   przeładowanie jest niepotrzebnym mignięciem ekranu. */
+var wantReload=false;
+function updateBar(reg){
+  if(document.getElementById("updbar"))return;
+  var busy=false;
+  var btn=el("button",{text:"Odśwież",onclick:function(){
+    if(busy)return;
+    busy=true;btn.setAttribute("disabled","");btn.textContent="Ładuję…";
+    /* Nowa wersja wchodzi tylko na wyraźne życzenie; przeładowanie robimy,
+       gdy faktycznie przejmie stronę, a nie „na wszelki wypadek”. */
+    wantReload=true;
+    if(reg.waiting)reg.waiting.postMessage({type:"skip"});
+    else{location.reload();return}
+    /* Gdyby zmiana controllera nie doszła (bywa na iOS), przeładuj i tak. */
+    setTimeout(function(){if(wantReload)location.reload()},3000);
+  }});
+  var bar=el("div",{class:"update",id:"updbar",role:"status"},[
+    el("span",{class:"tx",text:"Jest nowsza wersja apki"}),btn
+  ]);
+  document.body.appendChild(bar);
+  document.body.classList.add("hasupd");
+}
 if("serviceWorker" in navigator
    && document.querySelector('link[rel="manifest"]')
    && window.isSecureContext){
   window.addEventListener("load",function(){
-    navigator.serviceWorker.register("sw.js").catch(function(){});
+    navigator.serviceWorker.register("sw.js").then(function(reg){
+      /* Nowa wersja czeka już teraz (użytkownik wrócił po wdrożeniu). */
+      if(reg.waiting&&navigator.serviceWorker.controller)updateBar(reg);
+      reg.addEventListener("updatefound",function(){
+        var sw=reg.installing;
+        if(!sw)return;
+        sw.addEventListener("statechange",function(){
+          /* Brak controllera = pierwsza instalacja, nie aktualizacja. */
+          if(sw.state==="installed"&&navigator.serviceWorker.controller)updateBar(reg);
+        });
+      });
+      /* Powrót do apki to najlepszy moment na sprawdzenie wdrożeń — bez tego
+         zainstalowana apka może nie pytać o nic przez wiele godzin. */
+      document.addEventListener("visibilitychange",function(){
+        if(!document.hidden)reg.update().catch(function(){});
+      });
+    }).catch(function(){});
+    var reloading=false;
+    navigator.serviceWorker.addEventListener("controllerchange",function(){
+      if(!wantReload||reloading)return;
+      reloading=true;location.reload();
+    });
   });
 }
 

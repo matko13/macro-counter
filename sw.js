@@ -1,14 +1,24 @@
 /* Service worker: apka ma działać bez sieci, tak jak działała z dysku.
    Wszystkie ścieżki są relatywne, żeby zadziałało też pod adresem
    w podkatalogu (np. https://user.github.io/test/). */
-var V = "makro-v3";
+/* Podmieniane na skrót commita przy wdrożeniu. Bez tego plik jest identyczny
+   między wersjami, przeglądarka nie widzi nowego workera i nie ma czym
+   powiadomić o aktualizacji. */
+var BUILD = "__BUILD__";
+var V = "makro-" + BUILD;
 var SHELL = ["./", "index.html", "manifest.webmanifest", "icon.svg",
              "icon-192.png", "icon-512.png", "apple-touch-icon.png"];
 var FONTS = /^https:\/\/fonts\.(googleapis|gstatic)\.com\//;
 
 self.addEventListener("install", function (e) {
-  e.waitUntil(caches.open(V).then(function (c) { return c.addAll(SHELL); })
-    .then(function () { return self.skipWaiting(); }));
+  /* Bez skipWaiting: nowa wersja czeka, aż użytkownik ją przyjmie. Podmiana
+     w tle zostawiłaby na ekranie stary kod z nowym cache'em. */
+  e.waitUntil(caches.open(V).then(function (c) { return c.addAll(SHELL); }));
+});
+
+/* Strona prosi o wejście nowej wersji, gdy użytkownik tapnie "Odśwież". */
+self.addEventListener("message", function (e) {
+  if (e.data && e.data.type === "skip") self.skipWaiting();
 });
 
 self.addEventListener("activate", function (e) {

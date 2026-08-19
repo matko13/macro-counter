@@ -41,6 +41,13 @@ jobs:
             test -f "$f" || { echo "::error::brak pliku wymaganego przez stronę: $f"; exit 1; }
             cp "$f" _site/
           done
+          # Znacznik wersji w service workerze: bez zmiany tego pliku przeglądarka
+          # nie rozpozna nowego wdrożenia i nie zaproponuje odświeżenia.
+          sed -i "s/__BUILD__/${GITHUB_SHA:0:7}/" _site/sw.js
+          if grep -q "__BUILD__" _site/sw.js; then
+            echo "::error::nie podmieniono znacznika __BUILD__ w sw.js"; exit 1
+          fi
+          echo "build: $(grep -o 'makro-[0-9a-f]\{7\}' _site/sw.js | head -1)"
           ls -la _site
 
       - name: Sprawdź, czy Pages są włączone
