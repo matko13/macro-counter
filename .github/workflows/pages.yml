@@ -1,6 +1,8 @@
-# Publikacja na GitHub Pages bez klikania w ustawieniach: configure-pages
-# z enablement:true samo włącza Pages (źródło = GitHub Actions), a deploy-pages
-# wystawia stronę. Uruchamia się po każdym wejściu na main.
+# Publikacja na GitHub Pages. Włączenia Pages nie da się zrobić z workflow —
+# token Actions dostaje "Create Pages site failed: Resource not accessible by
+# integration", bo to wymaga uprawnienia administration. Dlatego workflow
+# sprawdza, czy Pages są włączone: jeśli tak, wdraża; jeśli nie, kończy się
+# zielono z instrukcją, zamiast mylić czerwienią o niczym.
 name: Publikuj na GitHub Pages
 
 on:
@@ -13,8 +15,6 @@ permissions:
   pages: write
   id-token: write
 
-# Równoległe wdrożenia Pages wchodzą sobie w drogę; kolejkujemy je,
-# ale nie przerywamy zaczętego, żeby nie zostawić strony w połowie.
 concurrency:
   group: pages
   cancel-in-progress: false
@@ -29,28 +29,65 @@ jobs:
       - name: Pobierz repo
         uses: actions/checkout@v4
 
-      - name: Włącz Pages, jeśli jeszcze nie są włączone
-        uses: actions/configure-pages@v5
-        with:
-          enablement: true
-
       # Publikujemy tylko pliki apki — bez README i bez katalogu .github.
+      # Sprawdzamy to zawsze, także gdy wdrożenie zostanie pominięte, bo brak
+      # pliku ma się wydać od razu, a nie dopiero przy publikacji.
       - name: Zbierz pliki strony
         run: |
           set -euo pipefail
           mkdir -p _site
           for f in index.html manifest.webmanifest sw.js icon.svg \
                    icon-192.png icon-512.png apple-touch-icon.png; do
-            test -f "$f" || { echo "brak pliku: $f" >&2; exit 1; }
+            test -f "$f" || { echo "::error::brak pliku wymaganego przez stronę: $f"; exit 1; }
             cp "$f" _site/
           done
           ls -la _site
 
+      - name: Sprawdź, czy Pages są włączone
+        id: pages
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          code=$(curl -sS -o /tmp/pages.json -w '%{http_code}' \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/pages") || code=000
+          echo "HTTP $code z /pages"
+          if [ "$code" = "200" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::warning title=Pages nie są włączone::Settings → Pages → Source: GitHub Actions. Token workflow nie może tego zrobić sam."
+            {
+              echo "## Publikacja pominięta — Pages nie są włączone"
+              echo
+              echo "Token workflow nie ma uprawnienia, żeby włączyć Pages"
+              echo '(`Create Pages site: Resource not accessible by integration`).'
+              echo "Zrób to raz ręcznie:"
+              echo
+              echo "1. **Settings → Pages**"
+              echo "2. *Build and deployment* → Source: **GitHub Actions**"
+              echo
+              echo "Na darmowym planie repozytorium musi być **publiczne** —"
+              echo "Pages dla repozytoriów prywatnych wymagają planu płatnego."
+              echo
+              echo "Potem uruchom ten workflow ponownie (*Run workflow*) — dalej idzie samo."
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Skonfiguruj Pages
+        if: steps.pages.outputs.enabled == 'true'
+        uses: actions/configure-pages@v5
+
       - name: Spakuj artefakt
+        if: steps.pages.outputs.enabled == 'true'
         uses: actions/upload-pages-artifact@v3
         with:
           path: _site
 
       - name: Wdróż
         id: deployment
+        if: steps.pages.outputs.enabled == 'true'
         uses: actions/deploy-pages@v4
