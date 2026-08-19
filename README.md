@@ -329,7 +329,22 @@ nie zalecenie medyczne.
   nośnikiem znaczenia — każdy pasek i słupek ma etykietę tekstową.
 - Cele tapania ≥ 44 px (minimum z wytycznych Apple, pilnowane testem), widoczny focus klawiatury, `prefers-reduced-motion`.
 - Testy: **165 przypadków** przez Playwright (headless Chromium, część na
-  emulowanym iPhone 13), w jedenastu zestawach:
+  emulowanym iPhone 13), w jedenastu zestawach. Całość leży w `test/`
+  i uruchamia się jednym poleceniem:
+
+  ```
+  ./test/run.sh              # wszystko
+  ./test/run.sh db wariant   # wybrane zestawy
+  ```
+
+  Dziewięć zestawów działa na `file://` i nie potrzebuje niczego poza
+  Playwrightem. Dwa ostatnie sprawdzają **prawdziwego service workera**, więc
+  skrypt stawia im lokalne serwery i buduje atrapy dwóch wdrożeń (A i B), żeby
+  dało się przejść aktualizację od początku do końca. Zajęty port przerywa
+  przebieg z błędem, zamiast po cichu testować cudze pliki — na tym raz
+  przejechałem, wynik wyglądał wtedy na porażkę apki, a była to porażka
+  atrapy.
+
 
   | zestaw | ile | co pilnuje |
   | --- | --- | --- |
