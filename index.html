@@ -285,6 +285,9 @@ main{flex:1;padding:16px 16px 26px;display:flex;flex-direction:column;gap:22px}
 .nlrow .rm{grid-column:3;width:30px;height:30px;display:grid;place-items:center;border-radius:8px;color:var(--ink-3)}
 .nlrow .rm:hover{background:var(--sunken);color:var(--over)}
 .nlrow .rm svg{width:14px;height:14px}
+.nlrow .warn{grid-column:1/-1;display:flex;align-items:flex-start;gap:6px;font-size:11.5px;color:var(--over);line-height:1.4;padding-top:4px}
+.nlrow .warn svg{width:13px;height:13px;flex:none;margin-top:2px}
+.nlrow .warn button{color:var(--over);font-weight:700;text-decoration:underline;font-size:11.5px}
 .nlrow .g{grid-column:1/-1;display:flex;align-items:center;gap:6px;padding-top:4px}
 .nlrow .g button{width:30px;height:30px;flex:none;border:1px solid var(--line-2);border-radius:9px;display:grid;place-items:center;font-size:16px;background:var(--surface)}
 .nlrow .g .v{min-width:60px;text-align:center;font-size:13.5px;font-weight:600}
@@ -476,7 +479,224 @@ var RAW=[
 ["Wino czerwone","napoje",85,0.1,2.6,0,150,"ml"],
 ["Wódka 40%","napoje",231,0,0,0,50,"ml"],
 ["Odżywka białkowa (WPC)","supl",380,78,8,5,30,"miarka"],
-["Baton proteinowy","supl",350,32,32,10,60,"szt"]
+["Baton proteinowy","supl",350,32,32,10,60,"szt"],
+["Piwo bezalkoholowe","napoje",26,0.4,5.5,0,500,"ml"],
+["Piwo mocne (7%)","napoje",62,0.5,5.5,0,500,"ml"],
+["Piwo IPA","napoje",55,0.6,4.5,0,500,"ml"],
+["Radler","napoje",40,0.2,9.5,0,500,"ml"],
+["Cydr","napoje",49,0,5,0,500,"ml"],
+["Wino białe","napoje",82,0.1,2.6,0,150,"ml"],
+["Prosecco","napoje",76,0.1,1.5,0,150,"ml"],
+["Whisky","napoje",250,0,0,0,40,"ml"],
+["Gin z tonikiem","napoje",70,0,6,0,250,"ml"],
+["Sprite","napoje",39,0,9.6,0,330,"ml"],
+["Fanta","napoje",42,0,10.4,0,330,"ml"],
+["Napój zero (bez cukru)","napoje",1,0,0.2,0,330,"ml"],
+["Tonik","napoje",34,0,8.4,0,200,"ml"],
+["Napój energetyczny","napoje",45,0,11,0,250,"ml"],
+["Napój energetyczny zero","napoje",3,0,0.3,0,250,"ml"],
+["Napój izotoniczny","napoje",24,0,6,0,500,"ml"],
+["Sok jabłkowy","napoje",46,0.1,11,0.1,250,"ml"],
+["Kompot","napoje",40,0,10,0,250,"ml"],
+["Smoothie owocowe","napoje",55,0.8,13,0.3,250,"ml"],
+["Napój owsiany","napoje",45,0.5,6.5,1.5,250,"ml"],
+["Napój migdałowy","napoje",24,0.5,3,1.1,250,"ml"],
+["Napój sojowy","napoje",39,3.3,1.2,1.8,250,"ml"],
+["Napój kokosowy","napoje",20,0.1,2.7,0.9,250,"ml"],
+["Herbata z cukrem","napoje",20,0,5,0,250,"ml"],
+["Mleko 0%","nabial",34,3.4,5,0.1,250,"ml"],
+["Jogurt naturalny 0%","nabial",41,4.5,5.5,0.1,150,"g"],
+["Jogurt owocowy","nabial",90,3.5,14,2,150,"g"],
+["Jogurt pitny","nabial",70,3,11,1.5,250,"ml"],
+["Jogurt grecki 2%","nabial",73,9,4,2,150,"g"],
+["Skyr smakowy","nabial",78,9.5,8,0.2,150,"g"],
+["Serek wiejski light","nabial",72,12.5,3.5,1,200,"g"],
+["Serek śmietankowy","nabial",253,6,4,24,30,"g"],
+["Śmietana 12%","nabial",130,2.8,4,12,30,"g"],
+["Śmietana 30%","nabial",293,2.4,3,30,30,"g"],
+["Ser topiony","nabial",290,12,6,24,30,"g"],
+["Ser pleśniowy (brie)","nabial",334,20,0.5,28,30,"g"],
+["Camembert","nabial",300,20,0.5,24,30,"g"],
+["Ser kozi","nabial",364,22,2.5,29,30,"g"],
+["Cheddar","nabial",402,25,1.3,33,30,"g"],
+["Mascarpone","nabial",435,4,4,44,50,"g"],
+["Ricotta","nabial",174,11,3,13,50,"g"],
+["Mleko skondensowane","nabial",320,7.5,55,8,20,"łyżka"],
+["Stek z wołowiny","mieso",217,26,0,12,200,"g"],
+["Antrykot","mieso",250,24,0,17,200,"g"],
+["Żeberka","mieso",290,17,0,24,200,"g"],
+["Golonka","mieso",240,18,0,18,200,"g"],
+["Szynka wieprzowa","mieso",145,20,0,7,50,"g"],
+["Szynka parmeńska","mieso",250,26,0,16,30,"g"],
+["Kabanosy","mieso",500,25,1,44,30,"g"],
+["Salami","mieso",407,21,1,35,30,"g"],
+["Pasztet","mieso",320,12,4,29,30,"g"],
+["Kaszanka","mieso",250,12,10,18,150,"g"],
+["Wątróbka drobiowa","mieso",128,20,1,5,150,"g"],
+["Mielony indyk","mieso",150,20,0,7,150,"g"],
+["Kurczak pieczony ze skórą","mieso",220,25,0,13,150,"g"],
+["Skrzydełka z kurczaka","mieso",250,22,0,18,150,"g"],
+["Łosoś wędzony","mieso",180,22,0,10,50,"g"],
+["Pstrąg","mieso",148,21,0,7,150,"g"],
+["Mintaj","mieso",72,17,0,0.6,150,"g"],
+["Tilapia","mieso",96,20,0,1.7,150,"g"],
+["Sardynki w oleju","mieso",208,25,0,11,100,"g"],
+["Paluszki rybne","mieso",220,12,20,10,100,"g"],
+["Paluszki krabowe","mieso",95,8,12,1,100,"g"],
+["Kalmary","mieso",92,16,3,1.4,150,"g"],
+["Chleb pszenno-żytni","zboza",240,7.5,46,1.5,40,"kromka"],
+["Chleb tostowy","zboza",265,8,49,3.5,30,"kromka"],
+["Chleb na zakwasie","zboza",245,8,47,1.5,40,"kromka"],
+["Chleb bezglutenowy","zboza",250,3,48,4,40,"kromka"],
+["Bułka grahamka","zboza",260,9,48,2,60,"szt"],
+["Pumpernikiel","zboza",250,6,50,1.5,35,"kromka"],
+["Chleb pita","zboza",275,9,55,1.2,60,"szt"],
+["Croissant","zboza",400,8,45,21,60,"szt"],
+["Sucharki","zboza",380,12,73,4,20,"g"],
+["Grzanki","zboza",400,10,65,12,25,"g"],
+["Kasza pęczak (ugotowana)","zboza",123,3.5,25,0.5,150,"g"],
+["Kasza manna na mleku","zboza",90,3,14,2,250,"g"],
+["Kasza bulgur (ugotowana)","zboza",120,3,25,0.3,150,"g"],
+["Ryż basmati (ugotowany)","zboza",140,3,30,0.4,150,"g"],
+["Makaron pełnoziarnisty (ugotowany)","zboza",145,6,27,1.2,200,"g"],
+["Makaron ryżowy (ugotowany)","zboza",110,1,25,0.2,200,"g"],
+["Kluski śląskie","zboza",160,3.5,35,0.5,200,"g"],
+["Kopytka","zboza",170,4,36,1,200,"g"],
+["Gnocchi","zboza",170,4,36,1,200,"g"],
+["Płatki kukurydziane","zboza",380,7,84,1,40,"g"],
+["Płatki czekoladowe","zboza",400,7,80,5,40,"g"],
+["Granola","zboza",430,9,65,15,50,"g"],
+["Tortilla kukurydziana","zboza",220,5.7,45,3,50,"szt"],
+["Kapusta biała","warzywa",25,1.3,5.8,0.1,150,"g"],
+["Kapusta pekińska","warzywa",16,1.2,3.2,0.2,150,"g"],
+["Kalarepa","warzywa",27,1.7,6,0.1,150,"g"],
+["Seler naciowy","warzywa",16,0.7,3,0.2,100,"g"],
+["Por","warzywa",61,1.5,14,0.3,100,"g"],
+["Rzodkiewka","warzywa",16,0.7,3.4,0.1,80,"g"],
+["Sałata lodowa","warzywa",14,0.9,3,0.1,80,"g"],
+["Rukola","warzywa",25,2.6,3.7,0.7,40,"g"],
+["Fasolka szparagowa","warzywa",31,1.8,7,0.1,150,"g"],
+["Bakłażan","warzywa",25,1,6,0.2,200,"g"],
+["Dynia","warzywa",26,1,6.5,0.1,200,"g"],
+["Brukselka","warzywa",43,3.4,9,0.3,150,"g"],
+["Szparagi","warzywa",20,2.2,3.9,0.1,150,"g"],
+["Ogórek kwaszony","warzywa",12,0.6,2.2,0.1,100,"g"],
+["Papryka zielona","warzywa",20,0.9,4.6,0.2,100,"g"],
+["Batat","warzywa",86,1.6,20,0.1,200,"g"],
+["Pomidory z puszki","warzywa",22,1.1,4,0.2,200,"g"],
+["Passata pomidorowa","warzywa",30,1.4,6,0.2,150,"g"],
+["Koncentrat pomidorowy","warzywa",82,4,15,0.5,20,"łyżka"],
+["Warzywa mrożone na patelnię","warzywa",40,2,6,0.5,200,"g"],
+["Surówka z białej kapusty","warzywa",60,1,7,3,100,"g"],
+["Mizeria","warzywa",45,1,3,3,100,"g"],
+["Buraczki zasmażane","warzywa",70,1.5,10,2.5,100,"g"],
+["Brzoskwinia","owoce",39,0.9,10,0.3,150,"szt"],
+["Nektarynka","owoce",44,1.1,11,0.3,140,"szt"],
+["Morela","owoce",48,1.4,11,0.4,40,"szt"],
+["Grejpfrut","owoce",42,0.8,11,0.1,200,"szt"],
+["Melon","owoce",34,0.8,8,0.2,200,"g"],
+["Granat","owoce",83,1.7,19,1.2,150,"g"],
+["Porzeczki","owoce",56,1.4,13,0.4,100,"g"],
+["Wiśnie","owoce",50,1,12,0.3,100,"g"],
+["Jeżyny","owoce",43,1.4,10,0.5,100,"g"],
+["Figi suszone","owoce",249,3.3,64,0.9,30,"g"],
+["Śliwki suszone","owoce",240,2.2,64,0.4,30,"g"],
+["Żurawina suszona","owoce",308,0.1,82,1.4,25,"g"],
+["Mus jabłkowy","owoce",50,0.2,12,0.1,100,"g"],
+["Ananas z puszki","owoce",60,0.4,15,0.1,100,"g"],
+["Orzechy laskowe","tluszcze",628,15,17,61,25,"garść"],
+["Pistacje","tluszcze",562,20,28,45,25,"garść"],
+["Orzechy brazylijskie","tluszcze",659,14,12,67,25,"garść"],
+["Makadamia","tluszcze",718,8,14,76,25,"garść"],
+["Mieszanka studencka","tluszcze",480,12,45,28,30,"garść"],
+["Wiórki kokosowe","tluszcze",660,7,24,64,15,"łyżka"],
+["Tahini","tluszcze",595,17,21,54,20,"łyżka"],
+["Olej kokosowy","tluszcze",900,0,0,100,10,"łyżka"],
+["Smalec","tluszcze",900,0,0,100,10,"łyżka"],
+["Margaryna","tluszcze",540,0.2,0.6,60,10,"g"],
+["Guacamole","tluszcze",180,2,6,16,50,"g"],
+["Pesto","tluszcze",450,5,4,45,20,"łyżka"],
+["Musztarda","tluszcze",66,4,5,3.5,10,"łyżeczka"],
+["Sos czosnkowy","tluszcze",380,2,5,39,20,"łyżka"],
+["Sos sojowy","tluszcze",60,6,6,0.5,10,"łyżka"],
+["Sos pomidorowy do makaronu","tluszcze",60,1.5,8,2,100,"g"],
+["Chrzan","tluszcze",90,2,15,1,10,"łyżeczka"],
+["Soczewica czerwona (ugotowana)","straczkowe",105,8,18,0.4,150,"g"],
+["Fasola biała (ugotowana)","straczkowe",110,7,20,0.5,150,"g"],
+["Bób","straczkowe",88,7.6,11,0.7,150,"g"],
+["Edamame","straczkowe",121,12,9,5,100,"g"],
+["Falafel","straczkowe",330,13,32,18,100,"g"],
+["Seitan","straczkowe",140,25,4,2,100,"g"],
+["Tofu wędzone","straczkowe",160,17,2,9,100,"g"],
+["Burger roślinny","straczkowe",220,17,6,14,110,"szt"],
+["Parówki wegańskie","straczkowe",200,14,5,14,100,"g"],
+["Pizza pepperoni","gotowe",290,12,32,13,150,"porcja"],
+["Zupa pomidorowa","gotowe",60,1.5,9,2,300,"ml"],
+["Zupa ogórkowa","gotowe",45,1.2,5,2,300,"ml"],
+["Żurek","gotowe",70,2,7,3.5,300,"ml"],
+["Barszcz czerwony","gotowe",35,1,6,0.5,300,"ml"],
+["Krem z dyni","gotowe",60,1.5,7,3,300,"ml"],
+["Zupa jarzynowa","gotowe",45,1.5,6,1.5,300,"ml"],
+["Gulasz","gotowe",140,13,5,7,250,"porcja"],
+["Leczo","gotowe",80,3,8,4,300,"porcja"],
+["Fasolka po bretońsku","gotowe",105,5,13,3.5,250,"porcja"],
+["Gołąbki","gotowe",110,6,10,5,250,"porcja"],
+["Ryba po grecku","gotowe",130,9,8,7,200,"porcja"],
+["Kotlet mielony","gotowe",250,15,10,17,120,"szt"],
+["Kotlet z kurczaka panierowany","gotowe",240,18,12,13,150,"szt"],
+["De volaille","gotowe",300,17,14,20,180,"szt"],
+["Pierogi z mięsem","gotowe",200,9,25,7,250,"porcja"],
+["Pierogi z kapustą i grzybami","gotowe",160,4,26,4,250,"porcja"],
+["Krokiety","gotowe",230,8,25,11,150,"szt"],
+["Placki ziemniaczane","gotowe",210,3,25,11,200,"porcja"],
+["Lasagne","gotowe",180,9,17,8,300,"porcja"],
+["Risotto","gotowe",160,4,25,5,300,"porcja"],
+["Makaron z pesto","gotowe",250,7,30,11,300,"porcja"],
+["Curry z kurczakiem","gotowe",150,12,8,8,300,"porcja"],
+["Chili con carne","gotowe",130,9,10,5,300,"porcja"],
+["Pad thai","gotowe",190,8,25,6,350,"porcja"],
+["Omlet","gotowe",160,11,2,12,150,"porcja"],
+["Jajecznica","gotowe",200,11,1,17,150,"porcja"],
+["Tost z serem","gotowe",300,13,30,14,100,"szt"],
+["Kanapka z szynką i serem","gotowe",250,12,28,10,120,"szt"],
+["Sałatka cezar","gotowe",190,10,5,14,300,"porcja"],
+["Sałatka z tuńczykiem","gotowe",130,12,5,7,300,"porcja"],
+["Tortilla z kurczakiem","gotowe",210,13,22,8,250,"szt"],
+["Cheeseburger","gotowe",260,13,25,12,120,"szt"],
+["Kebab na talerzu","gotowe",180,12,15,8,400,"porcja"],
+["Kostka rosołowa","gotowe",250,10,20,15,4,"szt"],
+["Deser mleczny","slodycze",220,4,25,11,100,"g"],
+["Budyń","slodycze",100,3,17,2,200,"g"],
+["Baton typu Mars","slodycze",480,4,68,21,50,"szt"],
+["Baton typu Kinder","slodycze",560,9,52,35,21,"szt"],
+["Ciastka digestive","slodycze",480,6,62,22,30,"g"],
+["Herbatniki","slodycze",430,7,75,11,30,"g"],
+["Wafelek w czekoladzie","slodycze",500,6,60,26,36,"szt"],
+["Ptasie mleczko","slodycze",400,3,65,14,30,"g"],
+["Krówki","slodycze",400,2,80,8,25,"g"],
+["Czekolada biała","slodycze",560,6,58,33,25,"g",6],
+["Czekolada z orzechami","slodycze",550,9,50,35,25,"g",6],
+["Praliny","slodycze",520,6,55,31,25,"g"],
+["Ciasto drożdżowe","slodycze",320,6,50,11,100,"g"],
+["Szarlotka","slodycze",250,3,35,11,120,"g"],
+["Brownie","slodycze",450,6,55,23,80,"g"],
+["Muffinka","slodycze",380,5,50,18,90,"szt"],
+["Tiramisu","slodycze",280,5,30,15,120,"g"],
+["Galaretka","slodycze",60,1.5,13,0,150,"g"],
+["Lody czekoladowe","slodycze",220,4,28,11,100,"g"],
+["Lody na patyku","slodycze",250,3,30,13,70,"szt"],
+["Sorbet","slodycze",130,0.3,32,0,100,"g"],
+["Bita śmietana","slodycze",260,2,8,25,30,"g"],
+["Chałwa","slodycze",500,12,50,30,30,"g"],
+["Faworki","slodycze",500,6,55,28,20,"szt"],
+["Piernik","slodycze",350,4,70,7,50,"g"],
+["Landrynki","slodycze",380,0,95,0,20,"g"],
+["Nachos","slodycze",490,7,60,24,30,"g"],
+["Paluszki","slodycze",400,11,72,7,30,"g"],
+["Precle","slodycze",380,10,72,4,30,"g"],
+["Guma do żucia bez cukru","slodycze",160,0,60,0.5,2,"szt"],
+["Syrop klonowy","slodycze",260,0,67,0,20,"łyżka"],
+["Izolat białka (WPI)","supl",370,85,3,2,30,"miarka"]
 ];
 
 function slug(s){return norm(s).replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")}
@@ -536,7 +756,8 @@ var ICON={
   trash:'<path d="M4.5 7h15M9.5 7V5h5v2M6.5 7l.8 12h9.4l.8-12"/>',
   repeat:'<path d="M4 12a8 8 0 0 1 8-8c3 0 5.4 1.6 6.8 4M20 12a8 8 0 0 1-8 8c-3 0-5.4-1.6-6.8-4"/><path d="M18.8 4v4h-4M5.2 20v-4h4"/>',
   pen:'<path d="M5 19h3.4L20 7.4a2.1 2.1 0 0 0-3-3L5 16.6V19z"/><path d="M15.4 6 18 8.6"/>',
-  check:'<path d="M5 12.5 9.5 17 19 7"/>'
+  check:'<path d="M5 12.5 9.5 17 19 7"/>',
+  alert:'<path d="M12 4.2 21.2 19.8H2.8L12 4.2z"/><path d="M12 9.6v4.2M12 16.6v.2"/>'
 };
 
 /* ═══════════════════════ 3. stan ═══════════════════════ */
@@ -968,14 +1189,19 @@ function viewAdd(){
     else if(activeCat==="all")src=ranked().concat(allFoods().filter(function(f){return !S.usage[f.id]}));
     else src=allFoods().filter(function(f){return f.cat===activeCat});
     if(nq){
-      var starts=[],has=[];
-      src.forEach(function(f){var n=norm(f.n);if(n.indexOf(nq)===0)starts.push(f);else if(n.indexOf(nq)>-1)has.push(f)});
+      var qt=nq.split(/\s+/).filter(Boolean),starts=[],has=[];
+      src.forEach(function(f){
+        if(!searchHit(f,qt))return;
+        (norm(f.n).indexOf(qt[0])===0?starts:has).push(f);
+      });
       src=starts.concat(has);
     }
     var seen={};
     src=src.filter(function(f){if(seen[f.id])return false;seen[f.id]=1;return true});
     if(!src.length){
-      holder.appendChild(el("div",{class:"empty",text:q?'Brak wyniku dla „'+q+'”.':"Pusto tutaj."}));
+      holder.appendChild(el("div",{class:"empty",text:q?"Nie mam „"+q.trim()+"” w bazie.":"Pusto tutaj."}));
+      if(q.trim())holder.appendChild(el("button",{class:"btn",text:"Dodaj „"+q.trim()+"” jako własny produkt",
+        onclick:function(){customSheet({name:q.trim()})}}));
     }
     src.slice(0,q?40:200).forEach(function(f){
       var m=scale(f,f.s);
@@ -989,18 +1215,22 @@ function viewAdd(){
         ])
       ]));
     });
-    holder.appendChild(el("button",{class:"btn alt",style:"margin-top:16px",text:"+ Dodaj własny produkt",onclick:customSheet}));
+    holder.appendChild(el("button",{class:"btn alt",style:"margin-top:16px",text:"+ Dodaj własny produkt",onclick:function(){customSheet()}}));
   }
   repaintList();
   return wrap;
 }
-function customSheet(){
+function customSheet(opts){
+  opts=opts||{};
+  var base=opts.base;
   openSheet(function(root){
     root.appendChild(el("h3",{id:"sheetTitle",text:"Własny produkt"}));
-    root.appendChild(el("div",{class:"per",text:"Podaj wartości z etykiety, na 100 g. Raz wpisane — potem dodajesz jednym tapnięciem."}));
-    var f={};
+    root.appendChild(el("div",{class:"per",text:base
+      ? "Wartości są przepisane z „"+base.n+"” — popraw te, które się różnią. Produkt zostanie w bazie na stałe."
+      : "Podaj wartości z etykiety, na 100 g. Raz wpisane — potem dodajesz jednym tapnięciem."}));
+    var f={},pre={n:opts.name||"",k:base?base.k:"",p:base?base.p:"",c:base?base.c:"",f:base?base.f:"",s:base?base.s:100};
     [["n","Nazwa","text"],["k","kcal / 100 g","number"],["p","Białko / 100 g","number"],["c","Węglowodany / 100 g","number"],["f","Tłuszcz / 100 g","number"],["s","Twoja porcja (g)","number"]].forEach(function(x){
-      var i=el("input",{type:x[2],inputmode:x[2]==="number"?"decimal":null,value:x[0]==="s"?"100":""});
+      var i=el("input",{type:x[2],inputmode:x[2]==="number"?"decimal":null,value:pre[x[0]]});
       f[x[0]]=i;
       root.appendChild(el("div",{class:"field"},[el("label",{text:x[1]}),i]));
     });
@@ -1011,9 +1241,10 @@ function customSheet(){
         if(!name)return f.n.focus();
         var food={id:"own-"+slug(name)+"-"+Date.now().toString(36),n:name,cat:"own",
           k:+f.k.value||0,p:+f.p.value||0,c:+f.c.value||0,f:+f.f.value||0,
-          s:Math.max(1,+f.s.value||100),u:"g",own:true};
+          s:Math.max(1,+f.s.value||100),u:base?base.u:"g",pc:base?base.pc:0,own:true};
         S.custom.push(food);save();closeSheet();
-        addEntry(food,food.s);render();
+        if(opts.onFood)opts.onFood(food);
+        else{addEntry(food,food.s);render()}
       }})
     ]));
   });
@@ -1225,7 +1456,7 @@ function backupSheet(){
    (kurczak → "Pierś z kurczaka"), wypadające "e" (serek → serków),
    nazwy potoczne (kartofle, owsianka, cottage). */
 var ALIAS={
-"jajko":"jaja|jaj|jajek|jajka|jajo|jajecznica",
+"jajko":"jaja|jaj|jajek|jajka|jajo",
 "bialko-jajka":"bialka jajek|bialek",
 "mleko-2":"mleko|mleka|mlekiem|mleku",
 "jogurt-naturalny-2":"jogurt|jogurtu|jogurtem",
@@ -1287,7 +1518,38 @@ var ALIAS={
 "miod":"miodu|miodem",
 "cukier":"cukru",
 "ketchup":"ketchupu|keczup",
-"majonez":"majonezu|majonezem"
+"majonez":"majonezu|majonezem",
+"piwo-bezalkoholowe":"piwo zero|bezalkoholowe|bezalkoholowy|bezalko|piwo bezalko|piwo bezalkoholowe",
+"napoj-zero-bez-cukru":"napoj zero|zero cukru|cola light|pepsi max",
+"mleko-0":"mleko odtluszczone|mleko zero",
+"jogurt-naturalny-0":"jogurt odtluszczony|jogurt chudy",
+"napoj-owsiany":"mleko owsiane|owsiane",
+"napoj-migdalowy":"mleko migdalowe|migdalowe",
+"napoj-sojowy":"mleko sojowe|sojowe",
+"napoj-kokosowy":"mleko kokosowe",
+"stek-z-wolowiny":"stek|steka|rostbef",
+"kurczak-pieczony-ze-skora":"kurczak pieczony|pieczony kurczak",
+"losos-wedzony":"wedzony losos",
+"seler-naciowy":"seler|selera",
+"kapusta-biala":"kapusta|kapusty",
+"batat":"bataty|slodki ziemniak",
+"chleb-tostowy":"tost|tosty|tostowy",
+"croissant":"rogalik|rogalika|rogaliki",
+"platki-kukurydziane":"kukurydziane|cornflakes|corn flakes",
+"granola":"granoli",
+"pizza-pepperoni":"pepperoni",
+"barszcz-czerwony":"barszcz|barszczu",
+"zurek":"zurku|zurkiem",
+"kotlet-mielony":"klops|mielony kotlet",
+"omlet":"omleta|omletem",
+"jajecznica":"jajecznice|jajecznicy",
+"kostka-rosolowa":"bulion|rosolowa kostka",
+"guma-do-zucia-bez-cukru":"guma|gumy",
+"bita-smietana":"smietana bita",
+"burger-roslinny":"burger wege|burger wegetarianski",
+"izolat-bialka-wpi":"izolat|wpi",
+"syrop-klonowy":"syrop",
+"kotlet-z-kurczaka-panierowany":"kurczak panierowany|panierowany kurczak|filet panierowany"
 };
 
 var NUMW={jeden:1,jedna:1,jedno:1,jednego:1,poltora:1.5,poltorej:1.5,
@@ -1334,6 +1596,16 @@ var STOP={};
  "male swieze swieza swiezy suszony suszona goracy gorace zimne zimny domowa domowy domowe wlasnej roboty ale bo "+
  "wiec no cos duzo malo troche sporo kawalek kawalki reszta pozniej wczesniej caly dzien nie tak owszem").split(" ")
  .forEach(function(w){if(w)STOP[w]=1});
+
+/* Przymiotniki, które potrafią zmienić kalorie o połowę. Jeśli taki wyraz
+   stoi obok produktu, a produkt go nie ma w nazwie, nie wolno go po cichu
+   zgubić — pozycja dostaje ostrzeżenie. */
+var QUAL={};
+("zero light lajt bezalkoholowe bezalkoholowy bezalkoholowego bezalko bezglutenowy bezglutenowe "+
+ "odtluszczone odtluszczony odtluszczona pelnotluste pelnotlusty nieslodzony nieslodzone "+
+ "weganski weganska weganskie wegetarianski wegetarianska roslinny roslinne wege "+
+ "smazony smazona smazone panierowany panierowana panierowane wedzony wedzona "+
+ "surowy surowa surowe mrozony mrozona kiszony solony").split(" ").forEach(function(w){if(w)QUAL[w]=1});
 
 /* Ile znaków wspólnego prefiksu wystarczy, by uznać dwie formy za to samo
    słowo. Progi zależą od długości: "fety"≈"feta" tak, ale "ser"≉"sernik". */
@@ -1382,11 +1654,31 @@ function matchAt(toks,i){
       }
       if(!ok)continue;
       var total=10*j+sc-3*(k-j);
-      if(!best||total>best.score)best={f:e.f,len:j,score:total};
+      if(!best||total>best.score||(total===best.score&&k<best.k))best={f:e.f,len:j,score:total,k:k};
       break;
     }
   }
   return best&&best.score>=8?best:null;
+}
+/* Wyszukiwanie po nazwie ORAZ aliasach, słowo po słowie — żeby "piwo zero"
+   trafiało w "Piwo bezalkoholowe", a nie zwracało pustki. */
+function searchWords(f){
+  if(f._sw)return f._sw;
+  var t=norm(f.n.replace(/[()\/,]/g," "));
+  if(ALIAS[f.id])t+=" "+norm(ALIAS[f.id].replace(/\|/g," "));
+  f._sw=t.split(/\s+/).filter(Boolean);
+  return f._sw;
+}
+function searchHit(f,qt){
+  var ws=searchWords(f);
+  for(var i=0;i<qt.length;i++){
+    var hit=false;
+    for(var j=0;j<ws.length;j++){
+      if(ws[j].indexOf(qt[i])===0||wmatch(qt[i],ws[j])){hit=true;break}
+    }
+    if(!hit)return false;
+  }
+  return true;
 }
 function unitGrams(u,food){
   if(u.own==="*")return pieceWeight(food);
@@ -1461,6 +1753,8 @@ function parseMeal(text){
       continue;
     }
     if(!t.n){continue}
+    /* "jogurt bez cukru" nie może dodać cukru jako składnika */
+    if(toks[a-1]&&toks[a-1].n==="bez"){t.qual=1;t.neg=1;if(pend){age++;if(age>3)pend=null}continue}
     var m=STOP[t.n]?null:matchAt(toks,a);
     if(m){
       var q=pend;
@@ -1484,6 +1778,7 @@ function parseMeal(text){
       pend=null;age=0;a+=m.len-1;
       continue;
     }
+    if(QUAL[t.n]){t.qual=1;if(pend){age++;if(age>3)pend=null}continue}
     if(!STOP[t.n]&&t.n.length>=4&&!seenSkip[t.n]&&res.skipped.length<6){
       seenSkip[t.n]=1;res.skipped.push(t.raw);
     }
@@ -1497,6 +1792,34 @@ function parseMeal(text){
       res.dish=res.items[0].f.n;res.items.shift();
     }
   }
+  /* kwalifikator przylegający do produktu, którego nie ma w jego nazwie:
+     "piwo light" przy braku wersji light = liczby są nie te */
+  /* szukamy do 3 tokenów w obie strony, przeskakując spójniki ("bez cukru"),
+     ale nie przechodząc przez przecinek ani przez inny produkt */
+  function nearQual(from,dir){
+    for(var i=1;i<=3;i++){
+      var c=toks[from+dir*i];
+      if(!c||c.brk)return null;
+      if(c.qual&&!c.used)return c;
+      if(c.n==="bez"||c.n==="w"||c.n==="z"||c.n==="ze"||c.n==="na")continue;
+      return null;
+    }
+    return null;
+  }
+  res.items.forEach(function(it){
+    var nn=norm(it.f.n);
+    [nearQual(it.at,-1),nearQual(it.at+it.len-1,1)].forEach(function(c){
+      if(!c||!c.qual||c.used||it.warn)return;
+      var stem=c.n.slice(0,Math.min(6,c.n.length));
+      if(nn.indexOf(stem)>-1)return;
+      it.warn=c.neg?"bez "+c.raw:c.raw;
+      c.used=true;
+    });
+  });
+  toks.forEach(function(t){
+    if(t.qual&&!t.used&&t.n.length>=4&&res.skipped.length<6&&res.skipped.indexOf(t.raw)<0)res.skipped.push(t.raw);
+  });
+
   /* ten sam produkt raz bez ilości, raz z ilością ("owsianka: 60 g płatków
      owsianych") to jedna rzecz nazwana dwa razy — zostaje wersja z ilością */
   var withQty={};
@@ -1534,7 +1857,7 @@ function nlSheet(prefill){
   }
 
   function review(r){
-    var items=r.items.map(function(x){return {f:x.f,g:x.g}});
+    var items=r.items.map(function(x){return {f:x.f,g:x.g,warn:x.warn}});
     var part=r.divisor==null?1:r.divisor;
     var sl=r.slot||slot(Date.now());
     var dk=shiftKey(day,r.dayShift);
@@ -1558,7 +1881,7 @@ function nlSheet(prefill){
           if(r.skipped.length)root.appendChild(el("div",{class:"note",text:"Pominięte słowa: "+r.skipped.join(", ")}));
           root.appendChild(el("div",{class:"sheetrow"},[
             el("button",{class:"btn alt",text:"Popraw opis",onclick:ask}),
-            el("button",{class:"btn",text:"Własny produkt",onclick:customSheet})
+            el("button",{class:"btn",text:"Własny produkt",onclick:function(){customSheet({name:text})}})
           ]));
           return;
         }
@@ -1584,7 +1907,7 @@ function nlSheet(prefill){
             draw();
           };
           var m=scale(it.f,it.g);
-          root.appendChild(el("div",{class:"nlrow"},[
+          var kids=[
             el("div",{class:"n"},[el("b",{text:it.f.n}),el("s",{text:unitLabel(it.f,it.g)})]),
             el("div",{class:"kc num",text:fmt(m.k)+" kcal"}),
             el("button",{class:"rm","aria-label":"Usuń "+it.f.n,onclick:function(){items.splice(ix,1);draw()}},[svg(ICON.x)]),
@@ -1593,7 +1916,19 @@ function nlSheet(prefill){
               el("span",{class:"v num",text:fmt(it.g)+" g"}),
               el("button",{text:"+","aria-label":"Więcej "+it.f.n,onclick:function(){bump(1)}})
             ])
+          ];
+          if(it.warn)kids.push(el("div",{class:"warn"},[
+            svg(ICON.alert),
+            el("span",{},[
+              el("span",{text:"nie mam wersji „"+it.warn+"” — liczby są dla zwykłej. "}),
+              el("button",{text:"popraw wartości",onclick:function(){
+                customSheet({name:it.f.n+" "+it.warn,base:it.f,onFood:function(food){
+                  it.f=food;it.warn=null;draw();
+                }});
+              }})
+            ])
           ]));
+          root.appendChild(el("div",{class:"nlrow"},kids));
         });
 
         var pBox=el("div",{class:"seg"});
