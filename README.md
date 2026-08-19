@@ -5,7 +5,9 @@ zasady: **jak najmniej wpisywania**. Codzienne logowanie jedzenia ma być
 tapaniem, nie wypełnianiem formularza.
 
 Jeden plik — `index.html`. Bez buildu, bez zależności, bez backendu.
-Otwórz go w przeglądarce (także z dysku, `file://`) i działa.
+Otwórz go w przeglądarce (także z dysku, `file://`) i działa. Postawiony na
+hostingu dokłada instalację na ekranie głównym i pracę offline — patrz
+„Publikacja online".
 
 ## Jak to unika wpisywania
 
@@ -102,6 +104,40 @@ markowa baza jest możliwa — patrz „Szersza baza produktów" niżej.
 - **Dowolny dzień** — strzałkami wstecz, więc można uzupełnić wczoraj.
 - **Jasny i ciemny motyw** — automatycznie z systemu albo ręcznie.
 
+## Publikacja online
+
+Repozytorium jest publiczne, więc wystarczy GitHub Pages — bez konta, bez
+opłat, bez konfiguracji:
+
+1. GitHub → **Settings** → **Pages**
+2. *Build and deployment* → Source: **Deploy from a branch**
+3. Branch: `claude/calorie-macro-counter-app-xg5mu3`, folder `/ (root)` → **Save**
+4. Po chwili adres to `https://<użytkownik>.github.io/test/`
+
+Wszystkie ścieżki w apce są relatywne, więc działa też w podkatalogu, jakim
+jest adres Pages. Co dokłada hosting:
+
+- **Instalacja na ekranie głównym** — `manifest.webmanifest` z ikonami, tryb
+  `standalone`, więc otwiera się bez paska przeglądarki, jak zwykła apka.
+- **Praca offline** — `sw.js` trzyma w cache cały szkielet apki (i fonty
+  z Google, pobierane trybem `cors`, bo odpowiedzi opaque nie da się zapisać
+  w Cache API). Po pierwszym wejściu apka wstaje bez sieci: log, parser
+  i zapisywanie działają normalnie.
+- **Możliwość odpytywania bazy na żywo** — to jest ta różnica względem wersji
+  opublikowanej jako Artifact: normalny hosting nie ma jej restrykcyjnej
+  polityki bezpieczeństwa, więc droga nr 2 z rozdziału „Szersza baza
+  produktów" staje się wykonalna.
+
+**Publiczny adres nie publikuje Twojego dziennika.** Publiczny jest kod;
+wpisy, cele i własne produkty siedzą w `localStorage` przeglądarki każdej
+osoby osobno i nigdzie nie są wysyłane. Kto wejdzie na adres, dostaje pustą
+apkę, nie Twoje dane.
+
+Service worker rejestruje się tylko wtedy, gdy strona jest w bezpiecznym
+kontekście (`https`, `localhost`, `127.0.0.1`) **i** ma znacznik manifestu —
+więc wersja jednoplikowa (Artifact, `file://`) go pomija i nie próbuje ładować
+plików, których tam nie ma.
+
 ## Dane
 
 Wszystko leży w `localStorage` tej jednej przeglądarki. Nie ma serwera, konta
@@ -150,7 +186,7 @@ nie zalecenie medyczne.
   deuteranopia / trytanopia) w obu motywach; kolor nigdy nie jest jedynym
   nośnikiem znaczenia — każdy pasek i słupek ma etykietę tekstową.
 - Cele tapania ≥ 38 px, widoczny focus klawiatury, `prefers-reduced-motion`.
-- Testy: 52 przypadki przez Playwright — 21 na interfejs (dodawanie, cofanie,
+- Testy: 62 przypadki przez Playwright — 21 na interfejs (dodawanie, cofanie,
   szukanie bez polskich znaków, arkusz porcji, zestawy, kalkulator, trwałość po
   odświeżeniu, oba motywy, brak poziomego przewijania) i 19 na opis posiłku
   zdaniem (rozpoznanie składników, gramatura, nazwa dania, część zjedzona,
@@ -160,4 +196,8 @@ nie zalecenie medyczne.
   aliasów, „piwo zero" i „mleko odtłuszczone" trafiające w wariant, ostrzeżenie
   przy braku wariantu, „bez cukru" nie dodające cukru, brak fałszywych trafień na
   zwykłych słowach („resztki z lodówki"), szukanie po aliasach.
+  Kolejne 10 sprawdza wersję hostowaną na prawdziwym serwerze HTTP pod
+  podkatalogiem: rejestrację i przejęcie kontroli przez service workera,
+  zawartość cache, a potem — po **zgaszeniu serwera** — start apki, trwałość
+  danych, działanie parsera i zapisywanie bez sieci, także w nowej karcie.
   Osobny zestaw kontrolny przepuszcza dziesięć realnych zdań przez sam parser.
