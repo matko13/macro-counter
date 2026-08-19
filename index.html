@@ -1,0 +1,2062 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Licznik Makro</title>
+<meta name="description" content="Prosty licznik kalorii i makro — dodajesz jedzenie jednym tapnięciem, bez wpisywania.">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#F6F5F0" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#14150F" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Makro">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500..700&display=swap">
+<style>
+/* ─────────── tokens: light is the base, both dark states redefine only these ─────────── */
+:root{
+  --ground:#E7E6DD; --surface:#F6F5F0; --sunken:#EFEEE6; --raised:#FFFFFF;
+  --ink:#191B12; --ink-2:#585B4B; --ink-3:#8A8D7B; --line:#DCDBCE; --line-2:#C9C8B8;
+  --p:#04795B; --c:#B5761B; --f:#6B4C9A;
+  --accent:#04795B; --accent-ink:#FFFFFF; --accent-soft:#DDEAE4;
+  --over:#D03B3B; --over-soft:#F7E3E1;
+  --shadow:0 1px 2px rgba(25,27,18,.06), 0 8px 24px -12px rgba(25,27,18,.18);
+  --r:14px; --r-sm:9px; --r-lg:20px;
+  --tap:46px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#0B0C07; --surface:#14150F; --sunken:#1C1E15; --raised:#22241A;
+    --ink:#F2F1E6; --ink-2:#B1B4A1; --ink-3:#7E8171; --line:#2B2D22; --line-2:#3B3E30;
+    --p:#22997A; --c:#B8862A; --f:#8A6FC2;
+    --accent:#22997A; --accent-ink:#08110D; --accent-soft:#1B2A23;
+    --over:#D03B3B; --over-soft:#2E1A18;
+    --shadow:0 1px 2px rgba(0,0,0,.5), 0 8px 24px -12px rgba(0,0,0,.7);
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0B0C07; --surface:#14150F; --sunken:#1C1E15; --raised:#22241A;
+  --ink:#F2F1E6; --ink-2:#B1B4A1; --ink-3:#7E8171; --line:#2B2D22; --line-2:#3B3E30;
+  --p:#22997A; --c:#B8862A; --f:#8A6FC2;
+  --accent:#22997A; --accent-ink:#08110D; --accent-soft:#1B2A23;
+  --over:#D03B3B; --over-soft:#2E1A18;
+  --shadow:0 1px 2px rgba(0,0,0,.5), 0 8px 24px -12px rgba(0,0,0,.7);
+}
+
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--ground); color:var(--ink);
+  font-family:Archivo,"Helvetica Neue",Arial,sans-serif;
+  font-size:15px; line-height:1.45;
+  -webkit-text-size-adjust:100%; -webkit-tap-highlight-color:transparent;
+}
+button,input,select,textarea{font:inherit;color:inherit}
+button{background:none;border:0;padding:0;cursor:pointer;text-align:left}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+h1,h2,h3{margin:0;font-family:Fraunces,Georgia,serif;font-weight:600;text-wrap:balance;letter-spacing:-.01em}
+.num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
+
+/* ─────────── shell: a paper strip on the counter ─────────── */
+.app{
+  max-width:460px;margin:0 auto;min-height:100vh;min-height:100dvh;
+  background:var(--surface);position:relative;
+  display:flex;flex-direction:column;
+  box-shadow:0 0 0 1px var(--line), 0 0 60px -20px rgba(0,0,0,.25);
+}
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:max(10px,env(safe-area-inset-top)) 16px 10px;
+  border-bottom:1px solid var(--line);
+  position:sticky;top:0;z-index:20;background:var(--surface);
+}
+.brand{display:flex;align-items:baseline;gap:7px}
+.brand b{font-family:Fraunces,Georgia,serif;font-weight:600;font-size:19px;letter-spacing:-.015em}
+.brand span{font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-3)}
+.iconbtn{
+  width:38px;height:38px;display:grid;place-items:center;border-radius:11px;
+  color:var(--ink-2);border:1px solid transparent;
+}
+.iconbtn:hover{background:var(--sunken);color:var(--ink)}
+main{flex:1;padding:16px 16px 26px;display:flex;flex-direction:column;gap:22px}
+
+/* ─────────── bottom tabs ─────────── */
+.tabs{
+  position:sticky;bottom:0;z-index:20;display:grid;grid-template-columns:repeat(4,1fr);
+  background:color-mix(in srgb,var(--surface) 92%,transparent);
+  backdrop-filter:blur(12px);border-top:1px solid var(--line);
+  padding-bottom:env(safe-area-inset-bottom);
+}
+.tab{
+  display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 0 8px;
+  color:var(--ink-3);font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;font-weight:500;
+}
+.tab svg{width:21px;height:21px;stroke-width:1.7}
+.tab[aria-current="page"]{color:var(--accent)}
+.tab[aria-current="page"] svg{stroke-width:2.1}
+
+/* ─────────── date shuttle ─────────── */
+.shuttle{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.shuttle h2{font-size:22px}
+.shuttle .dow{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);font-family:Archivo,sans-serif;font-weight:500}
+.nav{display:flex;gap:4px}
+.nav button{width:36px;height:36px;display:grid;place-items:center;border:1px solid var(--line);border-radius:10px;color:var(--ink-2)}
+.nav button:hover:not(:disabled){background:var(--sunken);color:var(--ink)}
+.nav button:disabled{opacity:.32;cursor:default}
+
+/* ─────────── the scale readout ─────────── */
+.readout{display:flex;flex-direction:column;gap:12px}
+.bignum{display:flex;align-items:flex-end;gap:9px;line-height:.9}
+.bignum .v{font-size:56px;font-weight:600;letter-spacing:-.035em}
+.bignum .u{font-size:14px;font-weight:500;color:var(--ink-2);padding-bottom:6px}
+.bignum .cap{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);padding-bottom:8px;margin-left:auto;font-weight:500}
+.readout.over .bignum .v{color:var(--over)}
+.sub{font-size:13px;color:var(--ink-2);display:flex;gap:6px;flex-wrap:wrap}
+.sub b{font-weight:600;color:var(--ink)}
+
+.gauge{position:relative;height:14px;background:var(--sunken);border-radius:7px;overflow:hidden}
+.gauge .fill{position:absolute;inset:0 auto 0 0;background:var(--accent);border-radius:7px;transition:width .35s cubic-bezier(.2,.7,.3,1)}
+.gauge.over .fill{background:var(--over)}
+.gauge .tick{position:absolute;top:0;bottom:0;width:1px;background:var(--surface);opacity:.75}
+.gauge .needle{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--ink);border-radius:2px;box-shadow:0 0 0 2px var(--surface);transition:left .35s cubic-bezier(.2,.7,.3,1)}
+
+/* ─────────── macro bars ─────────── */
+.macros{display:flex;flex-direction:column;gap:11px}
+.macro{display:grid;grid-template-columns:1fr auto;gap:3px 10px;align-items:baseline}
+.macro .k{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:500}
+.macro .dot{width:9px;height:9px;border-radius:3px;background:var(--hue);flex:none}
+.macro .v{font-size:13px;color:var(--ink-2)}
+.macro .v b{color:var(--ink);font-weight:600}
+.macro .track{grid-column:1/-1;height:8px;background:var(--sunken);border-radius:4px;overflow:hidden;display:flex}
+.macro .bar{background:var(--hue);border-radius:4px;transition:width .35s cubic-bezier(.2,.7,.3,1)}
+.macro .bar.spill{background:var(--over);margin-left:2px}
+
+/* ─────────── section furniture ─────────── */
+.sec{display:flex;flex-direction:column;gap:11px}
+.sechead{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.sechead h3{font-size:15px}
+.sechead .act{font-size:12px;font-weight:600;color:var(--accent)}
+.eyebrow{font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-3);font-weight:500}
+.rule{height:1px;background:var(--line);border:0;margin:0}
+
+/* ─────────── 7-day strip ─────────── */
+.week{position:relative;padding-top:14px}
+.week .band{position:absolute;left:0;right:0;top:14px;height:62px;pointer-events:none}
+.week .base{position:absolute;left:0;right:0;bottom:0;border-bottom:1px solid var(--line)}
+.week .goal{position:absolute;left:0;right:0;height:0;border-top:1px dashed var(--line-2)}
+.week .goal span{position:absolute;right:0;top:-14px;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+.week .cols{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.day{display:block;border-radius:5px;padding:0}
+.day .plot{display:block;position:relative;height:62px}
+.day .bar{position:absolute;left:0;right:0;bottom:0;display:block;background:var(--accent);border-radius:4px 4px 0 0;min-height:2px;transition:height .3s ease}
+.day.over .bar{background:var(--over)}
+.day.nodata .bar{background:var(--line)}
+.day .lbl{display:block;margin-top:5px;font-size:10px;line-height:1.45;text-align:center;color:var(--ink-3);letter-spacing:.04em}
+.day.now .lbl{color:var(--ink);font-weight:700}
+.day.now .bar{box-shadow:0 0 0 2px var(--surface),0 0 0 3px var(--ink)}
+.weekwrap{padding-bottom:2px}
+.wkfoot{display:flex;justify-content:space-between;font-size:12px;color:var(--ink-2);margin-top:9px}
+
+/* ─────────── quick chips ─────────── */
+.scroller{display:flex;gap:8px;overflow-x:auto;margin:0 -16px;padding:2px 16px 6px;scrollbar-width:none}
+.scroller::-webkit-scrollbar{display:none}
+.chip{
+  flex:none;display:flex;flex-direction:column;gap:2px;padding:9px 13px;min-width:104px;
+  background:var(--sunken);border:1px solid var(--line);border-radius:var(--r);
+}
+.chip:hover{border-color:var(--line-2);background:var(--raised)}
+.chip .n{font-size:13px;font-weight:500;line-height:1.25}
+.chip .m{font-size:11px;color:var(--ink-3)}
+.chip.ghost{background:transparent;border-style:dashed;justify-content:center;align-items:center;min-width:auto;padding:9px 15px}
+.chip.ghost .n{color:var(--accent);font-weight:600}
+
+/* ─────────── entry list ─────────── */
+.group{display:flex;flex-direction:column;gap:2px}
+.grouphead{display:flex;align-items:center;gap:9px;padding:6px 0 5px}
+.grouphead .t{font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-3);font-weight:600}
+.grouphead .k{font-size:11.5px;color:var(--ink-3);margin-left:auto}
+.grouphead .save{font-size:11px;font-weight:600;color:var(--accent);padding:2px 6px;border-radius:6px}
+.entry{display:flex;align-items:center;gap:11px;width:100%;padding:10px 2px;border-bottom:1px solid var(--line);min-height:var(--tap)}
+.entry:last-child{border-bottom:0}
+.entry:hover{background:var(--sunken)}
+.entry .n{flex:1;min-width:0}
+.entry .n b{display:block;font-weight:500;font-size:14.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.entry .n s{display:block;text-decoration:none;font-size:11.5px;color:var(--ink-3)}
+.entry .kc{font-size:14px;font-weight:600;flex:none}
+.entry .kc s{text-decoration:none;font-size:10.5px;color:var(--ink-3);font-weight:500;margin-left:2px}
+.macrodots{display:flex;gap:5px;font-size:10.5px;color:var(--ink-3)}
+.macrodots i{font-style:normal}
+
+/* ─────────── add view ─────────── */
+.search{position:relative}
+.search input{
+  width:100%;padding:12px 38px 12px 38px;border:1px solid var(--line-2);border-radius:12px;
+  background:var(--sunken);font-size:15px;
+}
+.search input::placeholder{color:var(--ink-3)}
+.search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:17px;height:17px;color:var(--ink-3)}
+.search .clear{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:30px;height:30px;display:grid;place-items:center;color:var(--ink-3);border-radius:8px}
+.cats{display:flex;gap:6px;overflow-x:auto;margin:0 -16px;padding:0 16px 2px;scrollbar-width:none}
+.cats::-webkit-scrollbar{display:none}
+.cat{flex:none;padding:6px 12px;border:1px solid var(--line);border-radius:999px;font-size:12.5px;color:var(--ink-2);white-space:nowrap}
+.cat[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink);font-weight:500}
+.food{display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--line)}
+.food:last-child{border-bottom:0}
+.food .body{flex:1;min-width:0;padding:11px 0;min-height:var(--tap)}
+.food:hover{background:var(--sunken)}
+.food .body b{display:block;font-weight:500;font-size:14.5px}
+.food .body s{display:block;text-decoration:none;font-size:11.5px;color:var(--ink-3)}
+.addbtn{
+  flex:none;display:flex;align-items:center;gap:5px;padding:8px 12px;border-radius:10px;
+  background:var(--accent-soft);color:var(--accent);font-size:12.5px;font-weight:600;
+  min-height:38px;
+}
+.addbtn:hover{background:var(--accent);color:var(--accent-ink)}
+.addbtn svg{width:14px;height:14px;stroke-width:2.6}
+.empty{padding:26px 8px;text-align:center;color:var(--ink-3);font-size:13.5px}
+
+/* ─────────── forms / settings ─────────── */
+.card{background:var(--sunken);border:1px solid var(--line);border-radius:var(--r-lg);padding:15px;display:flex;flex-direction:column;gap:13px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field>label{font-size:11px;letter-spacing:.11em;text-transform:uppercase;color:var(--ink-3);font-weight:600}
+.field input,.field textarea{width:100%;padding:10px 12px;border:1px solid var(--line-2);border-radius:10px;background:var(--surface)}
+.field textarea{font-size:12px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;min-height:96px}
+.seg{display:flex;gap:5px;flex-wrap:wrap}
+.seg button{padding:8px 12px;border:1px solid var(--line-2);border-radius:9px;font-size:13px;background:var(--surface);min-height:38px}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink);font-weight:500}
+.stepper{display:flex;align-items:center;gap:10px}
+.stepper button{width:40px;height:40px;flex:none;display:grid;place-items:center;border:1px solid var(--line-2);border-radius:10px;font-size:19px;background:var(--surface)}
+.stepper button:hover{background:var(--raised)}
+.stepper .val{flex:1;text-align:center;font-size:19px;font-weight:600}
+.stepper .val s{text-decoration:none;font-size:12px;color:var(--ink-3);font-weight:500;margin-left:3px}
+.btn{display:flex;align-items:center;justify-content:center;gap:7px;padding:13px 16px;border-radius:12px;background:var(--accent);color:var(--accent-ink);font-weight:600;font-size:15px;min-height:var(--tap)}
+.btn:hover{filter:brightness(1.08)}
+.btn.alt{background:var(--sunken);color:var(--ink);border:1px solid var(--line-2)}
+.btn.danger{background:transparent;color:var(--over);border:1px solid var(--over)}
+.note{font-size:12px;color:var(--ink-3);line-height:1.5}
+
+/* ─────────── bottom sheet ─────────── */
+.scrim{position:fixed;inset:0;background:rgba(10,11,7,.5);z-index:40;opacity:0;pointer-events:none;transition:opacity .2s}
+.scrim.on{opacity:1;pointer-events:auto}
+.sheet{
+  position:fixed;left:0;right:0;bottom:0;z-index:41;max-width:460px;margin:0 auto;
+  background:var(--surface);border-radius:var(--r-lg) var(--r-lg) 0 0;
+  box-shadow:var(--shadow);padding:8px 16px calc(18px + env(safe-area-inset-bottom));
+  transform:translateY(101%);transition:transform .26s cubic-bezier(.2,.8,.25,1);
+  max-height:88vh;overflow-y:auto;
+}
+.sheet.on{transform:translateY(0)}
+.grab{width:38px;height:4px;border-radius:2px;background:var(--line-2);margin:4px auto 12px}
+.sheet h3{font-size:19px;margin-bottom:2px}
+.sheet .per{font-size:12px;color:var(--ink-3);margin-bottom:14px}
+.sheet .seg{margin-bottom:15px}
+.sheet .field+.field{margin-top:13px}
+.preview{display:flex;align-items:baseline;gap:8px;padding:12px 0 2px}
+.preview .v{font-size:34px;font-weight:600;letter-spacing:-.03em}
+.preview .u{font-size:12px;color:var(--ink-2)}
+.pvmac{display:flex;gap:12px;font-size:12px;color:var(--ink-2);padding-bottom:14px}
+.pvmac i{font-style:normal;font-weight:600;color:var(--ink)}
+.sheetrow{display:flex;gap:8px;padding-top:12px}
+.sheetrow .btn{flex:1}
+
+/* ─────────── toast ─────────── */
+.toast{
+  position:fixed;left:50%;bottom:calc(74px + env(safe-area-inset-bottom));transform:translate(-50%,14px);
+  z-index:50;display:flex;align-items:center;gap:12px;max-width:calc(100% - 32px);
+  background:var(--ink);color:var(--surface);padding:10px 10px 10px 15px;border-radius:12px;
+  font-size:13.5px;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:.2s;
+}
+.toast.on{opacity:1;transform:translate(-50%,0);pointer-events:auto}
+.toast button{font-weight:700;font-size:13px;padding:6px 10px;border-radius:8px;background:rgba(255,255,255,.16);color:inherit}
+
+/* ─────────── opis posiłku zdaniem ─────────── */
+.nlcard{background:var(--accent-soft);border-radius:var(--r-lg);padding:13px 14px;display:flex;align-items:center;gap:12px;width:100%}
+.nlcard:hover{filter:brightness(.97)}
+.nlcard .ic{flex:none;width:34px;height:34px;border-radius:11px;background:var(--surface);display:grid;place-items:center;color:var(--accent)}
+.nlcard .ic svg{width:18px;height:18px}
+.nlcard .tx b{display:block;font-size:14.5px;font-weight:600;line-height:1.3}
+.nlcard .tx s{display:block;text-decoration:none;font-size:11.5px;color:var(--ink-2);line-height:1.35}
+.nlrow{display:grid;grid-template-columns:1fr auto auto;gap:3px 9px;padding:11px 0;border-bottom:1px solid var(--line);align-items:center}
+.nlrow .n{grid-column:1;min-width:0}
+.nlrow .n b{display:block;font-size:14.5px;font-weight:500}
+.nlrow .n s{display:block;text-decoration:none;font-size:11.5px;color:var(--ink-3)}
+.nlrow .kc{grid-column:2;font-size:14px;font-weight:600}
+.nlrow .rm{grid-column:3;width:30px;height:30px;display:grid;place-items:center;border-radius:8px;color:var(--ink-3)}
+.nlrow .rm:hover{background:var(--sunken);color:var(--over)}
+.nlrow .rm svg{width:14px;height:14px}
+.nlrow .warn{grid-column:1/-1;display:flex;align-items:flex-start;gap:6px;font-size:11.5px;color:var(--over);line-height:1.4;padding-top:4px}
+.nlrow .warn svg{width:13px;height:13px;flex:none;margin-top:2px}
+.nlrow .warn button{color:var(--over);font-weight:700;text-decoration:underline;font-size:11.5px}
+.nlrow .g{grid-column:1/-1;display:flex;align-items:center;gap:6px;padding-top:4px}
+.nlrow .g button{width:30px;height:30px;flex:none;border:1px solid var(--line-2);border-radius:9px;display:grid;place-items:center;font-size:16px;background:var(--surface)}
+.nlrow .g .v{min-width:60px;text-align:center;font-size:13.5px;font-weight:600}
+.nltot{display:flex;align-items:baseline;gap:9px;padding:16px 0 3px}
+.nltot .v{font-size:32px;font-weight:600;letter-spacing:-.03em}
+.nltot .u{font-size:12px;color:var(--ink-2)}
+.toggle{display:flex;align-items:center;gap:10px;padding:11px 0;width:100%;border-top:1px solid var(--line)}
+.toggle .box{flex:none;width:22px;height:22px;border:1.5px solid var(--line-2);border-radius:7px;display:grid;place-items:center;color:transparent}
+.toggle[aria-pressed="true"] .box{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.toggle .box svg{width:13px;height:13px;stroke-width:3}
+.toggle .lb{font-size:13.5px}
+
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <div class="brand"><b>Makro</b><span id="brandSub">licznik</span></div>
+    <button class="iconbtn" id="themeBtn" title="Motyw" aria-label="Zmień motyw">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" width="20" height="20"><circle cx="12" cy="12" r="4.2"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M18.4 5.6L17 7M7 17l-1.4 1.4"/></svg>
+    </button>
+  </header>
+  <main id="view"></main>
+  <nav class="tabs" id="tabs"></nav>
+</div>
+<div class="scrim" id="scrim"></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+"use strict";
+
+/* ═══════════════════════ 1. baza jedzenia ═══════════════════════
+   [nazwa, kategoria, kcal/100g, białko, węgle, tłuszcz, porcja g, jednostka,
+    opcjonalnie: waga jednej sztuki w g — gdy liczy się je na sztuki, a porcja
+    domyślna jest inna (np. "8 oliwek")] */
+var CATS={nabial:"Nabiał i jaja",mieso:"Mięso i ryby",zboza:"Zboża i pieczywo",warzywa:"Warzywa",owoce:"Owoce",tluszcze:"Orzechy i tłuszcze",straczkowe:"Strączkowe",gotowe:"Dania gotowe",slodycze:"Słodycze i przekąski",napoje:"Napoje",supl:"Suplementy"};
+var RAW=[
+["Jajko","nabial",143,12.6,0.7,9.9,55,"szt"],
+["Białko jajka","nabial",52,10.9,0.7,0.2,33,"szt"],
+["Mleko 2%","nabial",50,3.3,4.8,2,250,"ml"],
+["Mleko 3,2%","nabial",61,3.2,4.8,3.3,250,"ml"],
+["Kefir 2%","nabial",51,3.3,4.1,2,250,"ml"],
+["Maślanka","nabial",40,3.4,4.7,1,250,"ml"],
+["Jogurt naturalny 2%","nabial",60,4.3,6,2,150,"g"],
+["Jogurt grecki 10%","nabial",133,5.7,3,10.2,150,"g"],
+["Skyr / jogurt islandzki","nabial",63,10.5,4,0.2,150,"g"],
+["Twaróg chudy","nabial",99,19.8,3.5,0.5,100,"g"],
+["Twaróg półtłusty","nabial",133,18.7,3.7,4.7,100,"g"],
+["Serek wiejski","nabial",98,12.5,3.4,4.3,200,"g"],
+["Serek homogenizowany","nabial",145,8,14,6,150,"g"],
+["Ser żółty (gouda)","nabial",356,25,2.2,27,30,"g"],
+["Mozzarella","nabial",280,22,2.2,20,30,"g"],
+["Feta","nabial",264,14,4.1,21,50,"g"],
+["Parmezan","nabial",392,35,4.1,26,15,"g"],
+["Śmietana 18%","nabial",184,2.6,3.6,18,30,"g"],
+["Masło","nabial",735,0.7,0.6,81,10,"g"],
+["Pierś z kurczaka (surowa)","mieso",110,23,0,1.3,150,"g"],
+["Pierś z kurczaka (grill)","mieso",165,31,0,3.6,150,"g"],
+["Udko z kurczaka","mieso",185,18,0,12,120,"g"],
+["Pierś z indyka","mieso",104,24,0,0.7,150,"g"],
+["Mielona wołowina 10%","mieso",176,20,0,10,150,"g"],
+["Schab surowy","mieso",137,21,0,5.7,150,"g"],
+["Karkówka","mieso",220,17,0,17,150,"g"],
+["Boczek wędzony","mieso",417,12,0,40,30,"g"],
+["Kiełbasa śląska","mieso",275,13,2,24,100,"g"],
+["Szynka drobiowa","mieso",105,17,2,3,50,"g"],
+["Parówki","mieso",250,11,3,22,100,"g"],
+["Łosoś","mieso",208,20,0,13,150,"g"],
+["Dorsz","mieso",82,18,0,0.7,150,"g"],
+["Tuńczyk w wodzie","mieso",116,26,0,1,120,"g"],
+["Makrela wędzona","mieso",305,19,0,25,100,"g"],
+["Śledź w oleju","mieso",250,16,0,20,100,"g"],
+["Krewetki","mieso",99,24,0.2,0.3,150,"g"],
+["Ryż biały (ugotowany)","zboza",130,2.7,28,0.3,150,"g"],
+["Ryż brązowy (ugotowany)","zboza",123,2.6,26,1,150,"g"],
+["Ryż biały (suchy)","zboza",355,7,78,0.6,60,"g"],
+["Makaron (ugotowany)","zboza",158,5.8,31,0.9,200,"g"],
+["Makaron (suchy)","zboza",360,12,72,1.5,80,"g"],
+["Kasza gryczana (ugotowana)","zboza",110,4,20,1.1,150,"g"],
+["Kasza jaglana (ugotowana)","zboza",119,3.5,23,1,150,"g"],
+["Kuskus (ugotowany)","zboza",112,3.8,23,0.2,150,"g"],
+["Komosa ryżowa (ugotowana)","zboza",120,4.4,21,1.9,150,"g"],
+["Ziemniaki gotowane","zboza",86,2,20,0.1,200,"g"],
+["Ziemniaki pieczone","zboza",93,2.5,21,0.1,200,"g"],
+["Frytki","zboza",312,3.4,41,15,150,"g"],
+["Płatki owsiane","zboza",372,13,60,7,50,"g"],
+["Musli","zboza",380,9,66,8,50,"g"],
+["Chleb pszenny","zboza",265,9,49,3.2,35,"kromka"],
+["Chleb żytni razowy","zboza",250,8,45,1.7,40,"kromka"],
+["Bułka kajzerka","zboza",290,9,55,2.5,55,"szt"],
+["Bagietka","zboza",274,9,52,2,70,"g"],
+["Tortilla pszenna","zboza",310,8,50,8,60,"szt"],
+["Wafle ryżowe","zboza",387,8,81,3,10,"szt"],
+["Pomidor","warzywa",18,0.9,3.9,0.2,120,"szt"],
+["Ogórek","warzywa",15,0.7,3.6,0.1,100,"g"],
+["Papryka czerwona","warzywa",31,1,6,0.3,100,"g"],
+["Cebula","warzywa",40,1.1,9,0.1,50,"g"],
+["Marchew","warzywa",41,0.9,10,0.2,80,"szt"],
+["Brokuł","warzywa",34,2.8,7,0.4,150,"g"],
+["Kalafior","warzywa",25,1.9,5,0.3,150,"g"],
+["Cukinia","warzywa",17,1.2,3.1,0.3,150,"g"],
+["Sałata","warzywa",15,1.4,2.9,0.2,50,"g"],
+["Szpinak","warzywa",23,2.9,3.6,0.4,100,"g"],
+["Kapusta kiszona","warzywa",19,0.9,4.3,0.1,100,"g"],
+["Buraki gotowane","warzywa",44,1.7,10,0.2,100,"g"],
+["Pieczarki","warzywa",22,3.1,3.3,0.3,100,"g"],
+["Kukurydza z puszki","warzywa",86,3.2,19,1.2,80,"g"],
+["Groszek zielony","warzywa",81,5.4,14,0.4,80,"g"],
+["Awokado","warzywa",160,2,9,15,100,"g"],
+["Pomidorki koktajlowe","warzywa",18,0.9,3.9,0.2,90,"garść",8],
+["Pomidory suszone (w oleju)","warzywa",213,5,23,14,30,"garść",6],
+["Banan","owoce",89,1.1,23,0.3,120,"szt"],
+["Jabłko","owoce",52,0.3,14,0.2,180,"szt"],
+["Pomarańcza","owoce",47,0.9,12,0.1,150,"szt"],
+["Mandarynka","owoce",53,0.8,13,0.3,80,"szt"],
+["Gruszka","owoce",57,0.4,15,0.1,170,"szt"],
+["Kiwi","owoce",61,1.1,15,0.5,75,"szt"],
+["Truskawki","owoce",32,0.7,7.7,0.3,150,"g"],
+["Maliny","owoce",52,1.2,12,0.7,100,"g"],
+["Borówki","owoce",57,0.7,14,0.3,100,"g"],
+["Winogrona","owoce",69,0.7,18,0.2,100,"g"],
+["Arbuz","owoce",30,0.6,7.6,0.2,200,"g"],
+["Ananas","owoce",50,0.5,13,0.1,100,"g"],
+["Mango","owoce",60,0.8,15,0.4,150,"g"],
+["Śliwki","owoce",46,0.7,11,0.3,100,"g"],
+["Czereśnie","owoce",63,1,16,0.2,100,"g"],
+["Daktyle suszone","owoce",282,2.5,75,0.4,25,"g"],
+["Rodzynki","owoce",299,3.1,79,0.5,25,"g"],
+["Migdały","tluszcze",579,21,22,50,25,"garść"],
+["Orzechy włoskie","tluszcze",654,15,14,65,25,"garść"],
+["Nerkowce","tluszcze",553,18,30,44,25,"garść"],
+["Orzeszki ziemne","tluszcze",567,26,16,49,25,"garść"],
+["Masło orzechowe","tluszcze",588,25,20,50,20,"łyżka"],
+["Oliwa z oliwek","tluszcze",884,0,0,100,10,"łyżka"],
+["Olej rzepakowy","tluszcze",884,0,0,100,10,"łyżka"],
+["Siemię lniane","tluszcze",534,18,29,42,15,"łyżka"],
+["Nasiona chia","tluszcze",486,17,42,31,15,"łyżka"],
+["Pestki dyni","tluszcze",559,30,11,49,20,"g"],
+["Słonecznik","tluszcze",584,21,20,51,20,"g"],
+["Majonez","tluszcze",680,1,2,74,15,"łyżka"],
+["Ketchup","tluszcze",100,1.2,24,0.2,15,"łyżka"],
+["Hummus","tluszcze",177,8,20,9,50,"g"],
+["Oliwki","tluszcze",145,1,3.8,15,25,"g",4],
+["Soczewica (ugotowana)","straczkowe",116,9,20,0.4,150,"g"],
+["Ciecierzyca (ugotowana)","straczkowe",164,8.9,27,2.6,150,"g"],
+["Fasola czerwona z puszki","straczkowe",100,7,17,0.5,150,"g"],
+["Groch łuskany (ugotowany)","straczkowe",118,8,21,0.4,150,"g"],
+["Tofu","straczkowe",144,15,3,9,100,"g"],
+["Tempeh","straczkowe",192,20,8,11,100,"g"],
+["Pierogi ruskie","gotowe",172,5,25,6,250,"porcja"],
+["Naleśniki z serem","gotowe",210,8,28,7,200,"porcja"],
+["Kotlet schabowy","gotowe",280,20,10,18,150,"szt"],
+["Rosół z makaronem","gotowe",40,2.5,4,1.2,300,"ml"],
+["Bigos","gotowe",95,6,6,5,300,"porcja"],
+["Spaghetti bolognese","gotowe",150,8,17,5,350,"porcja"],
+["Pizza margherita","gotowe",266,11,33,10,150,"porcja"],
+["Kebab w bułce","gotowe",215,13,18,10,400,"szt"],
+["Zapiekanka","gotowe",240,9,30,9,200,"szt"],
+["Hot dog","gotowe",270,10,22,15,150,"szt"],
+["Burger (typu Big Mac)","gotowe",257,13,20,13,219,"szt"],
+["Nuggetsy","gotowe",296,15,16,19,100,"g"],
+["Sushi (rolka)","gotowe",145,5,28,1.5,200,"porcja"],
+["Sałatka grecka","gotowe",120,4,6,9,300,"porcja"],
+["Czekolada mleczna","slodycze",535,7.6,59,30,25,"g",6],
+["Czekolada gorzka 70%","slodycze",598,7.8,46,43,20,"g",6],
+["Baton typu Snickers","slodycze",484,8,60,24,50,"szt"],
+["Nutella","slodycze",539,6,57,31,20,"łyżka"],
+["Lody waniliowe","slodycze",207,3.5,24,11,100,"g"],
+["Ciastka owsiane","slodycze",450,6,65,18,30,"g"],
+["Pączek","slodycze",400,6,45,22,70,"szt"],
+["Drożdżówka","slodycze",340,7,50,12,90,"szt"],
+["Sernik","slodycze",321,6,26,21,100,"g"],
+["Chipsy","slodycze",536,6.6,53,34,30,"g"],
+["Krakersy","slodycze",480,9,60,22,30,"g"],
+["Popcorn","slodycze",387,12,78,4.5,30,"g"],
+["Żelki","slodycze",340,6.9,77,0.2,50,"g"],
+["Miód","slodycze",304,0.3,82,0,15,"łyżka"],
+["Cukier","slodycze",400,0,100,0,5,"łyżeczka"],
+["Kawa czarna","napoje",2,0.1,0,0,250,"ml"],
+["Kawa z mlekiem","napoje",30,1.6,2.4,1.5,250,"ml"],
+["Herbata","napoje",1,0,0.2,0,250,"ml"],
+["Sok pomarańczowy","napoje",45,0.7,10,0.2,250,"ml"],
+["Cola","napoje",42,0,10.6,0,330,"ml"],
+["Cola zero","napoje",0.3,0,0,0,330,"ml"],
+["Piwo jasne","napoje",43,0.5,3.6,0,500,"ml"],
+["Wino czerwone","napoje",85,0.1,2.6,0,150,"ml"],
+["Wódka 40%","napoje",231,0,0,0,50,"ml"],
+["Odżywka białkowa (WPC)","supl",380,78,8,5,30,"miarka"],
+["Baton proteinowy","supl",350,32,32,10,60,"szt"],
+["Piwo bezalkoholowe","napoje",26,0.4,5.5,0,500,"ml"],
+["Piwo mocne (7%)","napoje",62,0.5,5.5,0,500,"ml"],
+["Piwo IPA","napoje",55,0.6,4.5,0,500,"ml"],
+["Radler","napoje",40,0.2,9.5,0,500,"ml"],
+["Cydr","napoje",49,0,5,0,500,"ml"],
+["Wino białe","napoje",82,0.1,2.6,0,150,"ml"],
+["Prosecco","napoje",76,0.1,1.5,0,150,"ml"],
+["Whisky","napoje",250,0,0,0,40,"ml"],
+["Gin z tonikiem","napoje",70,0,6,0,250,"ml"],
+["Sprite","napoje",39,0,9.6,0,330,"ml"],
+["Fanta","napoje",42,0,10.4,0,330,"ml"],
+["Napój zero (bez cukru)","napoje",1,0,0.2,0,330,"ml"],
+["Tonik","napoje",34,0,8.4,0,200,"ml"],
+["Napój energetyczny","napoje",45,0,11,0,250,"ml"],
+["Napój energetyczny zero","napoje",3,0,0.3,0,250,"ml"],
+["Napój izotoniczny","napoje",24,0,6,0,500,"ml"],
+["Sok jabłkowy","napoje",46,0.1,11,0.1,250,"ml"],
+["Kompot","napoje",40,0,10,0,250,"ml"],
+["Smoothie owocowe","napoje",55,0.8,13,0.3,250,"ml"],
+["Napój owsiany","napoje",45,0.5,6.5,1.5,250,"ml"],
+["Napój migdałowy","napoje",24,0.5,3,1.1,250,"ml"],
+["Napój sojowy","napoje",39,3.3,1.2,1.8,250,"ml"],
+["Napój kokosowy","napoje",20,0.1,2.7,0.9,250,"ml"],
+["Herbata z cukrem","napoje",20,0,5,0,250,"ml"],
+["Mleko 0%","nabial",34,3.4,5,0.1,250,"ml"],
+["Jogurt naturalny 0%","nabial",41,4.5,5.5,0.1,150,"g"],
+["Jogurt owocowy","nabial",90,3.5,14,2,150,"g"],
+["Jogurt pitny","nabial",70,3,11,1.5,250,"ml"],
+["Jogurt grecki 2%","nabial",73,9,4,2,150,"g"],
+["Skyr smakowy","nabial",78,9.5,8,0.2,150,"g"],
+["Serek wiejski light","nabial",72,12.5,3.5,1,200,"g"],
+["Serek śmietankowy","nabial",253,6,4,24,30,"g"],
+["Śmietana 12%","nabial",130,2.8,4,12,30,"g"],
+["Śmietana 30%","nabial",293,2.4,3,30,30,"g"],
+["Ser topiony","nabial",290,12,6,24,30,"g"],
+["Ser pleśniowy (brie)","nabial",334,20,0.5,28,30,"g"],
+["Camembert","nabial",300,20,0.5,24,30,"g"],
+["Ser kozi","nabial",364,22,2.5,29,30,"g"],
+["Cheddar","nabial",402,25,1.3,33,30,"g"],
+["Mascarpone","nabial",435,4,4,44,50,"g"],
+["Ricotta","nabial",174,11,3,13,50,"g"],
+["Mleko skondensowane","nabial",320,7.5,55,8,20,"łyżka"],
+["Stek z wołowiny","mieso",217,26,0,12,200,"g"],
+["Antrykot","mieso",250,24,0,17,200,"g"],
+["Żeberka","mieso",290,17,0,24,200,"g"],
+["Golonka","mieso",240,18,0,18,200,"g"],
+["Szynka wieprzowa","mieso",145,20,0,7,50,"g"],
+["Szynka parmeńska","mieso",250,26,0,16,30,"g"],
+["Kabanosy","mieso",500,25,1,44,30,"g"],
+["Salami","mieso",407,21,1,35,30,"g"],
+["Pasztet","mieso",320,12,4,29,30,"g"],
+["Kaszanka","mieso",250,12,10,18,150,"g"],
+["Wątróbka drobiowa","mieso",128,20,1,5,150,"g"],
+["Mielony indyk","mieso",150,20,0,7,150,"g"],
+["Kurczak pieczony ze skórą","mieso",220,25,0,13,150,"g"],
+["Skrzydełka z kurczaka","mieso",250,22,0,18,150,"g"],
+["Łosoś wędzony","mieso",180,22,0,10,50,"g"],
+["Pstrąg","mieso",148,21,0,7,150,"g"],
+["Mintaj","mieso",72,17,0,0.6,150,"g"],
+["Tilapia","mieso",96,20,0,1.7,150,"g"],
+["Sardynki w oleju","mieso",208,25,0,11,100,"g"],
+["Paluszki rybne","mieso",220,12,20,10,100,"g"],
+["Paluszki krabowe","mieso",95,8,12,1,100,"g"],
+["Kalmary","mieso",92,16,3,1.4,150,"g"],
+["Chleb pszenno-żytni","zboza",240,7.5,46,1.5,40,"kromka"],
+["Chleb tostowy","zboza",265,8,49,3.5,30,"kromka"],
+["Chleb na zakwasie","zboza",245,8,47,1.5,40,"kromka"],
+["Chleb bezglutenowy","zboza",250,3,48,4,40,"kromka"],
+["Bułka grahamka","zboza",260,9,48,2,60,"szt"],
+["Pumpernikiel","zboza",250,6,50,1.5,35,"kromka"],
+["Chleb pita","zboza",275,9,55,1.2,60,"szt"],
+["Croissant","zboza",400,8,45,21,60,"szt"],
+["Sucharki","zboza",380,12,73,4,20,"g"],
+["Grzanki","zboza",400,10,65,12,25,"g"],
+["Kasza pęczak (ugotowana)","zboza",123,3.5,25,0.5,150,"g"],
+["Kasza manna na mleku","zboza",90,3,14,2,250,"g"],
+["Kasza bulgur (ugotowana)","zboza",120,3,25,0.3,150,"g"],
+["Ryż basmati (ugotowany)","zboza",140,3,30,0.4,150,"g"],
+["Makaron pełnoziarnisty (ugotowany)","zboza",145,6,27,1.2,200,"g"],
+["Makaron ryżowy (ugotowany)","zboza",110,1,25,0.2,200,"g"],
+["Kluski śląskie","zboza",160,3.5,35,0.5,200,"g"],
+["Kopytka","zboza",170,4,36,1,200,"g"],
+["Gnocchi","zboza",170,4,36,1,200,"g"],
+["Płatki kukurydziane","zboza",380,7,84,1,40,"g"],
+["Płatki czekoladowe","zboza",400,7,80,5,40,"g"],
+["Granola","zboza",430,9,65,15,50,"g"],
+["Tortilla kukurydziana","zboza",220,5.7,45,3,50,"szt"],
+["Kapusta biała","warzywa",25,1.3,5.8,0.1,150,"g"],
+["Kapusta pekińska","warzywa",16,1.2,3.2,0.2,150,"g"],
+["Kalarepa","warzywa",27,1.7,6,0.1,150,"g"],
+["Seler naciowy","warzywa",16,0.7,3,0.2,100,"g"],
+["Por","warzywa",61,1.5,14,0.3,100,"g"],
+["Rzodkiewka","warzywa",16,0.7,3.4,0.1,80,"g"],
+["Sałata lodowa","warzywa",14,0.9,3,0.1,80,"g"],
+["Rukola","warzywa",25,2.6,3.7,0.7,40,"g"],
+["Fasolka szparagowa","warzywa",31,1.8,7,0.1,150,"g"],
+["Bakłażan","warzywa",25,1,6,0.2,200,"g"],
+["Dynia","warzywa",26,1,6.5,0.1,200,"g"],
+["Brukselka","warzywa",43,3.4,9,0.3,150,"g"],
+["Szparagi","warzywa",20,2.2,3.9,0.1,150,"g"],
+["Ogórek kwaszony","warzywa",12,0.6,2.2,0.1,100,"g"],
+["Papryka zielona","warzywa",20,0.9,4.6,0.2,100,"g"],
+["Batat","warzywa",86,1.6,20,0.1,200,"g"],
+["Pomidory z puszki","warzywa",22,1.1,4,0.2,200,"g"],
+["Passata pomidorowa","warzywa",30,1.4,6,0.2,150,"g"],
+["Koncentrat pomidorowy","warzywa",82,4,15,0.5,20,"łyżka"],
+["Warzywa mrożone na patelnię","warzywa",40,2,6,0.5,200,"g"],
+["Surówka z białej kapusty","warzywa",60,1,7,3,100,"g"],
+["Mizeria","warzywa",45,1,3,3,100,"g"],
+["Buraczki zasmażane","warzywa",70,1.5,10,2.5,100,"g"],
+["Brzoskwinia","owoce",39,0.9,10,0.3,150,"szt"],
+["Nektarynka","owoce",44,1.1,11,0.3,140,"szt"],
+["Morela","owoce",48,1.4,11,0.4,40,"szt"],
+["Grejpfrut","owoce",42,0.8,11,0.1,200,"szt"],
+["Melon","owoce",34,0.8,8,0.2,200,"g"],
+["Granat","owoce",83,1.7,19,1.2,150,"g"],
+["Porzeczki","owoce",56,1.4,13,0.4,100,"g"],
+["Wiśnie","owoce",50,1,12,0.3,100,"g"],
+["Jeżyny","owoce",43,1.4,10,0.5,100,"g"],
+["Figi suszone","owoce",249,3.3,64,0.9,30,"g"],
+["Śliwki suszone","owoce",240,2.2,64,0.4,30,"g"],
+["Żurawina suszona","owoce",308,0.1,82,1.4,25,"g"],
+["Mus jabłkowy","owoce",50,0.2,12,0.1,100,"g"],
+["Ananas z puszki","owoce",60,0.4,15,0.1,100,"g"],
+["Orzechy laskowe","tluszcze",628,15,17,61,25,"garść"],
+["Pistacje","tluszcze",562,20,28,45,25,"garść"],
+["Orzechy brazylijskie","tluszcze",659,14,12,67,25,"garść"],
+["Makadamia","tluszcze",718,8,14,76,25,"garść"],
+["Mieszanka studencka","tluszcze",480,12,45,28,30,"garść"],
+["Wiórki kokosowe","tluszcze",660,7,24,64,15,"łyżka"],
+["Tahini","tluszcze",595,17,21,54,20,"łyżka"],
+["Olej kokosowy","tluszcze",900,0,0,100,10,"łyżka"],
+["Smalec","tluszcze",900,0,0,100,10,"łyżka"],
+["Margaryna","tluszcze",540,0.2,0.6,60,10,"g"],
+["Guacamole","tluszcze",180,2,6,16,50,"g"],
+["Pesto","tluszcze",450,5,4,45,20,"łyżka"],
+["Musztarda","tluszcze",66,4,5,3.5,10,"łyżeczka"],
+["Sos czosnkowy","tluszcze",380,2,5,39,20,"łyżka"],
+["Sos sojowy","tluszcze",60,6,6,0.5,10,"łyżka"],
+["Sos pomidorowy do makaronu","tluszcze",60,1.5,8,2,100,"g"],
+["Chrzan","tluszcze",90,2,15,1,10,"łyżeczka"],
+["Soczewica czerwona (ugotowana)","straczkowe",105,8,18,0.4,150,"g"],
+["Fasola biała (ugotowana)","straczkowe",110,7,20,0.5,150,"g"],
+["Bób","straczkowe",88,7.6,11,0.7,150,"g"],
+["Edamame","straczkowe",121,12,9,5,100,"g"],
+["Falafel","straczkowe",330,13,32,18,100,"g"],
+["Seitan","straczkowe",140,25,4,2,100,"g"],
+["Tofu wędzone","straczkowe",160,17,2,9,100,"g"],
+["Burger roślinny","straczkowe",220,17,6,14,110,"szt"],
+["Parówki wegańskie","straczkowe",200,14,5,14,100,"g"],
+["Pizza pepperoni","gotowe",290,12,32,13,150,"porcja"],
+["Zupa pomidorowa","gotowe",60,1.5,9,2,300,"ml"],
+["Zupa ogórkowa","gotowe",45,1.2,5,2,300,"ml"],
+["Żurek","gotowe",70,2,7,3.5,300,"ml"],
+["Barszcz czerwony","gotowe",35,1,6,0.5,300,"ml"],
+["Krem z dyni","gotowe",60,1.5,7,3,300,"ml"],
+["Zupa jarzynowa","gotowe",45,1.5,6,1.5,300,"ml"],
+["Gulasz","gotowe",140,13,5,7,250,"porcja"],
+["Leczo","gotowe",80,3,8,4,300,"porcja"],
+["Fasolka po bretońsku","gotowe",105,5,13,3.5,250,"porcja"],
+["Gołąbki","gotowe",110,6,10,5,250,"porcja"],
+["Ryba po grecku","gotowe",130,9,8,7,200,"porcja"],
+["Kotlet mielony","gotowe",250,15,10,17,120,"szt"],
+["Kotlet z kurczaka panierowany","gotowe",240,18,12,13,150,"szt"],
+["De volaille","gotowe",300,17,14,20,180,"szt"],
+["Pierogi z mięsem","gotowe",200,9,25,7,250,"porcja"],
+["Pierogi z kapustą i grzybami","gotowe",160,4,26,4,250,"porcja"],
+["Krokiety","gotowe",230,8,25,11,150,"szt"],
+["Placki ziemniaczane","gotowe",210,3,25,11,200,"porcja"],
+["Lasagne","gotowe",180,9,17,8,300,"porcja"],
+["Risotto","gotowe",160,4,25,5,300,"porcja"],
+["Makaron z pesto","gotowe",250,7,30,11,300,"porcja"],
+["Curry z kurczakiem","gotowe",150,12,8,8,300,"porcja"],
+["Chili con carne","gotowe",130,9,10,5,300,"porcja"],
+["Pad thai","gotowe",190,8,25,6,350,"porcja"],
+["Omlet","gotowe",160,11,2,12,150,"porcja"],
+["Jajecznica","gotowe",200,11,1,17,150,"porcja"],
+["Tost z serem","gotowe",300,13,30,14,100,"szt"],
+["Kanapka z szynką i serem","gotowe",250,12,28,10,120,"szt"],
+["Sałatka cezar","gotowe",190,10,5,14,300,"porcja"],
+["Sałatka z tuńczykiem","gotowe",130,12,5,7,300,"porcja"],
+["Tortilla z kurczakiem","gotowe",210,13,22,8,250,"szt"],
+["Cheeseburger","gotowe",260,13,25,12,120,"szt"],
+["Kebab na talerzu","gotowe",180,12,15,8,400,"porcja"],
+["Kostka rosołowa","gotowe",250,10,20,15,4,"szt"],
+["Deser mleczny","slodycze",220,4,25,11,100,"g"],
+["Budyń","slodycze",100,3,17,2,200,"g"],
+["Baton typu Mars","slodycze",480,4,68,21,50,"szt"],
+["Baton typu Kinder","slodycze",560,9,52,35,21,"szt"],
+["Ciastka digestive","slodycze",480,6,62,22,30,"g"],
+["Herbatniki","slodycze",430,7,75,11,30,"g"],
+["Wafelek w czekoladzie","slodycze",500,6,60,26,36,"szt"],
+["Ptasie mleczko","slodycze",400,3,65,14,30,"g"],
+["Krówki","slodycze",400,2,80,8,25,"g"],
+["Czekolada biała","slodycze",560,6,58,33,25,"g",6],
+["Czekolada z orzechami","slodycze",550,9,50,35,25,"g",6],
+["Praliny","slodycze",520,6,55,31,25,"g"],
+["Ciasto drożdżowe","slodycze",320,6,50,11,100,"g"],
+["Szarlotka","slodycze",250,3,35,11,120,"g"],
+["Brownie","slodycze",450,6,55,23,80,"g"],
+["Muffinka","slodycze",380,5,50,18,90,"szt"],
+["Tiramisu","slodycze",280,5,30,15,120,"g"],
+["Galaretka","slodycze",60,1.5,13,0,150,"g"],
+["Lody czekoladowe","slodycze",220,4,28,11,100,"g"],
+["Lody na patyku","slodycze",250,3,30,13,70,"szt"],
+["Sorbet","slodycze",130,0.3,32,0,100,"g"],
+["Bita śmietana","slodycze",260,2,8,25,30,"g"],
+["Chałwa","slodycze",500,12,50,30,30,"g"],
+["Faworki","slodycze",500,6,55,28,20,"szt"],
+["Piernik","slodycze",350,4,70,7,50,"g"],
+["Landrynki","slodycze",380,0,95,0,20,"g"],
+["Nachos","slodycze",490,7,60,24,30,"g"],
+["Paluszki","slodycze",400,11,72,7,30,"g"],
+["Precle","slodycze",380,10,72,4,30,"g"],
+["Guma do żucia bez cukru","slodycze",160,0,60,0.5,2,"szt"],
+["Syrop klonowy","slodycze",260,0,67,0,20,"łyżka"],
+["Izolat białka (WPI)","supl",370,85,3,2,30,"miarka"]
+];
+
+function slug(s){return norm(s).replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")}
+var DB=RAW.map(function(r){
+  return {id:slug(r[0]),n:r[0],cat:r[1],k:r[2],p:r[3],c:r[4],f:r[5],s:r[6],u:r[7],pc:r[8]||0};
+});
+
+/* ═══════════════════════ 2. pomocnicze ═══════════════════════ */
+function norm(s){
+  return String(s).toLowerCase()
+    .replace(/ł/g,"l").replace(/Ł/g,"l")
+    .normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+}
+function n0(x){return Math.round(x)}
+function fmt(x){return n0(x).toLocaleString("pl-PL")}
+function dkey(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+function parseKey(k){var a=k.split("-");return new Date(+a[0],+a[1]-1,+a[2])}
+function shiftKey(k,n){var d=parseKey(k);d.setDate(d.getDate()+n);return dkey(d)}
+var DOW=["niedziela","poniedziałek","wtorek","środa","czwartek","piątek","sobota"];
+var DOW1=["N","Pn","Wt","Śr","Cz","Pt","So"];
+var MON=["stycznia","lutego","marca","kwietnia","maja","czerwca","lipca","sierpnia","września","października","listopada","grudnia"];
+function dayTitle(k){
+  var t=dkey(new Date());
+  if(k===t)return "Dziś";
+  if(k===shiftKey(t,-1))return "Wczoraj";
+  if(k===shiftKey(t,1))return "Jutro";
+  var d=parseKey(k);return d.getDate()+" "+MON[d.getMonth()];
+}
+function el(tag,attrs,kids){
+  var e=document.createElement(tag);
+  if(attrs)for(var a in attrs){
+    if(a==="class")e.className=attrs[a];
+    else if(a==="html")e.innerHTML=attrs[a];
+    else if(a==="text")e.textContent=attrs[a];
+    else if(a.slice(0,2)==="on")e.addEventListener(a.slice(2),attrs[a]);
+    else if(a.slice(0,2)==="--")e.style.setProperty(a,attrs[a]);
+    else if(attrs[a]!=null)e.setAttribute(a,attrs[a]);
+  }
+  (kids||[]).forEach(function(k){if(k)e.appendChild(k)});
+  return e;
+}
+function svg(d,extra){
+  var s='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">'+d+'</svg>';
+  var w=el("span",{class:extra||"",html:s});
+  return w.firstChild;
+}
+var ICON={
+  today:'<path d="M4 6.5h16M4 12h16M4 17.5h9"/>',
+  add:'<path d="M12 5v14M5 12h14"/>',
+  meals:'<path d="M5 4v7a3 3 0 0 0 6 0V4M8 11v9"/><path d="M17 4c-1.6 1.4-2.2 3-2 5 .2 1.6 1 2.4 2 2.6V20"/>',
+  me:'<circle cx="12" cy="8.5" r="3.6"/><path d="M5 20c.8-3.6 3.5-5.2 7-5.2S18.2 16.4 19 20"/>',
+  search:'<circle cx="11" cy="11" r="6.2"/><path d="M15.6 15.6 20 20"/>',
+  x:'<path d="M6 6l12 12M18 6 6 18"/>',
+  left:'<path d="M14.5 5.5 8 12l6.5 6.5"/>',
+  right:'<path d="M9.5 5.5 16 12l-6.5 6.5"/>',
+  plus:'<path d="M12 5.5v13M5.5 12h13"/>',
+  trash:'<path d="M4.5 7h15M9.5 7V5h5v2M6.5 7l.8 12h9.4l.8-12"/>',
+  repeat:'<path d="M4 12a8 8 0 0 1 8-8c3 0 5.4 1.6 6.8 4M20 12a8 8 0 0 1-8 8c-3 0-5.4-1.6-6.8-4"/><path d="M18.8 4v4h-4M5.2 20v-4h4"/>',
+  pen:'<path d="M5 19h3.4L20 7.4a2.1 2.1 0 0 0-3-3L5 16.6V19z"/><path d="M15.4 6 18 8.6"/>',
+  check:'<path d="M5 12.5 9.5 17 19 7"/>',
+  alert:'<path d="M12 4.2 21.2 19.8H2.8L12 4.2z"/><path d="M12 9.6v4.2M12 16.6v.2"/>'
+};
+
+/* ═══════════════════════ 3. stan ═══════════════════════ */
+var KEY="makro.v1";
+var S={log:{},custom:[],sets:[],usage:{},goal:{k:2200,p:150,c:230,f:70},profile:null,theme:"auto",split:"bal"};
+function load(){
+  try{
+    var r=JSON.parse(localStorage.getItem(KEY)||"null");
+    if(r&&typeof r==="object"){
+      ["log","custom","sets","usage","goal","profile","theme","split"].forEach(function(k){
+        if(r[k]!=null)S[k]=r[k];
+      });
+    }
+  }catch(e){}
+}
+var saveT=null;
+function save(){
+  clearTimeout(saveT);
+  saveT=setTimeout(function(){
+    try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){toast("Nie udało się zapisać danych")}
+  },80);
+}
+function allFoods(){return DB.concat(S.custom)}
+function byId(id){
+  var a=allFoods();
+  for(var i=0;i<a.length;i++)if(a[i].id===id)return a[i];
+  return null;
+}
+
+/* ═══════════════════════ 4. logika ═══════════════════════ */
+var day=dkey(new Date());
+var view="today";
+var undo=null,toastT=null;
+
+function entries(k){return S.log[k]||[]}
+function totals(k){
+  var t={k:0,p:0,c:0,f:0};
+  entries(k).forEach(function(e){t.k+=e.k;t.p+=e.p;t.c+=e.c;t.f+=e.f});
+  return t;
+}
+function scale(food,g){
+  var r=g/100;
+  return {k:food.k*r,p:food.p*r,c:food.c*r,f:food.f*r};
+}
+var SLOTS=["Śniadanie","Obiad","Kolacja","Przekąska"];
+function slot(ts){
+  var h=new Date(ts).getHours();
+  if(h>=4&&h<11)return "Śniadanie";
+  if(h>=11&&h<16)return "Obiad";
+  if(h>=16&&h<21)return "Kolacja";
+  return "Przekąska";
+}
+/* posiłek podany wprost ("na śniadanie") bije zgadywanie z godziny */
+function slotOf(e){return e.sl||slot(e.t)}
+function pieceWeight(food){return food.pc||food.s}
+function bump(id){var u=S.usage[id]||{n:0,last:0};u.n++;u.last=Date.now();S.usage[id]=u}
+function unitLabel(food,g){
+  if(food.u==="g"||food.u==="ml")return fmt(g)+" "+food.u;
+  var q=g/food.s, s=q===1?"1":(Math.abs(q-0.5)<0.01?"½":(Math.abs(q-1.5)<0.01?"1½":String(Math.round(q*10)/10).replace(".",",")));
+  return s+" "+food.u+" · "+fmt(g)+" g";
+}
+function addLabel(food){
+  if(food.u==="g"||food.u==="ml")return fmt(food.s)+" "+food.u;
+  return "1 "+food.u;
+}
+function pushEntry(dk,food,g,sl,tOff){
+  var m=scale(food,g);
+  var e={fid:food.id,n:food.n,g:g,u:food.u,s:food.s,k:m.k,p:m.p,c:m.c,f:m.f,t:Date.now()+(tOff||0)};
+  if(sl)e.sl=sl;
+  if(!S.log[dk])S.log[dk]=[];
+  S.log[dk].push(e);
+  bump(food.id);
+  return e;
+}
+function addEntry(food,g,silent){
+  var e=pushEntry(day,food,g);
+  save();
+  if(!silent){
+    undo=function(){var a=S.log[day];var i=a.indexOf(e);if(i>-1)a.splice(i,1);save();render()};
+    toast(food.n+" · "+fmt(e.k)+" kcal","Cofnij",undo);
+  }
+  return e;
+}
+function delEntry(e){
+  var a=S.log[day],i=a.indexOf(e);
+  if(i<0)return;
+  a.splice(i,1);save();
+  toast("Usunięto "+e.n,"Cofnij",function(){a.splice(Math.min(i,a.length),0,e);save();render()});
+  render();
+}
+function ranked(){
+  var out=allFoods().filter(function(f){return S.usage[f.id]});
+  out.sort(function(a,b){
+    var ua=S.usage[a.id],ub=S.usage[b.id];
+    return (ub.n-ua.n)||(ub.last-ua.last);
+  });
+  return out;
+}
+function toast(msg,actLbl,act){
+  var t=document.getElementById("toast");
+  t.innerHTML="";
+  t.appendChild(el("span",{text:msg}));
+  if(actLbl)t.appendChild(el("button",{text:actLbl,onclick:function(){act();hideToast()}}));
+  t.classList.add("on");
+  clearTimeout(toastT);
+  toastT=setTimeout(hideToast,4200);
+}
+function hideToast(){document.getElementById("toast").classList.remove("on")}
+
+/* ═══════════════════════ 5. arkusz (bottom sheet) ═══════════════════════ */
+var sheetEl=document.getElementById("sheet"),scrimEl=document.getElementById("scrim");
+function openSheet(build){
+  sheetEl.innerHTML="";
+  sheetEl.appendChild(el("div",{class:"grab"}));
+  build(sheetEl);
+  sheetEl.classList.add("on");scrimEl.classList.add("on");
+}
+function closeSheet(){sheetEl.classList.remove("on");scrimEl.classList.remove("on")}
+scrimEl.addEventListener("click",closeSheet);
+document.addEventListener("keydown",function(e){if(e.key==="Escape")closeSheet()});
+
+function portionSheet(food,opts){
+  opts=opts||{};
+  var g=opts.g||food.s;
+  openSheet(function(root){
+    var pv,pvm;
+    function upd(){
+      var m=scale(food,g);
+      pv.innerHTML="";
+      pv.appendChild(el("span",{class:"v num",text:fmt(m.k)}));
+      pv.appendChild(el("span",{class:"u",text:"kcal · "+unitLabel(food,g)}));
+      pvm.innerHTML="";
+      [["B",m.p,"var(--p)"],["W",m.c,"var(--c)"],["T",m.f,"var(--f)"]].forEach(function(x){
+        pvm.appendChild(el("span",{html:'<span style="color:'+x[2]+';font-weight:700">'+x[0]+'</span> <i class="num">'+fmt(x[1])+" g</i>"}));
+      });
+      valEl.innerHTML="";
+      valEl.appendChild(el("span",{class:"num",text:fmt(g)}));
+      valEl.appendChild(el("s",{text:"g"}));
+    }
+    root.appendChild(el("h3",{id:"sheetTitle",text:food.n}));
+    root.appendChild(el("div",{class:"per",text:"100 g = "+fmt(food.k)+" kcal · B "+food.p+" · W "+food.c+" · T "+food.f}));
+    pv=el("div",{class:"preview"});root.appendChild(pv);
+    pvm=el("div",{class:"pvmac"});root.appendChild(pvm);
+
+    var chips=el("div",{class:"seg"});
+    var mults=(food.u==="g"||food.u==="ml")?[0.5,1,1.5,2]:[0.5,1,1.5,2,3];
+    mults.forEach(function(m){
+      var gg=Math.round(food.s*m);
+      var lbl=(food.u==="g"||food.u==="ml")?fmt(gg)+" "+food.u
+        :(m===0.5?"½":m===1.5?"1½":String(m))+" "+food.u;
+      chips.appendChild(el("button",{text:lbl,onclick:function(){g=gg;upd();paint()}}));
+    });
+    function paint(){
+      [].forEach.call(chips.children,function(b,i){
+        b.setAttribute("aria-pressed",Math.round(food.s*mults[i])===g?"true":"false");
+      });
+    }
+    root.appendChild(chips);
+
+    var valEl=el("div",{class:"val"});
+    var step=el("div",{class:"stepper"},[
+      el("button",{text:"−","aria-label":"Mniej",onclick:function(){g=Math.max(1,g-(g>60?10:5));upd();paint()}}),
+      valEl,
+      el("button",{text:"+","aria-label":"Więcej",onclick:function(){g=g+(g>=60?10:5);upd();paint()}})
+    ]);
+    root.appendChild(el("div",{class:"field"},[el("label",{text:"Ilość w gramach"}),step]));
+
+    var row=el("div",{class:"sheetrow"});
+    if(opts.entry){
+      row.appendChild(el("button",{class:"btn danger",text:"Usuń",onclick:function(){closeSheet();delEntry(opts.entry)}}));
+      row.appendChild(el("button",{class:"btn",text:"Zapisz",onclick:function(){
+        var m=scale(food,g);
+        opts.entry.g=g;opts.entry.k=m.k;opts.entry.p=m.p;opts.entry.c=m.c;opts.entry.f=m.f;
+        save();closeSheet();render();
+      }}));
+    }else{
+      row.appendChild(el("button",{class:"btn alt",text:"Anuluj",onclick:closeSheet}));
+      row.appendChild(el("button",{class:"btn",text:"Dodaj",onclick:function(){closeSheet();addEntry(food,g);render()}}));
+    }
+    root.appendChild(row);
+    upd();paint();
+  });
+}
+
+function promptSheet(title,label,value,onOk){
+  openSheet(function(root){
+    root.appendChild(el("h3",{id:"sheetTitle",text:title}));
+    var inp=el("input",{type:"text",value:value||""});
+    root.appendChild(el("div",{class:"field"},[el("label",{text:label}),inp]));
+    root.appendChild(el("div",{class:"sheetrow"},[
+      el("button",{class:"btn alt",text:"Anuluj",onclick:closeSheet}),
+      el("button",{class:"btn",text:"Zapisz",onclick:function(){
+        var v=inp.value.trim();if(!v)return inp.focus();
+        closeSheet();onOk(v);
+      }})
+    ]));
+    setTimeout(function(){inp.focus()},260);
+  });
+}
+
+/* ═══════════════════════ 6. widok: Dziś ═══════════════════════ */
+function viewToday(){
+  var wrap=document.createDocumentFragment();
+  var t=totals(day),G=S.goal;
+
+  /* przesuwanie dni */
+  var isToday=day===dkey(new Date());
+  wrap.appendChild(el("div",{class:"shuttle"},[
+    el("div",{},[
+      el("h2",{text:dayTitle(day)}),
+      el("div",{class:"dow",text:DOW[parseKey(day).getDay()]+", "+parseKey(day).getDate()+" "+MON[parseKey(day).getMonth()]})
+    ]),
+    el("div",{class:"nav"},[
+      el("button",{"aria-label":"Poprzedni dzień",onclick:function(){day=shiftKey(day,-1);render()}},[svg(ICON.left)]),
+      el("button",{"aria-label":"Następny dzień",disabled:isToday?"":null,onclick:function(){day=shiftKey(day,1);render()}},[svg(ICON.right)])
+    ])
+  ]));
+
+  /* odczyt jak z wagi */
+  var left=G.k-t.k, over=left<0;
+  var pct=G.k?Math.min(100,t.k/G.k*100):0;
+  var gauge=el("div",{class:"gauge"+(over?" over":"")},[el("div",{class:"fill"})]);
+  gauge.firstChild.style.width=pct+"%";
+  [25,50,75].forEach(function(x){var tk=el("div",{class:"tick"});tk.style.left=x+"%";gauge.appendChild(tk)});
+  var nd=el("div",{class:"needle"});nd.style.left="calc("+pct+"% - 1px)";gauge.appendChild(nd);
+
+  wrap.appendChild(el("div",{class:"readout"+(over?" over":"")},[
+    el("div",{class:"bignum"},[
+      el("span",{class:"v num",text:fmt(Math.abs(left))}),
+      el("span",{class:"u",text:"kcal"}),
+      el("span",{class:"cap",text:over?"ponad cel":"do celu"})
+    ]),
+    el("div",{class:"sub",html:"<b class='num'>"+fmt(t.k)+"</b> z <b class='num'>"+fmt(G.k)+"</b> kcal"+(entries(day).length?" · "+entries(day).length+" "+plural(entries(day).length,"pozycja","pozycje","pozycji"):"")}),
+    gauge
+  ]));
+
+  /* makro */
+  var mac=el("div",{class:"macros"});
+  [["Białko","p","--p"],["Węglowodany","c","--c"],["Tłuszcz","f","--f"]].forEach(function(x){
+    var have=t[x[1]],goal=G[x[1]];
+    var w=goal?Math.min(100,have/goal*100):0;
+    var spill=goal&&have>goal?Math.min(100-w,(have-goal)/goal*100):0;
+    var track=el("div",{class:"track"});
+    var bar=el("div",{class:"bar"});bar.style.width=w+"%";track.appendChild(bar);
+    if(spill>0){var sp=el("div",{class:"bar spill"});sp.style.width=spill+"%";track.appendChild(sp)}
+    var row=el("div",{class:"macro"},[
+      el("div",{class:"k"},[el("span",{class:"dot"}),el("span",{text:x[0]})]),
+      el("div",{class:"v",html:"<b class='num'>"+fmt(have)+"</b> / <span class='num'>"+fmt(goal)+"</span> g"}),
+      track
+    ]);
+    row.style.setProperty("--hue","var("+x[2]+")");
+    mac.appendChild(row);
+  });
+  wrap.appendChild(mac);
+  wrap.appendChild(el("hr",{class:"rule"}));
+
+  /* szybkie dodawanie */
+  var quick=ranked().slice(0,10);
+  var sc=el("div",{class:"scroller"});
+  if(!quick.length){
+    DB.filter(function(f){return ["jajko","platki-owsiane","piers-z-kurczaka-grill","ryz-bialy-ugotowany","banan","chleb-zytni-razowy","jogurt-grecki-10","kawa-z-mlekiem"].indexOf(f.id)>-1}).forEach(function(f){quick.push(f)});
+  }
+  quick.forEach(function(f){
+    sc.appendChild(el("button",{class:"chip",onclick:function(){addEntry(f,f.s);render()}},[
+      el("span",{class:"n",text:f.n}),
+      el("span",{class:"m num",text:"+ "+addLabel(f)+" · "+fmt(scale(f,f.s).k)+" kcal"})
+    ]));
+  });
+  var y=shiftKey(day,-1);
+  if(entries(y).length){
+    sc.appendChild(el("button",{class:"chip ghost",onclick:function(){copyDay(y)}},[
+      el("span",{class:"n",text:"↺ Powtórz wczoraj"})
+    ]));
+  }
+  wrap.appendChild(nlCard());
+  wrap.appendChild(el("div",{class:"sec"},[
+    el("div",{class:"sechead"},[
+      el("h3",{text:ranked().length?"Twoje najczęstsze":"Na start"}),
+      el("button",{class:"act",text:"Wszystko →",onclick:function(){go("add")}})
+    ]),
+    sc
+  ]));
+
+  /* wykres 7 dni */
+  wrap.appendChild(weekStrip());
+
+  /* log dnia */
+  var es=entries(day).slice().sort(function(a,b){return a.t-b.t});
+  var sec=el("div",{class:"sec"});
+  sec.appendChild(el("div",{class:"sechead"},[el("h3",{text:"Zjedzone"})]));
+  if(!es.length){
+    sec.appendChild(el("div",{class:"empty",text:"Nic jeszcze nie zapisane. Tapnij coś powyżej albo wejdź w „Dodaj”."}));
+  }else{
+    var groups={},order=[];
+    es.forEach(function(e){var s=slotOf(e);if(!groups[s]){groups[s]=[];order.push(s)}groups[s].push(e)});
+    SLOTS.forEach(function(sname){
+      if(!groups[sname])return;
+      var list=groups[sname];
+      var gk=list.reduce(function(a,e){return a+e.k},0);
+      var g=el("div",{class:"group"});
+      g.appendChild(el("div",{class:"grouphead"},[
+        el("span",{class:"t",text:sname}),
+        el("span",{class:"k num",text:fmt(gk)+" kcal"}),
+        el("button",{class:"save",text:"zapisz zestaw",onclick:function(){saveSet(sname,list)}})
+      ]));
+      list.forEach(function(e){
+        var f=byId(e.fid);
+        g.appendChild(el("button",{class:"entry",onclick:function(){
+          if(f)portionSheet(f,{g:e.g,entry:e});
+          else delEntry(e);
+        }},[
+          el("span",{class:"n"},[
+            el("b",{text:e.n}),
+            el("s",{text:(f?unitLabel(f,e.g):fmt(e.g)+" g")})
+          ]),
+          el("span",{class:"macrodots",html:"<i style='color:var(--p)'>B "+fmt(e.p)+"</i><i style='color:var(--c)'>W "+fmt(e.c)+"</i><i style='color:var(--f)'>T "+fmt(e.f)+"</i>"}),
+          el("span",{class:"kc num",html:fmt(e.k)+"<s>kcal</s>"})
+        ]));
+      });
+      sec.appendChild(g);
+    });
+  }
+  wrap.appendChild(sec);
+  return wrap;
+}
+function plural(n,one,few,many){
+  if(n===1)return one;
+  var m=n%10, h=n%100;
+  if(m>=2&&m<=4&&!(h>=12&&h<=14))return few;
+  return many;
+}
+
+/* pasek 7 dni — jedna seria, jeden odcień; kolor statusu tylko dla przekroczenia celu */
+function weekStrip(){
+  var days=[];
+  for(var i=6;i>=0;i--)days.push(shiftKey(day,-i));
+  var vals=days.map(function(k){return totals(k).k});
+  var goal=S.goal.k||2000;
+  var max=Math.max(goal*1.15,Math.max.apply(null,vals)*1.05,1);
+  var strip=el("div",{class:"week"});
+  var gl=el("div",{class:"goal"},[el("span",{text:"cel "+fmt(goal)})]);
+  gl.style.bottom=(goal/max*100)+"%";
+  strip.appendChild(el("div",{class:"band"},[gl,el("div",{class:"base"})]));
+  var cols=el("div",{class:"cols"});
+  strip.appendChild(cols);
+  days.forEach(function(k,i){
+    var v=vals[i], over=v>goal, empty=v===0;
+    var d=parseKey(k);
+    var col=el("button",{
+      class:"day"+(over?" over":"")+(empty?" nodata":"")+(k===day?" now":""),
+      role:"img",
+      "aria-label":DOW[d.getDay()]+" "+d.getDate()+" "+MON[d.getMonth()]+": "+fmt(v)+" kcal, cel "+fmt(goal)+" kcal",
+      title:dayTitle(k)+" · "+fmt(v)+" kcal",
+      onclick:function(){day=k;render();window.scrollTo({top:0,behavior:"smooth"})}
+    });
+    var bar=el("span",{class:"bar"});
+    bar.style.height=Math.max(2,v/max*100)+"%";
+    col.appendChild(el("span",{class:"plot"},[bar]));
+    col.appendChild(el("span",{class:"lbl",text:DOW1[d.getDay()]}));
+    cols.appendChild(col);
+  });
+  var sum=vals.reduce(function(a,b){return a+b},0);
+  var logged=vals.filter(function(v){return v>0}).length;
+  return el("div",{class:"sec weekwrap"},[
+    el("div",{class:"sechead"},[el("h3",{text:"Ostatnie 7 dni"})]),
+    strip,
+    el("div",{class:"wkfoot"},[
+      el("span",{html:"średnia z zapisanych dni: <b class='num'>"+fmt(logged?sum/logged:0)+"</b> kcal"}),
+      el("span",{class:"num",text:logged+"/7"})
+    ])
+  ]);
+}
+
+function copyDay(from){
+  var src=entries(from);
+  if(!src.length)return;
+  if(!S.log[day])S.log[day]=[];
+  var added=[];
+  src.forEach(function(e){
+    var copy={};for(var k in e)copy[k]=e[k];
+    copy.t=Date.now()+added.length;
+    S.log[day].push(copy);added.push(copy);
+    bump(e.fid);
+  });
+  save();render();
+  toast("Skopiowano "+added.length+" "+plural(added.length,"pozycję","pozycje","pozycji"),"Cofnij",function(){
+    S.log[day]=S.log[day].filter(function(e){return added.indexOf(e)<0});save();render();
+  });
+}
+function saveSet(name,list){
+  promptSheet("Zapisz zestaw","Nazwa",name+" "+parseKey(day).getDate()+"."+(parseKey(day).getMonth()+1),function(v){
+    S.sets.push({id:"s"+Date.now(),n:v,items:list.map(function(e){return {fid:e.fid,n:e.n,g:e.g,k:e.k,p:e.p,c:e.c,f:e.f,u:e.u,s:e.s,sl:e.sl}})});
+    save();toast("Zestaw „"+v+"” zapisany");render();
+  });
+}
+
+/* ═══════════════════════ 7. widok: Dodaj ═══════════════════════ */
+var q="",activeCat="all";
+function viewAdd(){
+  var wrap=document.createDocumentFragment();
+  wrap.appendChild(el("h2",{text:"Dodaj jedzenie",style:"font-size:22px"}));
+  wrap.appendChild(nlCard());
+  wrap.appendChild(el("div",{class:"eyebrow",text:"albo pojedynczy produkt"}));
+
+  var inp=el("input",{type:"search",placeholder:"Szukaj — np. jajko, ryż, banan",value:q,autocomplete:"off",
+    oninput:function(){q=this.value;repaintList()}});
+  var srch=el("div",{class:"search"},[svg(ICON.search),inp]);
+  if(q)srch.appendChild(el("button",{class:"clear","aria-label":"Wyczyść",onclick:function(){q="";render();}},[svg(ICON.x)]));
+  wrap.appendChild(srch);
+
+  var cats=el("div",{class:"cats"});
+  var list=[["all","Wszystko"]];
+  if(ranked().length)list.push(["mine","Twoje"]);
+  if(S.custom.length)list.push(["own","Własne"]);
+  for(var c in CATS)list.push([c,CATS[c]]);
+  list.forEach(function(x){
+    cats.appendChild(el("button",{class:"cat",text:x[1],"aria-pressed":activeCat===x[0]?"true":"false",
+      onclick:function(){activeCat=x[0];render()}}));
+  });
+  wrap.appendChild(cats);
+
+  var holder=el("div",{});
+  wrap.appendChild(holder);
+  function repaintList(){
+    holder.innerHTML="";
+    var nq=norm(q.trim()),src;
+    if(activeCat==="mine")src=ranked();
+    else if(activeCat==="own")src=S.custom;
+    else if(activeCat==="all")src=ranked().concat(allFoods().filter(function(f){return !S.usage[f.id]}));
+    else src=allFoods().filter(function(f){return f.cat===activeCat});
+    if(nq){
+      var qt=nq.split(/\s+/).filter(Boolean),starts=[],has=[];
+      src.forEach(function(f){
+        if(!searchHit(f,qt))return;
+        (norm(f.n).indexOf(qt[0])===0?starts:has).push(f);
+      });
+      src=starts.concat(has);
+    }
+    var seen={};
+    src=src.filter(function(f){if(seen[f.id])return false;seen[f.id]=1;return true});
+    if(!src.length){
+      holder.appendChild(el("div",{class:"empty",text:q?"Nie mam „"+q.trim()+"” w bazie.":"Pusto tutaj."}));
+      if(q.trim())holder.appendChild(el("button",{class:"btn",text:"Dodaj „"+q.trim()+"” jako własny produkt",
+        onclick:function(){customSheet({name:q.trim()})}}));
+    }
+    src.slice(0,q?40:200).forEach(function(f){
+      var m=scale(f,f.s);
+      holder.appendChild(el("div",{class:"food"},[
+        el("button",{class:"body",onclick:function(){portionSheet(f)}},[
+          el("b",{text:f.n}),
+          el("s",{class:"num",text:addLabel(f)+" · "+fmt(m.k)+" kcal · B "+fmt(m.p)+" W "+fmt(m.c)+" T "+fmt(m.f)})
+        ]),
+        el("button",{class:"addbtn","aria-label":"Dodaj "+f.n,onclick:function(){addEntry(f,f.s);renderChrome()}},[
+          svg(ICON.plus),el("span",{class:"num",text:addLabel(f)})
+        ])
+      ]));
+    });
+    holder.appendChild(el("button",{class:"btn alt",style:"margin-top:16px",text:"+ Dodaj własny produkt",onclick:function(){customSheet()}}));
+  }
+  repaintList();
+  return wrap;
+}
+function customSheet(opts){
+  opts=opts||{};
+  var base=opts.base;
+  openSheet(function(root){
+    root.appendChild(el("h3",{id:"sheetTitle",text:"Własny produkt"}));
+    root.appendChild(el("div",{class:"per",text:base
+      ? "Wartości są przepisane z „"+base.n+"” — popraw te, które się różnią. Produkt zostanie w bazie na stałe."
+      : "Podaj wartości z etykiety, na 100 g. Raz wpisane — potem dodajesz jednym tapnięciem."}));
+    var f={},pre={n:opts.name||"",k:base?base.k:"",p:base?base.p:"",c:base?base.c:"",f:base?base.f:"",s:base?base.s:100};
+    [["n","Nazwa","text"],["k","kcal / 100 g","number"],["p","Białko / 100 g","number"],["c","Węglowodany / 100 g","number"],["f","Tłuszcz / 100 g","number"],["s","Twoja porcja (g)","number"]].forEach(function(x){
+      var i=el("input",{type:x[2],inputmode:x[2]==="number"?"decimal":null,value:pre[x[0]]});
+      f[x[0]]=i;
+      root.appendChild(el("div",{class:"field"},[el("label",{text:x[1]}),i]));
+    });
+    root.appendChild(el("div",{class:"sheetrow"},[
+      el("button",{class:"btn alt",text:"Anuluj",onclick:closeSheet}),
+      el("button",{class:"btn",text:"Zapisz",onclick:function(){
+        var name=f.n.value.trim();
+        if(!name)return f.n.focus();
+        var food={id:"own-"+slug(name)+"-"+Date.now().toString(36),n:name,cat:"own",
+          k:+f.k.value||0,p:+f.p.value||0,c:+f.c.value||0,f:+f.f.value||0,
+          s:Math.max(1,+f.s.value||100),u:base?base.u:"g",pc:base?base.pc:0,own:true};
+        S.custom.push(food);save();closeSheet();
+        if(opts.onFood)opts.onFood(food);
+        else{addEntry(food,food.s);render()}
+      }})
+    ]));
+  });
+}
+
+/* ═══════════════════════ 8. widok: Zestawy ═══════════════════════ */
+function viewSets(){
+  var wrap=document.createDocumentFragment();
+  wrap.appendChild(el("h2",{text:"Zestawy",style:"font-size:22px"}));
+  wrap.appendChild(el("p",{class:"note",text:"Zestaw to zapisany posiłek — cała owsianka albo cały obiad. Jedno tapnięcie i wszystko wpada do dnia. Zapisujesz je z listy „Zjedzone” na ekranie Dziś."}));
+  if(!S.sets.length){
+    wrap.appendChild(el("div",{class:"empty",text:"Brak zestawów. Dodaj posiłek na ekranie Dziś, a potem tapnij „zapisz zestaw” przy jego nagłówku."}));
+  }
+  S.sets.forEach(function(st){
+    var tk=st.items.reduce(function(a,i){return a+i.k},0);
+    var tp=st.items.reduce(function(a,i){return a+i.p},0);
+    var tc=st.items.reduce(function(a,i){return a+i.c},0);
+    var tf=st.items.reduce(function(a,i){return a+i.f},0);
+    wrap.appendChild(el("div",{class:"card"},[
+      el("div",{class:"sechead"},[
+        el("h3",{text:st.n}),
+        el("span",{class:"num",style:"font-weight:600",text:fmt(tk)+" kcal"})
+      ]),
+      el("div",{class:"note",text:st.items.map(function(i){return i.n+" ("+fmt(i.g)+" g)"}).join(" · ")}),
+      el("div",{class:"pvmac",style:"padding:0",html:"<span style='color:var(--p);font-weight:700'>B</span> <i class='num'>"+fmt(tp)+" g</i><span style='color:var(--c);font-weight:700'>W</span> <i class='num'>"+fmt(tc)+" g</i><span style='color:var(--f);font-weight:700'>T</span> <i class='num'>"+fmt(tf)+" g</i>"}),
+      el("div",{class:"sheetrow",style:"padding-top:0"},[
+        el("button",{class:"btn",text:"Dodaj do "+dayTitle(day).toLowerCase(),onclick:function(){
+          if(!S.log[day])S.log[day]=[];
+          var added=[];
+          st.items.forEach(function(i){
+            var copy={};for(var k in i)copy[k]=i[k];
+            copy.t=Date.now()+added.length;
+            S.log[day].push(copy);added.push(copy);
+            bump(i.fid);
+          });
+          save();go("today");
+          toast("Dodano „"+st.n+"”","Cofnij",function(){
+            S.log[day]=S.log[day].filter(function(e){return added.indexOf(e)<0});save();render();
+          });
+        }}),
+        el("button",{class:"btn danger",style:"flex:0 0 auto;padding:13px 15px","aria-label":"Usuń zestaw",onclick:function(){
+          var i=S.sets.indexOf(st);S.sets.splice(i,1);save();render();
+          toast("Usunięto zestaw","Cofnij",function(){S.sets.splice(i,0,st);save();render()});
+        }},[svg(ICON.trash)])
+      ])
+    ]));
+  });
+  var y=shiftKey(day,-1);
+  if(entries(y).length){
+    wrap.appendChild(el("button",{class:"btn alt",text:"↺ Skopiuj cały wczorajszy dzień",onclick:function(){copyDay(y);go("today")}}));
+  }
+  return wrap;
+}
+
+/* ═══════════════════════ 9. widok: Ja ═══════════════════════ */
+var SPLITS={bal:{n:"Zbalansowany",p:.30,c:.40,f:.30},hp:{n:"Więcej białka",p:.40,c:.35,f:.25},lc:{n:"Mniej węgli",p:.30,c:.20,f:.50}};
+function viewMe(){
+  var wrap=document.createDocumentFragment();
+  wrap.appendChild(el("h2",{text:"Ja i cele",style:"font-size:22px"}));
+
+  var P=S.profile||{sex:"m",age:30,w:75,h:178,act:1.55,aim:0};
+  function stepper(label,key,step,unit,min,max){
+    var v=el("div",{class:"val"});
+    function paint(){v.innerHTML="";v.appendChild(el("span",{class:"num",text:String(P[key]).replace(".",",")}));v.appendChild(el("s",{text:unit}))}
+    paint();
+    return el("div",{class:"field"},[el("label",{text:label}),el("div",{class:"stepper"},[
+      el("button",{text:"−","aria-label":"Mniej "+label,onclick:function(){P[key]=Math.max(min,Math.round((P[key]-step)*10)/10);paint()}}),
+      v,
+      el("button",{text:"+","aria-label":"Więcej "+label,onclick:function(){P[key]=Math.min(max,Math.round((P[key]+step)*10)/10);paint()}})
+    ])]);
+  }
+  function segs(label,opts,key,after){
+    var box=el("div",{class:"seg"});
+    opts.forEach(function(o){
+      box.appendChild(el("button",{text:o[1],"aria-pressed":P[key]===o[0]?"true":"false",onclick:function(){
+        P[key]=o[0];
+        [].forEach.call(box.children,function(b,i){b.setAttribute("aria-pressed",opts[i][0]===P[key]?"true":"false")});
+        if(after)after();
+      }}));
+    });
+    return el("div",{class:"field"},[el("label",{text:label}),box]);
+  }
+  var out=el("div",{class:"note"});
+  function calc(){
+    var bmr=10*P.w+6.25*P.h-5*P.age+(P.sex==="m"?5:-161);
+    var tdee=bmr*P.act;
+    var k=Math.round((tdee*(1+P.aim))/10)*10;
+    return k;
+  }
+  function refresh(){
+    var k=calc();
+    out.innerHTML="Wyliczone zapotrzebowanie: <b class='num'>"+fmt(k)+" kcal</b> / dzień (Mifflin-St Jeor).";
+  }
+  refresh();
+
+  wrap.appendChild(el("div",{class:"card"},[
+    el("div",{class:"eyebrow",text:"Kalkulator celu"}),
+    segs("Płeć",[["m","Mężczyzna"],["k","Kobieta"]],"sex",refresh),
+    stepper("Wiek","age",1,"lat",14,99),
+    stepper("Waga","w",0.5,"kg",35,250),
+    stepper("Wzrost","h",1,"cm",120,220),
+    segs("Aktywność",[[1.2,"Siedząca"],[1.375,"Lekka"],[1.55,"Średnia"],[1.725,"Duża"],[1.9,"Bardzo duża"]],"act",refresh),
+    segs("Cel",[[-0.2,"Schudnąć"],[0,"Utrzymać"],[0.12,"Przytyć"]],"aim",refresh),
+    out,
+    el("button",{class:"btn",text:"Ustaw jako mój cel",onclick:function(){
+      S.profile=P;
+      S.goal.k=calc();
+      applySplit();
+      save();render();toast("Cel ustawiony: "+fmt(S.goal.k)+" kcal");
+    }})
+  ]));
+
+  var splitBox=el("div",{class:"seg"});
+  Object.keys(SPLITS).forEach(function(k){
+    var s=SPLITS[k];
+    splitBox.appendChild(el("button",{text:s.n+" "+Math.round(s.p*100)+"/"+Math.round(s.c*100)+"/"+Math.round(s.f*100),
+      "aria-pressed":S.split===k?"true":"false",onclick:function(){S.split=k;applySplit();save();render()}}));
+  });
+  wrap.appendChild(el("div",{class:"card"},[
+    el("div",{class:"eyebrow",text:"Rozkład makro (B / W / T)"}),
+    splitBox,
+    el("div",{class:"note",html:"Teraz: <b class='num'>"+fmt(S.goal.k)+"</b> kcal · B <b class='num'>"+fmt(S.goal.p)+" g</b> · W <b class='num'>"+fmt(S.goal.c)+" g</b> · T <b class='num'>"+fmt(S.goal.f)+" g</b>"}),
+    el("button",{class:"btn alt",text:"Ustaw ręcznie",onclick:manualSheet})
+  ]));
+
+  var themeBox=el("div",{class:"seg"});
+  [["auto","Auto"],["light","Jasny"],["dark","Ciemny"]].forEach(function(o){
+    themeBox.appendChild(el("button",{text:o[1],"aria-pressed":S.theme===o[0]?"true":"false",
+      onclick:function(){S.theme=o[0];applyTheme();save();render()}}));
+  });
+  wrap.appendChild(el("div",{class:"card"},[
+    el("div",{class:"eyebrow",text:"Motyw"}),themeBox
+  ]));
+
+  wrap.appendChild(el("div",{class:"card"},[
+    el("div",{class:"eyebrow",text:"Twoje dane"}),
+    el("div",{class:"note",text:"Wszystko siedzi tylko w tej przeglądarce (localStorage) — nic nie wychodzi na żaden serwer. Kopia zapasowa to zwykły tekst: skopiuj go sobie gdziekolwiek."}),
+    el("button",{class:"btn alt",text:"Kopia zapasowa / przywracanie",onclick:backupSheet}),
+    el("button",{class:"btn danger",text:"Wyczyść wszystko",onclick:function(){
+      openSheet(function(root){
+        root.appendChild(el("h3",{id:"sheetTitle",text:"Wyczyścić wszystko?"}));
+        root.appendChild(el("div",{class:"per",text:"Znikną wszystkie wpisy, zestawy i cele. Tego nie da się cofnąć."}));
+        root.appendChild(el("div",{class:"sheetrow"},[
+          el("button",{class:"btn alt",text:"Zostaw",onclick:closeSheet}),
+          el("button",{class:"btn danger",text:"Usuń wszystko",onclick:function(){
+            localStorage.removeItem(KEY);
+            S={log:{},custom:[],sets:[],usage:{},goal:{k:2200,p:150,c:230,f:70},profile:null,theme:S.theme,split:"bal"};
+            closeSheet();day=dkey(new Date());render();toast("Wyczyszczone");
+          }})
+        ]));
+      });
+    }})
+  ]));
+  return wrap;
+}
+function applySplit(){
+  var s=SPLITS[S.split]||SPLITS.bal,k=S.goal.k;
+  S.goal.p=Math.round(k*s.p/4);
+  S.goal.c=Math.round(k*s.c/4);
+  S.goal.f=Math.round(k*s.f/9);
+}
+function manualSheet(){
+  openSheet(function(root){
+    root.appendChild(el("h3",{id:"sheetTitle",text:"Cel ręcznie"}));
+    var f={};
+    [["k","kcal"],["p","Białko (g)"],["c","Węglowodany (g)"],["f","Tłuszcz (g)"]].forEach(function(x){
+      var i=el("input",{type:"number",inputmode:"numeric",value:S.goal[x[0]]});
+      f[x[0]]=i;root.appendChild(el("div",{class:"field"},[el("label",{text:x[1]}),i]));
+    });
+    root.appendChild(el("div",{class:"sheetrow"},[
+      el("button",{class:"btn alt",text:"Anuluj",onclick:closeSheet}),
+      el("button",{class:"btn",text:"Zapisz",onclick:function(){
+        S.goal={k:+f.k.value||0,p:+f.p.value||0,c:+f.c.value||0,f:+f.f.value||0};
+        save();closeSheet();render();
+      }})
+    ]));
+  });
+}
+function backupSheet(){
+  openSheet(function(root){
+    root.appendChild(el("h3",{id:"sheetTitle",text:"Kopia zapasowa"}));
+    var ta=el("textarea",{spellcheck:"false"});
+    ta.value=JSON.stringify(S);
+    root.appendChild(el("div",{class:"field"},[el("label",{text:"Twoje dane w formacie JSON"}),ta]));
+    root.appendChild(el("div",{class:"sheetrow"},[
+      el("button",{class:"btn alt",text:"Kopiuj",onclick:function(){
+        ta.select();
+        if(navigator.clipboard)navigator.clipboard.writeText(ta.value).then(function(){toast("Skopiowane do schowka")},function(){toast("Zaznacz i skopiuj ręcznie")});
+        else toast("Zaznacz i skopiuj ręcznie");
+      }}),
+      el("button",{class:"btn",text:"Wczytaj z pola",onclick:function(){
+        try{
+          var r=JSON.parse(ta.value);
+          if(!r||typeof r!=="object")throw 0;
+          ["log","custom","sets","usage","goal","profile","theme","split"].forEach(function(k){if(r[k]!=null)S[k]=r[k]});
+          save();applyTheme();closeSheet();render();toast("Dane wczytane");
+        }catch(e){toast("To nie wygląda na poprawną kopię")}
+      }})
+    ]));
+  });
+}
+
+/* ═══════════════════════ 11. rozumienie zdań ═══════════════════════
+   Parsowanie idzie w całości lokalnie — żaden opis posiłku nie wychodzi
+   z przeglądarki. Słownik jest zamknięty (baza wyżej), więc wystarczy
+   dopasowanie polskiej odmiany + liczebniki + jednostki. */
+
+/* Formy, których reguła prefiksu sama nie złapie: inne słowo w nazwie
+   (kurczak → "Pierś z kurczaka"), wypadające "e" (serek → serków),
+   nazwy potoczne (kartofle, owsianka, cottage). */
+var ALIAS={
+"jajko":"jaja|jaj|jajek|jajka|jajo",
+"bialko-jajka":"bialka jajek|bialek",
+"mleko-2":"mleko|mleka|mlekiem|mleku",
+"jogurt-naturalny-2":"jogurt|jogurtu|jogurtem",
+"skyr-jogurt-islandzki":"skyr|skyru",
+"twarog-chudy":"twarog|twarogu|twarogiem|ser bialy|bialy ser|bialego sera",
+"twarog-poltlusty":"twarog poltlusty",
+"serek-wiejski":"serkow wiejskich|serki wiejskie|serka wiejskiego|cottage|cottage cheese",
+"ser-zolty-gouda":"ser zolty|zolty ser|gouda|sera zoltego|zoltego sera",
+"feta":"ser feta|serem feta",
+"piers-z-kurczaka-grill":"kurczak|kurczaka|kurczakiem|kurczaki|piersi z kurczaka|filet z kurczaka|filet",
+"piers-z-kurczaka-surowa":"piers surowa",
+"piers-z-indyka":"indyk|indyka|indykiem",
+"mielona-wolowina-10":"wolowina|wolowiny|mieso mielone|mielone|mielonego",
+"kotlet-schabowy":"schabowy|schabowego|kotlet|kotleta",
+"losos":"lososia|lososiem",
+"tunczyk-w-wodzie":"tunczyk|tunczyka",
+"szynka-drobiowa":"szynka|szynki|szynke",
+"kielbasa-slaska":"kielbasa|kielbasy|kielbaske",
+"boczek-wedzony":"boczek|boczku",
+"parowki":"parowka|parowek",
+"ryz-bialy-ugotowany":"ryz|ryzu|ryzem",
+"makaron-ugotowany":"makaron|makaronu|makaronem|spaghetti|penne|swiderki",
+"kasza-gryczana-ugotowana":"kasza gryczana|gryczana|gryki",
+"kasza-jaglana-ugotowana":"kasza jaglana|jaglana",
+"ziemniaki-gotowane":"ziemniaki|ziemniakow|kartofle|kartofli|puree",
+"chleb-zytni-razowy":"chleb|chleba|chlebem|pieczywo|razowy|razowego",
+"bulka-kajzerka":"bulka|bulki|kajzerka",
+"tortilla-pszenna":"tortilla|tortille|wrap",
+"platki-owsiane":"platki|platkow|owsianka|owsianke|owsianki",
+"maslo":"masla|maslem",
+"maslo-orzechowe":"peanut butter|masla orzechowego",
+"oliwa-z-oliwek":"oliwa|oliwy|oliwie",
+"oliwki":"oliwek|oliwkami|oliwka|czarne oliwki|zielone oliwki",
+"pomidorki-koktajlowe":"pomidorki|pomidorkow|pomidorkami|cherry|koktajlowe",
+"pomidory-suszone-w-oleju":"suszone pomidory|suszonych pomidorow",
+"papryka-czerwona":"papryka|papryki|papryke",
+"cebula":"cebuli|cebule|cebulka",
+"pieczarki":"pieczarek|pieczarkami|grzyby",
+"brokul":"brokula|brokulem|brokuly",
+"salata":"salaty|salate",
+"szpinak":"szpinaku|szpinakiem",
+"cukinia":"cukinii|cukinie",
+"awokado":"avocado|awokada",
+"banan":"banana|banany|bananow|bananami",
+"jablko":"jablka|jablek",
+"migdaly":"migdalow|migdalami",
+"orzechy-wloskie":"orzechy|orzechow|wloskie",
+"kefir-2":"kefir|kefiru",
+"kawa-czarna":"kawa|kawy|kawe|espresso|americano",
+"kawa-z-mlekiem":"kawa z mlekiem|latte|cappuccino",
+"piwo-jasne":"piwo|piwa|piwem",
+"wino-czerwone":"wino|wina|winem|lampka wina",
+"sok-pomaranczowy":"sok|soku",
+"odzywka-bialkowa-wpc":"odzywka|odzywke|bialko w proszku|whey|wpc",
+"czekolada-mleczna":"czekolada|czekolady",
+"czekolada-gorzka-70":"czekolada gorzka|gorzka czekolada",
+"frytki":"frytek|frytkami",
+"pierogi-ruskie":"pierogi|pierogow",
+"miod":"miodu|miodem",
+"cukier":"cukru",
+"ketchup":"ketchupu|keczup",
+"majonez":"majonezu|majonezem",
+"piwo-bezalkoholowe":"piwo zero|bezalkoholowe|bezalkoholowy|bezalko|piwo bezalko|piwo bezalkoholowe",
+"napoj-zero-bez-cukru":"napoj zero|zero cukru|cola light|pepsi max",
+"mleko-0":"mleko odtluszczone|mleko zero",
+"jogurt-naturalny-0":"jogurt odtluszczony|jogurt chudy",
+"napoj-owsiany":"mleko owsiane|owsiane",
+"napoj-migdalowy":"mleko migdalowe|migdalowe",
+"napoj-sojowy":"mleko sojowe|sojowe",
+"napoj-kokosowy":"mleko kokosowe",
+"stek-z-wolowiny":"stek|steka|rostbef",
+"kurczak-pieczony-ze-skora":"kurczak pieczony|pieczony kurczak",
+"losos-wedzony":"wedzony losos",
+"seler-naciowy":"seler|selera",
+"kapusta-biala":"kapusta|kapusty",
+"batat":"bataty|slodki ziemniak",
+"chleb-tostowy":"tost|tosty|tostowy",
+"croissant":"rogalik|rogalika|rogaliki",
+"platki-kukurydziane":"kukurydziane|cornflakes|corn flakes",
+"granola":"granoli",
+"pizza-pepperoni":"pepperoni",
+"barszcz-czerwony":"barszcz|barszczu",
+"zurek":"zurku|zurkiem",
+"kotlet-mielony":"klops|mielony kotlet",
+"omlet":"omleta|omletem",
+"jajecznica":"jajecznice|jajecznicy",
+"kostka-rosolowa":"bulion|rosolowa kostka",
+"guma-do-zucia-bez-cukru":"guma|gumy",
+"bita-smietana":"smietana bita",
+"burger-roslinny":"burger wege|burger wegetarianski",
+"izolat-bialka-wpi":"izolat|wpi",
+"syrop-klonowy":"syrop",
+"kotlet-z-kurczaka-panierowany":"kurczak panierowany|panierowany kurczak|filet panierowany"
+};
+
+var NUMW={jeden:1,jedna:1,jedno:1,jednego:1,poltora:1.5,poltorej:1.5,
+dwa:2,dwie:2,dwoch:2,dwu:2,dwoma:2,dwiema:2,para:2,pare:2,pary:2,
+trzy:3,trzech:3,trzema:3,cztery:4,czterech:4,czterema:4,
+piec:5,pieciu:5,piecioma:5,szesc:6,szesciu:6,szescioma:6,
+siedem:7,siedmiu:7,osiem:8,osmiu:8,dziewiec:9,dziewieciu:9,
+dziesiec:10,dziesieciu:10,jedenascie:11,jedenastu:11,
+dwanascie:12,dwunastu:12,tuzin:12,kilka:3,kilku:3,kilkanascie:12,kilkunastu:12};
+
+var FRACW={pol:0.5,polowa:0.5,polowe:0.5,polowy:0.5,polowke:0.5,polowka:0.5,
+cwierc:0.25,cwiartke:0.25,cwiartka:0.25,czwarta:0.25,trzecia:1/3,trzeciej:1/3,
+calosc:1,cale:1,caly:1,cala:1,calego:1,wszystko:1,reszte:1};
+var DENOM={trzecie:3,trzeciej:3,trzecia:3,czwarte:4,czwartej:4,czwarta:4,piate:5};
+
+var UNITS={
+g:{gram:1},gram:{gram:1},grama:{gram:1},gramow:{gram:1},gramy:{gram:1},gr:{gram:1},
+dag:{gram:10},dkg:{gram:10},kg:{gram:1000},kilo:{gram:1000},
+ml:{gram:1},l:{gram:1000},litr:{gram:1000},litra:{gram:1000},
+szklanka:{gram:250},szklanki:{gram:250},szklance:{gram:250},szklanke:{gram:250},
+kubek:{gram:250},kubka:{gram:250},butelka:{gram:500},butelke:{gram:500},butelki:{gram:500},
+garsc:{own:"garść",gram:30},garsci:{own:"garść",gram:30},garscie:{own:"garść",gram:30},garscia:{own:"garść",gram:30},
+lyzka:{own:"łyżka",gram:15},lyzki:{own:"łyżka",gram:15},lyzke:{own:"łyżka",gram:15},lyzek:{own:"łyżka",gram:15},
+lyzeczka:{own:"łyżeczka",gram:5},lyzeczki:{own:"łyżeczka",gram:5},lyzeczke:{own:"łyżeczka",gram:5},lyzeczek:{own:"łyżeczka",gram:5},
+kromka:{own:"kromka",gram:35},kromki:{own:"kromka",gram:35},kromek:{own:"kromka",gram:35},kromke:{own:"kromka",gram:35},
+plaster:{gram:20},plasterek:{gram:20},plastry:{gram:20},plasterki:{gram:20},plasterkow:{gram:20},
+sztuka:{own:"*"},sztuki:{own:"*"},sztuk:{own:"*"},sztuke:{own:"*"},szt:{own:"*"},
+puszka:{gram:400},puszki:{gram:400},puszke:{gram:400},sloik:{gram:300},sloika:{gram:300},
+opakowanie:{own:"*"},opakowania:{own:"*"},paczka:{own:"*"},paczki:{own:"*"},paczke:{own:"*"},
+miarka:{own:"miarka"},miarki:{own:"miarka"},miarke:{own:"miarka"},
+porcja:{own:"porcja"},porcje:{own:"porcja"},porcji:{own:"porcja"},talerz:{own:"porcja"},
+szczypta:{gram:2},szczypte:{gram:2},kostka:{own:"pc",gram:200},kostki:{own:"pc",gram:200},tabliczka:{gram:100},tabliczke:{gram:100}};
+
+/* Słowa, które nie są jedzeniem — nie próbujemy ich dopasowywać ani
+   raportować jako pominiętych. */
+var STOP={};
+("na w we z ze i oraz a do po przy dla o od plus tez tego to te tym ta ten tam byl byla bylo byly jest sa mam mialem "+
+ "zrobilem zrobilam zrobil zrobila zrobilismy zjadlem zjadlam zjadl zjadla zjedlem zjedlismy jadlem jadlam wypilem "+
+ "wypilam wypil dodalem dodalam dalem mialam bylem bylam sobie siebie potem jeszcze tylko okolo mniej wiecej jakies "+
+ "jakis jaka jakie ok razem lacznie gora gorze gore wierzchu wierzch srodku srodka spodu posypane posypana polane "+
+ "polana dodatkowo jako typu rodzaju swoj swoja moj moja mojej mojego dzisiaj dzis wczoraj przedwczoraj rano "+
+ "wieczorem poludnie noc nocy sniadanie sniadaniem sniadanko obiad obiadem kolacja kolacje kolacji przekaska "+
+ "przekaske podwieczorek deser drugie pierwsze topping dressing sos sosem lekki lekka duzy duza duze maly mala male "+
+ "male swieze swieza swiezy suszony suszona goracy gorace zimne zimny domowa domowy domowe wlasnej roboty ale bo "+
+ "wiec no cos duzo malo troche sporo kawalek kawalki reszta pozniej wczesniej caly dzien nie tak owszem").split(" ")
+ .forEach(function(w){if(w)STOP[w]=1});
+
+/* Przymiotniki, które potrafią zmienić kalorie o połowę. Jeśli taki wyraz
+   stoi obok produktu, a produkt go nie ma w nazwie, nie wolno go po cichu
+   zgubić — pozycja dostaje ostrzeżenie. */
+var QUAL={};
+("zero light lajt bezalkoholowe bezalkoholowy bezalkoholowego bezalko bezglutenowy bezglutenowe "+
+ "odtluszczone odtluszczony odtluszczona pelnotluste pelnotlusty nieslodzony nieslodzone "+
+ "weganski weganska weganskie wegetarianski wegetarianska roslinny roslinne wege "+
+ "smazony smazona smazone panierowany panierowana panierowane wedzony wedzona "+
+ "surowy surowa surowe mrozony mrozona kiszony solony").split(" ").forEach(function(w){if(w)QUAL[w]=1});
+
+/* Ile znaków wspólnego prefiksu wystarczy, by uznać dwie formy za to samo
+   słowo. Progi zależą od długości: "fety"≈"feta" tak, ale "ser"≉"sernik". */
+function wmatch(a,b){
+  if(a===b)return a.length+2;
+  var i=0,L=Math.min(a.length,b.length);
+  while(i<L&&a.charAt(i)===b.charAt(i))i++;
+  if(i<3)return 0;
+  var mn=Math.min(a.length,b.length),d=Math.abs(a.length-b.length);
+  if(i<mn-1)return 0;
+  if(d>2&&!(d<=4&&i>=5))return 0;
+  return i;
+}
+var IDX=null,IDXn=0;
+function buildIdx(){
+  if(IDX&&IDXn===S.custom.length)return;
+  IDX=[];IDXn=S.custom.length;
+  allFoods().forEach(function(f){
+    var phr=[f.n.replace(/\([^)]*\)/g," ").replace(/[\/,]/g," ")];
+    if(ALIAS[f.id])ALIAS[f.id].split("|").forEach(function(a){phr.push(a)});
+    var seen={};
+    phr.forEach(function(x){
+      var w=norm(x).split(/\s+/).filter(Boolean);
+      if(!w.length)return;
+      var k=w.join(" ");
+      if(seen[k])return;
+      seen[k]=1;IDX.push({f:f,w:w});
+    });
+  });
+}
+/* Najlepszy produkt zaczynający się na pozycji i. Dłuższa fraza wygrywa
+   z krótszą ("pomidorki koktajlowe" bije "pomidor"). */
+function matchAt(toks,i){
+  var best=null;
+  for(var x=0;x<IDX.length;x++){
+    var e=IDX[x],w=e.w,k=w.length;
+    for(var j=Math.min(k,4);j>=1;j--){
+      if(i+j>toks.length)continue;
+      var sc=0,ok=true;
+      for(var q=0;q<j;q++){
+        var t=toks[i+q];
+        if(!t.n||t.used||t.brk||t.num!=null||t.unit){ok=false;break}
+        var m=wmatch(t.n,w[q]);
+        if(!m){ok=false;break}
+        sc+=m;
+      }
+      if(!ok)continue;
+      var total=10*j+sc-3*(k-j);
+      if(!best||total>best.score||(total===best.score&&k<best.k))best={f:e.f,len:j,score:total,k:k};
+      break;
+    }
+  }
+  return best&&best.score>=8?best:null;
+}
+/* Wyszukiwanie po nazwie ORAZ aliasach, słowo po słowie — żeby "piwo zero"
+   trafiało w "Piwo bezalkoholowe", a nie zwracało pustki. */
+function searchWords(f){
+  if(f._sw)return f._sw;
+  var t=norm(f.n.replace(/[()\/,]/g," "));
+  if(ALIAS[f.id])t+=" "+norm(ALIAS[f.id].replace(/\|/g," "));
+  f._sw=t.split(/\s+/).filter(Boolean);
+  return f._sw;
+}
+function searchHit(f,qt){
+  var ws=searchWords(f);
+  for(var i=0;i<qt.length;i++){
+    var hit=false;
+    for(var j=0;j<ws.length;j++){
+      if(ws[j].indexOf(qt[i])===0||wmatch(qt[i],ws[j])){hit=true;break}
+    }
+    if(!hit)return false;
+  }
+  return true;
+}
+function unitGrams(u,food){
+  if(u.own==="*")return pieceWeight(food);
+  if(u.own==="pc")return food.pc||u.gram;
+  if(u.own&&norm(u.own)===norm(food.u))return food.s;
+  if(u.gram)return u.gram;
+  return food.s;
+}
+function qtyGrams(food,q){
+  if(!q)return food.s;
+  var n=q.num;
+  if(q.unit){
+    if(q.unit.gram&&!q.unit.own)return Math.max(1,Math.round((n==null?1:n)*q.unit.gram));
+    return Math.max(1,Math.round((n==null?1:n)*unitGrams(q.unit,food)));
+  }
+  if(n!=null)return Math.max(1,Math.round(n*pieceWeight(food)));
+  return food.s;
+}
+function tokenize(text){
+  var out=[],re=/[0-9]+(?:[.,][0-9]+)?(?:\/[0-9]+)?%?|[a-ząćęłńóśźż]+|[,.;:!?]/g,m;
+  text=String(text||"").toLowerCase();
+  while((m=re.exec(text))){
+    var raw=m[0],t={raw:raw};
+    if(/^[0-9]/.test(raw)){
+      var str=raw,pct=false;
+      if(str.charAt(str.length-1)==="%"){pct=true;str=str.slice(0,-1)}
+      var v;
+      if(str.indexOf("/")>-1){var ab=str.split("/");v=parseFloat(ab[0])/parseFloat(ab[1])}
+      else v=parseFloat(str.replace(",","."));
+      if(!isFinite(v))continue;
+      if(pct)v=v/100;
+      t.num=v;t.frac=pct||raw.indexOf("/")>-1||(v>0&&v<1);
+    }else if(/^[a-ząćęłńóśźż]/.test(raw)){
+      t.n=norm(raw);
+      if(NUMW[t.n]!=null)t.num=NUMW[t.n];
+      else if(FRACW[t.n]!=null){t.num=FRACW[t.n];t.frac=true}
+      else if(UNITS[t.n])t.unit=UNITS[t.n];
+    }else t.brk=true;
+    out.push(t);
+  }
+  return out;
+}
+function parseMeal(text){
+  buildIdx();
+  var toks=tokenize(text),a,t;
+  /* "dwie trzecie", "trzy czwarte" */
+  for(a=0;a<toks.length-1;a++){
+    if(toks[a].num>=1&&!toks[a].frac&&toks[a+1].n&&DENOM[toks[a+1].n]){
+      toks[a].num=toks[a].num/DENOM[toks[a+1].n];toks[a].frac=true;toks[a+1].used=true;
+    }
+  }
+  var flat=toks.map(function(x){return x.n||""}).join(" ");
+  var res={items:[],divisor:null,slot:null,dayShift:0,dish:null,skipped:[]};
+  if(/drugie sniadanie/.test(flat))res.slot="Przekąska";
+  else if(/sniadan/.test(flat))res.slot="Śniadanie";
+  else if(/obiad/.test(flat))res.slot="Obiad";
+  else if(/kolacj/.test(flat))res.slot="Kolacja";
+  else if(/przekask|podwieczorek|deser/.test(flat))res.slot="Przekąska";
+  if(/przedwczoraj/.test(flat))res.dayShift=-2;
+  else if(/wczoraj/.test(flat))res.dayShift=-1;
+
+  var pend=null,age=0,seenSkip={};
+  for(a=0;a<toks.length;a++){
+    t=toks[a];
+    if(t.used)continue;
+    if(t.brk){pend=null;continue}
+    if(t.num!=null||t.unit){
+      if(!pend)pend={num:null,unit:null,toks:[]};
+      if(t.num!=null&&pend.num==null)pend.num=t.num;
+      if(t.unit)pend.unit=t.unit;
+      pend.toks.push(t);age=0;
+      continue;
+    }
+    if(!t.n){continue}
+    /* "jogurt bez cukru" nie może dodać cukru jako składnika */
+    if(toks[a-1]&&toks[a-1].n==="bez"){t.qual=1;t.neg=1;if(pend){age++;if(age>3)pend=null}continue}
+    var m=STOP[t.n]?null:matchAt(toks,a);
+    if(m){
+      var q=pend;
+      if(!q){
+        /* ilość podana po produkcie: "ryż 200 g" — ale tylko z liczbą,
+           żeby "jajka, garść migdałów" nie przypisało garści do jajek */
+        var j=a+m.len,fw={num:null,unit:null,toks:[]},got=false;
+        while(j<toks.length&&j<a+m.len+2){
+          var u=toks[j];
+          if(u.brk||u.used)break;
+          if(u.num!=null&&!u.frac&&fw.num==null){fw.num=u.num;fw.toks.push(u);got=true;j++;continue}
+          if(u.unit&&got){fw.unit=u.unit;fw.toks.push(u);j++;continue}
+          break;
+        }
+        if(got)q=fw;
+      }
+      var g=qtyGrams(m.f,q);
+      if(q)q.toks.forEach(function(x){x.used=true});
+      for(var z=0;z<m.len;z++)toks[a+z].used=true;
+      res.items.push({f:m.f,g:g,at:a,len:m.len,qty:!!q});
+      pend=null;age=0;a+=m.len-1;
+      continue;
+    }
+    if(QUAL[t.n]){t.qual=1;if(pend){age++;if(age>3)pend=null}continue}
+    if(!STOP[t.n]&&t.n.length>=4&&!seenSkip[t.n]&&res.skipped.length<6){
+      seenSkip[t.n]=1;res.skipped.push(t.raw);
+    }
+    if(pend){age++;if(age>3)pend=null}
+  }
+  /* "zapiekanka z 4 jaj, 2 serków…" — pierwszy produkt przed "z" i długą
+     listą składników jest nazwą dania, nie składnikiem */
+  if(res.items.length>=3&&!res.items[0].qty){
+    var after=toks[res.items[0].at+res.items[0].len];
+    if(after&&after.n&&(after.n==="z"||after.n==="ze")){
+      res.dish=res.items[0].f.n;res.items.shift();
+    }
+  }
+  /* kwalifikator przylegający do produktu, którego nie ma w jego nazwie:
+     "piwo light" przy braku wersji light = liczby są nie te */
+  /* szukamy do 3 tokenów w obie strony, przeskakując spójniki ("bez cukru"),
+     ale nie przechodząc przez przecinek ani przez inny produkt */
+  function nearQual(from,dir){
+    for(var i=1;i<=3;i++){
+      var c=toks[from+dir*i];
+      if(!c||c.brk)return null;
+      if(c.qual&&!c.used)return c;
+      if(c.n==="bez"||c.n==="w"||c.n==="z"||c.n==="ze"||c.n==="na")continue;
+      return null;
+    }
+    return null;
+  }
+  res.items.forEach(function(it){
+    var nn=norm(it.f.n);
+    [nearQual(it.at,-1),nearQual(it.at+it.len-1,1)].forEach(function(c){
+      if(!c||!c.qual||c.used||it.warn)return;
+      var stem=c.n.slice(0,Math.min(6,c.n.length));
+      if(nn.indexOf(stem)>-1)return;
+      it.warn=c.neg?"bez "+c.raw:c.raw;
+      c.used=true;
+    });
+  });
+  toks.forEach(function(t){
+    if(t.qual&&!t.used&&t.n.length>=4&&res.skipped.length<6&&res.skipped.indexOf(t.raw)<0)res.skipped.push(t.raw);
+  });
+
+  /* ten sam produkt raz bez ilości, raz z ilością ("owsianka: 60 g płatków
+     owsianych") to jedna rzecz nazwana dwa razy — zostaje wersja z ilością */
+  var withQty={};
+  res.items.forEach(function(it){if(it.qty)withQty[it.f.id]=1});
+  res.items=res.items.filter(function(it){return it.qty||!withQty[it.f.id]});
+
+  /* niezużyty ułamek na końcu = "zjadłem tego połowę" */
+  for(a=toks.length-1;a>=0;a--){
+    if(toks[a].frac&&!toks[a].used&&toks[a].num!=null){res.divisor=toks[a].num;break}
+  }
+  return res;
+}
+
+/* ═══════════════════════ 12. arkusz: opis posiłku ═══════════════════════ */
+var NLPH="np. na śniadanie zapiekanka z 4 jaj, 2 serków wiejskich, garści pomidorków koktajlowych i 8 oliwek, na górze feta — zjadłem połowę";
+var PARTS=[["¼",0.25],["⅓",1/3],["½",0.5],["⅔",2/3],["¾",0.75],["całość",1]];
+
+function nlSheet(prefill){
+  var text=prefill||"";
+  ask();
+
+  function ask(){
+    openSheet(function(root){
+      root.appendChild(el("h3",{id:"sheetTitle",text:"Opisz posiłek"}));
+      root.appendChild(el("div",{class:"per",text:"Zwykłym zdaniem — z czego się składał i ile z tego zjadłeś. Rozpoznawanie liczy się na Twoim urządzeniu, opis nigdzie nie wychodzi."}));
+      var ta=el("textarea",{spellcheck:"false",placeholder:NLPH,style:"min-height:112px"});
+      ta.value=text;
+      root.appendChild(el("div",{class:"field"},[el("label",{text:"Opis"}),ta]));
+      root.appendChild(el("div",{class:"sheetrow"},[
+        el("button",{class:"btn alt",text:"Anuluj",onclick:closeSheet}),
+        el("button",{class:"btn",text:"Rozpoznaj",onclick:function(){text=ta.value;review(parseMeal(text))}})
+      ]));
+      setTimeout(function(){ta.focus()},280);
+    });
+  }
+
+  function review(r){
+    var items=r.items.map(function(x){return {f:x.f,g:x.g,warn:x.warn}});
+    var part=r.divisor==null?1:r.divisor;
+    var sl=r.slot||slot(Date.now());
+    var dk=shiftKey(day,r.dayShift);
+    var asSet=!!r.dish&&items.length>1;
+    var setName=r.dish||sl;
+    draw();
+
+    function total(mult){
+      var t={k:0,p:0,c:0,f:0};
+      items.forEach(function(it){
+        var m=scale(it.f,it.g*mult);
+        t.k+=m.k;t.p+=m.p;t.c+=m.c;t.f+=m.f;
+      });
+      return t;
+    }
+    function draw(){
+      openSheet(function(root){
+        if(!items.length){
+          root.appendChild(el("h3",{id:"sheetTitle",text:"Nie rozpoznałem produktów"}));
+          root.appendChild(el("div",{class:"per",text:"Nic z tego opisu nie pasuje do bazy. Spróbuj nazwać składniki prościej („4 jajka”, „150 g ryżu”) albo dodaj brakujący produkt raz na zawsze."}));
+          if(r.skipped.length)root.appendChild(el("div",{class:"note",text:"Pominięte słowa: "+r.skipped.join(", ")}));
+          root.appendChild(el("div",{class:"sheetrow"},[
+            el("button",{class:"btn alt",text:"Popraw opis",onclick:ask}),
+            el("button",{class:"btn",text:"Własny produkt",onclick:function(){customSheet({name:text})}})
+          ]));
+          return;
+        }
+        root.appendChild(el("h3",{id:"sheetTitle",text:"Rozpoznałem"}));
+        root.appendChild(el("div",{class:"per",text:"Trafi do: "+dayTitle(dk).toLowerCase()+(r.dish?" · danie: "+r.dish:"")+". Popraw, co się nie zgadza."}));
+
+        var slBox=el("div",{class:"seg"});
+        SLOTS.forEach(function(o){
+          slBox.appendChild(el("button",{text:o,"aria-pressed":sl===o?"true":"false",
+            onclick:function(){sl=o;draw()}}));
+        });
+        root.appendChild(el("div",{class:"field"},[el("label",{text:"Posiłek"}),slBox]));
+
+        items.forEach(function(it,ix){
+          /* produkty na sztuki/garście chodzą po pół porcji, żeby nie
+             wychodziło "3,8 szt" — w gramach normalnie po 10 g */
+          var piecey=it.f.u!=="g"&&it.f.u!=="ml";
+          var bump=function(dir){
+            if(piecey){
+              var q=Math.round(it.g/it.f.s*2)/2;
+              it.g=Math.round(Math.max(0.5,q+dir*0.5)*it.f.s);
+            }else it.g=Math.max(1,it.g+dir*(it.g>=60?10:5));
+            draw();
+          };
+          var m=scale(it.f,it.g);
+          var kids=[
+            el("div",{class:"n"},[el("b",{text:it.f.n}),el("s",{text:unitLabel(it.f,it.g)})]),
+            el("div",{class:"kc num",text:fmt(m.k)+" kcal"}),
+            el("button",{class:"rm","aria-label":"Usuń "+it.f.n,onclick:function(){items.splice(ix,1);draw()}},[svg(ICON.x)]),
+            el("div",{class:"g"},[
+              el("button",{text:"−","aria-label":"Mniej "+it.f.n,onclick:function(){bump(-1)}}),
+              el("span",{class:"v num",text:fmt(it.g)+" g"}),
+              el("button",{text:"+","aria-label":"Więcej "+it.f.n,onclick:function(){bump(1)}})
+            ])
+          ];
+          if(it.warn)kids.push(el("div",{class:"warn"},[
+            svg(ICON.alert),
+            el("span",{},[
+              el("span",{text:"nie mam wersji „"+it.warn+"” — liczby są dla zwykłej. "}),
+              el("button",{text:"popraw wartości",onclick:function(){
+                customSheet({name:it.f.n+" "+it.warn,base:it.f,onFood:function(food){
+                  it.f=food;it.warn=null;draw();
+                }});
+              }})
+            ])
+          ]));
+          root.appendChild(el("div",{class:"nlrow"},kids));
+        });
+
+        var pBox=el("div",{class:"seg"});
+        PARTS.forEach(function(o){
+          pBox.appendChild(el("button",{text:o[0],"aria-pressed":Math.abs(part-o[1])<0.02?"true":"false",
+            onclick:function(){part=o[1];draw()}}));
+        });
+        root.appendChild(el("div",{class:"field",style:"margin-top:14px"},[
+          el("label",{text:"Ile z tego zjadłeś"}),pBox]));
+
+        var t=total(part);
+        root.appendChild(el("div",{class:"nltot"},[
+          el("span",{class:"v num",text:fmt(t.k)}),
+          el("span",{class:"u",text:part<1?"kcal — z całości "+fmt(total(1).k):"kcal"})
+        ]));
+        root.appendChild(el("div",{class:"pvmac",html:
+          "<span style='color:var(--p);font-weight:700'>B</span> <i class='num'>"+fmt(t.p)+" g</i>"+
+          "<span style='color:var(--c);font-weight:700'>W</span> <i class='num'>"+fmt(t.c)+" g</i>"+
+          "<span style='color:var(--f);font-weight:700'>T</span> <i class='num'>"+fmt(t.f)+" g</i>"}));
+
+        if(r.skipped.length)root.appendChild(el("div",{class:"note",text:"Pominięte słowa: "+r.skipped.join(", ")+". Jeśli któreś z nich to jedzenie, dopisz je prościej albo dodaj jako własny produkt."}));
+
+        if(items.length>1){
+          var nameF=el("input",{type:"text",value:setName,oninput:function(){setName=this.value}});
+          var tg=el("button",{class:"toggle","aria-pressed":asSet?"true":"false",onclick:function(){asSet=!asSet;draw()}},[
+            el("span",{class:"box"},[svg(ICON.check)]),
+            el("span",{class:"lb",text:"Zapisz też jako zestaw — następny raz jedno tapnięcie"})
+          ]);
+          root.appendChild(tg);
+          if(asSet)root.appendChild(el("div",{class:"field"},[el("label",{text:"Nazwa zestawu"}),nameF]));
+        }
+
+        root.appendChild(el("div",{class:"sheetrow"},[
+          el("button",{class:"btn alt",text:"Popraw opis",onclick:ask}),
+          el("button",{class:"btn",text:"Dodaj "+items.length+" "+plural(items.length,"pozycję","pozycje","pozycji"),onclick:commit})
+        ]));
+      });
+    }
+    function commit(){
+      var added=[];
+      items.forEach(function(it,ix){
+        added.push(pushEntry(dk,it.f,Math.max(1,Math.round(it.g*part)),sl,ix));
+      });
+      var savedSet=null;
+      if(asSet&&items.length>1){
+        savedSet={id:"s"+Date.now(),n:(setName||"Posiłek").trim(),items:added.map(function(e){
+          return {fid:e.fid,n:e.n,g:e.g,k:e.k,p:e.p,c:e.c,f:e.f,u:e.u,s:e.s,sl:e.sl};
+        })};
+        S.sets.push(savedSet);
+      }
+      save();closeSheet();
+      day=dk;render();
+      toast("Dodano "+added.length+" "+plural(added.length,"pozycję","pozycje","pozycji")+" · "+fmt(total(part).k)+" kcal","Cofnij",function(){
+        S.log[dk]=(S.log[dk]||[]).filter(function(e){return added.indexOf(e)<0});
+        if(savedSet){var i=S.sets.indexOf(savedSet);if(i>-1)S.sets.splice(i,1)}
+        save();render();
+      });
+    }
+  }
+}
+function nlCard(){
+  return el("button",{class:"nlcard",onclick:function(){nlSheet()}},[
+    el("span",{class:"ic"},[svg(ICON.pen)]),
+    el("span",{class:"tx"},[
+      el("b",{text:"Opisz posiłek zdaniem"}),
+      el("s",{text:"„zapiekanka z 4 jaj, 2 serków i 8 oliwek — zjadłem połowę”"})
+    ])
+  ]);
+}
+
+/* ═══════════════════════ 10. render ═══════════════════════ */
+var VIEWS={today:viewToday,add:viewAdd,meals:viewSets,me:viewMe};
+var TABS=[["today","Dziś",ICON.today],["add","Dodaj",ICON.add],["meals","Zestawy",ICON.meals],["me","Ja",ICON.me]];
+function go(v){view=v;render();window.scrollTo({top:0})}
+function renderChrome(){
+  var t=totals(day),left=S.goal.k-t.k;
+  document.getElementById("brandSub").textContent=left>=0?fmt(left)+" kcal do celu":fmt(-left)+" kcal ponad";
+}
+function render(){
+  var v=document.getElementById("view");
+  v.innerHTML="";
+  v.appendChild(VIEWS[view]());
+  var tabs=document.getElementById("tabs");
+  tabs.innerHTML="";
+  TABS.forEach(function(t){
+    var b=el("button",{class:"tab","aria-current":view===t[0]?"page":null,onclick:function(){go(t[0])}},[
+      svg(t[2]),el("span",{text:t[1]})
+    ]);
+    tabs.appendChild(b);
+  });
+  renderChrome();
+}
+function applyTheme(){
+  if(S.theme==="auto")document.documentElement.removeAttribute("data-theme");
+  else document.documentElement.setAttribute("data-theme",S.theme);
+}
+document.getElementById("themeBtn").addEventListener("click",function(){
+  var order=["auto","light","dark"],i=order.indexOf(S.theme);
+  S.theme=order[(i+1)%3];applyTheme();save();
+  toast("Motyw: "+({auto:"auto",light:"jasny",dark:"ciemny"}[S.theme]));
+  if(view==="me")render();
+});
+
+/* uchwyt dla testów — parser bywa jedyną częścią, którą warto sprawdzić
+   bez klikania po ekranach */
+window.MAKRO={parse:parseMeal,alias:ALIAS,foods:allFoods,byId:byId,scale:scale};
+
+/* Offline. Rejestrujemy service workera tylko wtedy, gdy strona jest
+   hostowana i ma manifest — wersja jednoplikowa (Artifact, file://) nie ma
+   tych plików, więc nie ma czego rejestrować. */
+if("serviceWorker" in navigator
+   && document.querySelector('link[rel="manifest"]')
+   && window.isSecureContext){
+  window.addEventListener("load",function(){
+    navigator.serviceWorker.register("sw.js").catch(function(){});
+  });
+}
+
+load();
+if(S.profile&&!S.goal.p)applySplit();
+applyTheme();
+day=dkey(new Date());
+render();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,56 @@
+# Publikacja na GitHub Pages bez klikania w ustawieniach: configure-pages
+# z enablement:true samo włącza Pages (źródło = GitHub Actions), a deploy-pages
+# wystawia stronę. Uruchamia się po każdym wejściu na main.
+name: Publikuj na GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Równoległe wdrożenia Pages wchodzą sobie w drogę; kolejkujemy je,
+# ale nie przerywamy zaczętego, żeby nie zostawić strony w połowie.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Pobierz repo
+        uses: actions/checkout@v4
+
+      - name: Włącz Pages, jeśli jeszcze nie są włączone
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      # Publikujemy tylko pliki apki — bez README i bez katalogu .github.
+      - name: Zbierz pliki strony
+        run: |
+          set -euo pipefail
+          mkdir -p _site
+          for f in index.html manifest.webmanifest sw.js icon.svg \
+                   icon-192.png icon-512.png apple-touch-icon.png; do
+            test -f "$f" || { echo "brak pliku: $f" >&2; exit 1; }
+            cp "$f" _site/
+          done
+          ls -la _site
+
+      - name: Spakuj artefakt
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - name: Wdróż
+        id: deployment
+        uses: actions/deploy-pages@v4
