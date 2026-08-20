@@ -1339,13 +1339,32 @@ function portionSheet(food,opts){
     ]);
     root.appendChild(el("div",{class:"field"},[el("label",{text:"Ilość w gramach"}),step]));
 
+    /* Posiłek jest zgadywany z godziny, więc musi być jak go poprawić:
+       kanapka zjedzona o 15:00 to nadal może być śniadanie. */
+    var pickedSlot=null;
+    if(opts.entry){
+      pickedSlot=slotOf(opts.entry);
+      var slotSeg=el("div",{class:"seg"});
+      var paintSlot=function(){
+        [].forEach.call(slotSeg.children,function(b){
+          b.setAttribute("aria-pressed",b.textContent===pickedSlot?"true":"false");
+        });
+      };
+      SLOTS.forEach(function(sn){
+        slotSeg.appendChild(el("button",{text:sn,onclick:function(){pickedSlot=sn;paintSlot()}}));
+      });
+      paintSlot();
+      root.appendChild(el("div",{class:"field"},[el("label",{text:"Posiłek"}),slotSeg]));
+    }
+
     var row=el("div",{class:"sheetrow"});
     if(opts.entry){
       row.appendChild(el("button",{class:"btn danger",text:"Usuń",onclick:function(){closeSheet();delEntry(opts.entry)}}));
       row.appendChild(el("button",{class:"btn",text:"Zapisz",onclick:function(){
         var m=scale(food,g);
         opts.entry.g=g;opts.entry.k=m.k;opts.entry.p=m.p;opts.entry.c=m.c;opts.entry.f=m.f;
-        save();closeSheet();render();
+        opts.entry.sl=pickedSlot;
+        saveNow();closeSheet();render();
       }}));
     }else{
       row.appendChild(el("button",{class:"btn alt",text:"Anuluj",onclick:closeSheet}));

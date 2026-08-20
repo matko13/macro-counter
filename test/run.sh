@@ -10,7 +10,7 @@ set -u
 cd "$(dirname "$0")"
 ROOT="$(cd .. && pwd)"
 WORK="$(mktemp -d)"
-LOCAL=(test nl qual wariant db dict dish mobile reopen)
+LOCAL=(test nl qual wariant db dict dish mobile reopen posilek)
 SERVED=(updbar ratunek offline)
 HTTP="$(command -v http-server || echo /opt/node22/lib/node_modules/http-server/bin/http-server)"
 
@@ -19,14 +19,27 @@ run_it () { [ ${#want[@]} -eq 0 ] && return 0; for w in "${want[@]}"; do [ "$w" 
 
 pass=0; fail=0; ran=0
 
-for s in "${LOCAL[@]}"; do
-  run_it "$s" || continue
-  out="$(node "$s.mjs" "$WORK" 2>&1)"
+# Zestaw, który wywali się wyjątkiem, nie wypisze ani jednego FAIL — a to jest
+# gorsze niż porażka, bo wygląda na brak uwag. Dlatego liczy się też kod wyjścia.
+tally () {  # tally <nazwa> <kod> <wyjście>
+  local name="$1" code="$2" out="$3"
+  local p f
   p=$(grep -c '^PASS' <<<"$out"); f=$(grep -c '^FAIL' <<<"$out")
   pass=$((pass+p)); fail=$((fail+f)); ran=$((ran+1))
-  printf '%-10s %3d PASS %3d FAIL\n' "$s" "$p" "$f"
+  printf '%-10s %3d PASS %3d FAIL\n' "$name" "$p" "$f"
   grep '^FAIL' <<<"$out"
   grep -i 'błędy JS' <<<"$out" | grep -v brak
+  if [ "$code" -ne 0 ] && [ "$f" -eq 0 ]; then
+    fail=$((fail+1))
+    echo "  ✗ zestaw przerwany (kod $code), a nie zgłosił żadnego FAIL:"
+    tail -n 6 <<<"$out" | sed 's/^/    /'
+  fi
+}
+
+for s in "${LOCAL[@]}"; do
+  run_it "$s" || continue
+  out="$(node "$s.mjs" "$WORK" 2>&1)"; code=$?
+  tally "$s" "$code" "$out"
 done
 
 # ── atrapy dla zestawów serwerowych ────────────────────────────────────────
@@ -60,30 +73,23 @@ if run_it updbar; then
   stage "$WORK/upd/b"   bbbbbbb
   sed -i 's|<b>Makro</b>|<b>Makro2</b>|' "$WORK/upd/b/index.html"
   serve "$WORK/upd" 8211
-  out="$(node updbar.mjs "$WORK" 2>&1)"
-  p=$(grep -c '^PASS' <<<"$out"); f=$(grep -c '^FAIL' <<<"$out")
-  pass=$((pass+p)); fail=$((fail+f)); ran=$((ran+1))
-  printf '%-10s %3d PASS %3d FAIL\n' updbar "$p" "$f"; grep '^FAIL' <<<"$out"
+  out="$(node updbar.mjs "$WORK" 2>&1)"; code=$?
+  tally updbar "$code" "$out"
 fi
 
 if run_it ratunek; then
   stage "$WORK/rescue/app" aaaaaaa
   serve "$WORK/rescue" 8215
-  out="$(node ratunek.mjs "$WORK" 2>&1)"
-  p=$(grep -c '^PASS' <<<"$out"); f=$(grep -c '^FAIL' <<<"$out")
-  pass=$((pass+p)); fail=$((fail+f)); ran=$((ran+1))
-  printf '%-10s %3d PASS %3d FAIL\n' ratunek "$p" "$f"; grep '^FAIL' <<<"$out"
-  grep -i 'błędy JS' <<<"$out" | grep -v brak
+  out="$(node ratunek.mjs "$WORK" 2>&1)"; code=$?
+  tally ratunek "$code" "$out"
 fi
 
 if run_it offline; then
   # offline.mjs sam gasi ten serwer — na tym polega dowód pracy bez sieci
   stage "$WORK/serve/test" aaaaaaa
   serve "$WORK/serve" 8199
-  out="$(node offline.mjs "$WORK" 2>&1)"
-  p=$(grep -c '^PASS' <<<"$out"); f=$(grep -c '^FAIL' <<<"$out")
-  pass=$((pass+p)); fail=$((fail+f)); ran=$((ran+1))
-  printf '%-10s %3d PASS %3d FAIL\n' offline "$p" "$f"; grep '^FAIL' <<<"$out"
+  out="$(node offline.mjs "$WORK" 2>&1)"; code=$?
+  tally offline "$code" "$out"
 fi
 
 # to, co jeszcze żyje w katalogu roboczym, gasimy po sobie

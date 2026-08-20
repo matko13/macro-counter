@@ -23,7 +23,7 @@ hostingu dokłada instalację na ekranie głównym i pracę offline — patrz
 | cały posiłek po kawałku | **zestawy** — raz zapisany posiłek dodajesz jednym tapnięciem |
 | wczorajszy dzień od nowa | **Powtórz wczoraj** kopiuje cały dzień |
 | swój cel kaloryczny | kalkulator (Mifflin-St Jeor) — same plusy/minusy, żadnej klawiatury |
-| przypisanie do posiłku | posiłek (śniadanie / obiad / kolacja / przekąska) zgaduje się z godziny |
+| przypisanie do posiłku | posiłek (śniadanie / obiad / kolacja / przekąska) zgaduje się z godziny, a tapnięcie wpisu pozwala go przenieść |
 | korektę pomyłki | każde dodanie i usunięcie ma **Cofnij** |
 
 Klawiatura jest potrzebna dokładnie w dwóch miejscach: szukanie produktu
@@ -200,7 +200,10 @@ markowa baza jest możliwa — patrz „Szersza baza produktów" niżej.
   Przekroczenie celu ma własny kolor.
 - **Ostatnie 7 dni** — słupki z linią celu; tapnięcie przeskakuje na ten dzień.
 - **Log dnia** — pogrupowany po posiłkach, z makro przy każdej pozycji.
-  Tapnięcie pozycji otwiera zmianę gramatury albo usunięcie.
+  Tapnięcie pozycji otwiera zmianę gramatury, **przeniesienie do innego
+  posiłku** albo usunięcie. Zgadywanie z godziny jest tylko domysłem —
+  kanapka zjedzona o 15:00 nadal może być śniadaniem, więc raz wpisana
+  pozycja nie zostaje uwięziona w porze dnia, w której ją zapisano.
 - **Dowolny dzień** — strzałkami wstecz, więc można uzupełnić wczoraj.
 - **Jasny i ciemny motyw** — automatycznie z systemu albo ręcznie.
 
@@ -357,8 +360,8 @@ nie zalecenie medyczne.
   deuteranopia / trytanopia) w obu motywach; kolor nigdy nie jest jedynym
   nośnikiem znaczenia — każdy pasek i słupek ma etykietę tekstową.
 - Cele tapania ≥ 44 px (minimum z wytycznych Apple, pilnowane testem), widoczny focus klawiatury, `prefers-reduced-motion`.
-- Testy: **187 przypadków** przez Playwright (headless Chromium, część na
-  emulowanym iPhone 13), w dwunastu zestawach. Całość leży w `test/`
+- Testy: **205 przypadków** przez Playwright (headless Chromium, część na
+  emulowanym iPhone 13), w trzynastu zestawach. Całość leży w `test/`
   i uruchamia się jednym poleceniem:
 
   ```
@@ -386,6 +389,7 @@ nie zalecenie medyczne.
   | danie a składnik | 11 | burger z wołowiną kontra chleb z masłem kontra przepis z ilościami, nazwy pięciowyrazowe, porcje jadalne owoców |
   | dotyk | 11 | żadna reguła `:hover` poza `@media (hover:hover)` (na iOS pierwsze tapnięcie na takim elemencie tylko „najeżdża", a klika dopiero drugie), pojedyncze tapnięcie zatwierdza posiłek i dodaje produkt, **każdy element dotykowy ma ≥44 px** na wszystkich ekranach |
   | podgląd bez dubli | 8 | spóźnione zamknięcie sesji mowy po zatwierdzeniu, zamknięcie arkusza w trakcie dyktowania, podwójne kliknięcie w „Dodaj" |
+  | przenoszenie posiłku | 18 | wybór posiłku w arkuszu wpisu, zaznaczony ten właściwy, przeniesienie zmieniające grupę bez ruszania kalorii i gramatury, zniknięcie pustej grupy, trwałość po przeładowaniu, powrót do pierwotnego posiłku, rozdzielenie dwóch wpisów na dwie grupy z osobnymi sumami, oraz „Usuń" nadal działające w tym samym arkuszu |
   | ratunek danych | 20 | migawka w Cache Storage, propozycja przeniesienia przy pustym starcie (i to, że nic nie wczytuje się samo), „Nie teraz" nieusuwające migawki, „Wyczyść wszystko" usuwające ją naprawdę, wyjaśnienie w trybie z ekranu głównego pokazywane raz, brak zaczepki w zwykłej karcie, oraz uszkodzony zapis odkładany na bok zamiast nadpisania |
   | aktualizacja (prawdziwy SW) | 15 | brak paska przy pierwszej instalacji, pojawienie się po podmianie wdrożenia, brak samoczynnej podmiany kodu, wejście nowej wersji po tapnięciu, przełączenie cache'u, przetrwanie danych, **nietykalność cache'u z migawką** |
   | offline na serwerze HTTP | 10 | rejestracja i przejęcie kontroli przez SW, zawartość cache, a potem — po **zgaszeniu serwera** — start apki, trwałość danych, parser i zapisywanie bez sieci, także w nowej karcie |
