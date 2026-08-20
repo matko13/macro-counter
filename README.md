@@ -22,7 +22,7 @@ hostingu dokłada instalację na ekranie głównym i pracę offline — patrz
 | ciągle to samo śniadanie | sekcja **Twoje najczęstsze** sama wypycha na wierzch to, co jesz realnie |
 | cały posiłek po kawałku | **zestawy** — raz zapisany posiłek dodajesz jednym tapnięciem |
 | wczorajszy dzień od nowa | **Powtórz wczoraj** kopiuje cały dzień |
-| swój cel kaloryczny | kalkulator (Mifflin-St Jeor) — same plusy/minusy, żadnej klawiatury |
+| swój cel kaloryczny | kalkulator (Mifflin-St Jeor) — same plusy/minusy, żadnej klawiatury; a po kilku tygodniach cel przelicza się z **Twoich** danych, patrz „Cel z pomiaru" |
 | przypisanie do posiłku | posiłek (śniadanie / obiad / kolacja / przekąska) zgaduje się z godziny, a tapnięcie wpisu pozwala go przenieść |
 | korektę pomyłki | każde dodanie i usunięcie ma **Cofnij** |
 
@@ -226,6 +226,41 @@ Reszta wynika z tego samego:
 - **oba motywy pełnoprawne** — ciemny nie jest przyciemnionym jasnym: ma własne
   wartości kolorów danych, sprawdzone pod kątem daltonizmu tak samo jak jasny
 
+## Cel z pomiaru, nie ze wzoru
+
+Mifflin-St Jeor opisuje statystycznego człowieka o Twoich wymiarach, a mnożnik
+aktywności (1,2 … 1,9) i tak zgadujesz sam — i to jest największa niepewność
+w całym rachunku: między „siedzącą" a „średnią" jest ~630 kcal dziennie.
+
+To można zmierzyć, zamiast zgadywać. Apka zna Twoje spożycie, więc wystarczy
+wiedzieć, co się z Tobą przy nim dzieje:
+
+```
+zapotrzebowanie = średnie spożycie − (zmiana wagi × 7700 kcal/kg)
+```
+
+7700 kcal/kg to przyjęta wartość energetyczna tkanki tłuszczowej. Wpisujesz
+wagę (stepper startuje od ostatniego pomiaru — waga zmienia się o grosze na
+dobę, więc to kilka tapnięć, nie wpisywanie), a po ~3 tygodniach karta
+**Ja → „Cel z Twoich danych"** pokazuje, ile realnie spalasz, i pozwala ustawić
+to jako cel jednym tapnięciem.
+
+Trzy rzeczy, na które trzeba tu uważać, i co apka z nimi robi:
+
+- **dzienna waga skacze o 1–2 kg** od wody, glikogenu i zawartości jelit.
+  Tempo bierze się więc z **regresji liniowej po wszystkich pomiarach**
+  z okna 28 dni, a nie z odjęcia dwóch liczb; na ekranie Dziś widać *trend*,
+  nie tylko goły pomiar
+- **niezapisane dni psują wynik mocniej niż waga** — średnia z połowy dni to
+  nie średnie spożycie, a wynik wychodzi wtedy zaniżony. Apka **odmawia**
+  policzenia, dopóki nie ma zapisu z ≥70% dni okna, i mówi, ilu jeszcze
+  brakuje. Dni pominięte wypisuje przy wyniku
+- **za mało danych to za mało danych**: minimum 3 pomiary wagi rozłożone na
+  ≥14 dni. Zamiast liczby dostajesz wtedy informację, czego brakuje
+
+Waga z ostatniego pomiaru podstawia się też do kalkulatora, żeby wzór nie
+liczył z liczby wpisanej ręcznie kiedyś dawno.
+
 ## Publikacja online
 
 Wdrażanie jest zautomatyzowane: `.github/workflows/pages.yml` po każdym wejściu
@@ -360,8 +395,8 @@ nie zalecenie medyczne.
   deuteranopia / trytanopia) w obu motywach; kolor nigdy nie jest jedynym
   nośnikiem znaczenia — każdy pasek i słupek ma etykietę tekstową.
 - Cele tapania ≥ 44 px (minimum z wytycznych Apple, pilnowane testem), widoczny focus klawiatury, `prefers-reduced-motion`.
-- Testy: **205 przypadków** przez Playwright (headless Chromium, część na
-  emulowanym iPhone 13), w trzynastu zestawach. Całość leży w `test/`
+- Testy: **229 przypadków** przez Playwright (headless Chromium, część na
+  emulowanym iPhone 13), w czternastu zestawach. Całość leży w `test/`
   i uruchamia się jednym poleceniem:
 
   ```
@@ -389,6 +424,7 @@ nie zalecenie medyczne.
   | danie a składnik | 11 | burger z wołowiną kontra chleb z masłem kontra przepis z ilościami, nazwy pięciowyrazowe, porcje jadalne owoców |
   | dotyk | 11 | żadna reguła `:hover` poza `@media (hover:hover)` (na iOS pierwsze tapnięcie na takim elemencie tylko „najeżdża", a klika dopiero drugie), pojedyncze tapnięcie zatwierdza posiłek i dodaje produkt, **każdy element dotykowy ma ≥44 px** na wszystkich ekranach |
   | podgląd bez dubli | 8 | spóźnione zamknięcie sesji mowy po zatwierdzeniu, zamknięcie arkusza w trakcie dyktowania, podwójne kliknięcie w „Dodaj" |
+  | waga i cel z pomiaru | 24 | wzór na zapotrzebowanie sprawdzony na czterech scenariuszach co do kilokalorii (spadek, utrzymanie, szybki spadek, przyrost), odporność tempa na szum ±0,9 kg, **odmowa policzenia** przy jednym pomiarze / za krótkim oknie / połowie dni bez zapisu, wiersz wagi na Dziś, karta kalibracji, ustawienie celu z pomiaru wraz z przeliczeniem makro, stepper startujący od ostatniego pomiaru, synchronizacja wagi z kalkulatorem, usuwanie pomiaru i obecność wagi w kopii zapasowej |
   | przenoszenie posiłku | 18 | wybór posiłku w arkuszu wpisu, zaznaczony ten właściwy, przeniesienie zmieniające grupę bez ruszania kalorii i gramatury, zniknięcie pustej grupy, trwałość po przeładowaniu, powrót do pierwotnego posiłku, rozdzielenie dwóch wpisów na dwie grupy z osobnymi sumami, oraz „Usuń" nadal działające w tym samym arkuszu |
   | ratunek danych | 20 | migawka w Cache Storage, propozycja przeniesienia przy pustym starcie (i to, że nic nie wczytuje się samo), „Nie teraz" nieusuwające migawki, „Wyczyść wszystko" usuwające ją naprawdę, wyjaśnienie w trybie z ekranu głównego pokazywane raz, brak zaczepki w zwykłej karcie, oraz uszkodzony zapis odkładany na bok zamiast nadpisania |
   | aktualizacja (prawdziwy SW) | 15 | brak paska przy pierwszej instalacji, pojawienie się po podmianie wdrożenia, brak samoczynnej podmiany kodu, wejście nowej wersji po tapnięciu, przełączenie cache'u, przetrwanie danych, **nietykalność cache'u z migawką** |

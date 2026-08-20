@@ -1104,12 +1104,13 @@ var ICON={
   check:'<path d="M5 12.5 9.5 17 19 7"/>',
   alert:'<path d="M12 4.2 21.2 19.8H2.8L12 4.2z"/><path d="M12 9.6v4.2M12 16.6v.2"/>',
   mic:'<path d="M12 4.2a3 3 0 0 1 3 3v5a3 3 0 0 1-6 0v-5a3 3 0 0 1 3-3z"/><path d="M5.5 11.2a6.5 6.5 0 0 0 13 0M12 17.7V20.5M9 20.5h6"/>',
-  stop:'<rect x="6.5" y="6.5" width="11" height="11" rx="2.5"/>'
+  stop:'<rect x="6.5" y="6.5" width="11" height="11" rx="2.5"/>',
+  scale:'<rect x="3.5" y="4.5" width="17" height="15" rx="3.5"/><path d="M8 9.2a5.5 5.5 0 0 1 8 0"/><path d="M12 12.6 14.4 9.6"/>'
 };
 
 /* ═══════════════════════ 3. stan ═══════════════════════ */
 var KEY="makro.v1";
-var S={log:{},custom:[],sets:[],usage:{},goal:{k:2200,p:150,c:230,f:70},profile:null,theme:"auto",split:"bal"};
+var S={log:{},custom:[],sets:[],usage:{},wt:{},goal:{k:2200,p:150,c:230,f:70},profile:null,theme:"auto",split:"bal"};
 var loadFailed=false;
 function load(){
   var raw=null;
@@ -1118,7 +1119,7 @@ function load(){
   try{
     var r=JSON.parse(raw);
     if(r&&typeof r==="object"){
-      ["log","custom","sets","usage","goal","profile","theme","split"].forEach(function(k){
+      ["log","custom","sets","usage","goal","profile","theme","split","wt"].forEach(function(k){
         if(r[k]!=null)S[k]=r[k];
       });
     }
@@ -1213,6 +1214,67 @@ function scale(food,g){
   var r=g/100;
   return {k:food.k*r,p:food.p*r,c:food.c*r,f:food.f*r};
 }
+/* ═══════════════════ waga: trend i realne zapotrzebowanie ═══════════════════
+   Wzór Mifflina daje zapotrzebowanie statystycznego człowieka o Twoich
+   wymiarach, a mnożnik aktywności zgadujesz sam. To można zmierzyć zamiast
+   zgadywać: przy znanym spożyciu tempo zmiany wagi mówi, ile realnie spalasz.
+
+       zapotrzebowanie = średnie spożycie − (zmiana wagi × 7700 kcal/kg)
+
+   7700 kcal na kilogram to przyjęta wartość dla tkanki tłuszczowej. Dzienna
+   waga skacze o 1–2 kg od wody i zawartości jelit, więc tempo bierzemy
+   z regresji liniowej po wszystkich pomiarach, a nie z odejmowania dwóch. */
+var KCAL_PER_KG=7700, WT_WINDOW=28;
+
+function wtDays(){
+  var out=[];
+  for(var k in S.wt){var v=+S.wt[k];if(isFinite(v)&&v>0)out.push({d:k,w:v})}
+  out.sort(function(a,b){return a.d<b.d?-1:a.d>b.d?1:0});
+  return out;
+}
+function dayNum(k){var p=k.split("-");return Math.round(Date.UTC(+p[0],+p[1]-1,+p[2])/86400000)}
+function lastWeight(){var a=wtDays();return a.length?a[a.length-1].w:null}
+
+/* Prosta regresja: nachylenie w kg/dobę i wygładzona waga na dziś. */
+function wtFit(win){
+  var all=wtDays();
+  if(!all.length)return null;
+  var end=dayNum(all[all.length-1].d);
+  var pts=all.filter(function(x){return end-dayNum(x.d)<win});
+  if(pts.length<2)return {n:pts.length,span:0,slope:0,now:pts.length?pts[0].w:null};
+  var xs=pts.map(function(x){return dayNum(x.d)}),ys=pts.map(function(x){return x.w});
+  var mx=xs.reduce(function(a,b){return a+b},0)/xs.length;
+  var my=ys.reduce(function(a,b){return a+b},0)/ys.length;
+  var num=0,den=0;
+  for(var i=0;i<xs.length;i++){num+=(xs[i]-mx)*(ys[i]-my);den+=(xs[i]-mx)*(xs[i]-mx)}
+  var slope=den?num/den:0;
+  return {n:pts.length,span:xs[xs.length-1]-xs[0]+1,slope:slope,
+          now:my+slope*(xs[xs.length-1]-mx),from:xs[0],to:xs[xs.length-1]};
+}
+
+/* Ile realnie spalasz — albo czego jeszcze brakuje, żeby to policzyć.
+   Największym źródłem błędu nie jest waga, tylko niezapisane dni: średnia
+   z połowy dni to nie średnie spożycie. Dlatego wymagamy pokrycia. */
+function tdeeReal(){
+  var f=wtFit(WT_WINDOW);
+  if(!f||f.n<3)return {ok:false,why:"wagi",need:3-((f&&f.n)||0),fit:f};
+  if(f.span<14)return {ok:false,why:"czas",need:14-f.span,fit:f};
+  var kcal=[],miss=0;
+  for(var d=f.from;d<=f.to;d++){
+    var key=dkey(new Date(d*86400000));
+    var es=S.log[key]||[];
+    var sum=es.reduce(function(a,e){return a+e.k},0);
+    if(sum>500)kcal.push(sum); else miss++;
+  }
+  var span=f.to-f.from+1;
+  if(kcal.length<Math.ceil(span*0.7))
+    return {ok:false,why:"dni",need:Math.ceil(span*0.7)-kcal.length,fit:f,logged:kcal.length,span:span};
+  var mean=kcal.reduce(function(a,b){return a+b},0)/kcal.length;
+  return {ok:true,fit:f,mean:Math.round(mean),logged:kcal.length,span:span,miss:miss,
+          tdee:Math.round((mean-f.slope*KCAL_PER_KG)/10)*10};
+}
+function kgWeek(slope){return Math.round(slope*7*100)/100}
+
 var SLOTS=["Śniadanie","Obiad","Kolacja","Przekąska"];
 function slot(ts){
   var h=new Date(ts).getHours();
@@ -1375,6 +1437,85 @@ function portionSheet(food,opts){
   });
 }
 
+/* Waga zmienia się o grosze na dobę, więc wpisywanie jej z klawiatury to
+   marnotrawstwo: startujemy od ostatniego pomiaru i dojeżdżamy plusem. */
+function weightSheet(){
+  var d=day, cur=S.wt[d]!=null?+S.wt[d]:(lastWeight()||(S.profile&&S.profile.w)||75);
+  openSheet(function(root){
+    var v=el("div",{class:"val"});
+    function paint(){
+      v.innerHTML="";
+      v.appendChild(el("span",{class:"num",text:cur.toFixed(1).replace(".",",")}));
+      v.appendChild(el("s",{text:"kg"}));
+    }
+    function nudge(x){cur=Math.round(Math.min(300,Math.max(25,cur+x))*10)/10;paint()}
+    paint();
+    root.appendChild(el("h3",{id:"sheetTitle",text:"Waga"}));
+    root.appendChild(el("div",{class:"per",text:
+      new Date(d+"T12:00:00").toLocaleDateString("pl-PL",{weekday:"long",day:"numeric",month:"long"})+
+      " · najlepiej rano, po toalecie, przed jedzeniem"}));
+    root.appendChild(el("div",{class:"field"},[el("label",{text:"Pomiar"}),
+      el("div",{class:"stepper"},[
+        el("button",{text:"−","aria-label":"Mniej",onclick:function(){nudge(-0.1)}}),
+        v,
+        el("button",{text:"+","aria-label":"Więcej",onclick:function(){nudge(0.1)}})
+      ])]));
+    var jump=el("div",{class:"seg"});
+    [-1,-0.5,0.5,1].forEach(function(x){
+      jump.appendChild(el("button",{text:(x>0?"+":"−")+String(Math.abs(x)).replace(".",","),
+        onclick:function(){nudge(x)}}));
+    });
+    root.appendChild(el("div",{class:"field"},[el("label",{text:"Skok"}),jump]));
+    var row=el("div",{class:"sheetrow"});
+    if(S.wt[d]!=null){
+      row.appendChild(el("button",{class:"btn danger",text:"Usuń pomiar",onclick:function(){
+        delete S.wt[d];syncProfileWeight();saveNow();closeSheet();render();toast("Pomiar usunięty");
+      }}));
+    }else{
+      row.appendChild(el("button",{class:"btn alt",text:"Anuluj",onclick:closeSheet}));
+    }
+    row.appendChild(el("button",{class:"btn",text:"Zapisz",onclick:function(){
+      S.wt[d]=cur;syncProfileWeight();saveNow();closeSheet();render();
+      toast("Waga zapisana: "+cur.toFixed(1).replace(".",",")+" kg");
+    }}));
+    root.appendChild(row);
+  });
+}
+/* Waga w kalkulatorze musi iść za pomiarem, inaczej wzór liczy z liczby
+   wpisanej kiedyś ręcznie i cicho się rozjeżdża z rzeczywistością. */
+function syncProfileWeight(){
+  var nw=lastWeight();
+  if(S.profile&&nw!=null)S.profile.w=nw;
+}
+
+/* Jedna linijka na ekranie Dziś. Trend jest ważniejszy niż sam pomiar:
+   pomiar skacze od wody i jedzenia, trend pokazuje kierunek. */
+function weightRow(){
+  var f=wtFit(WT_WINDOW), here=S.wt[day];
+  var kids=[el("span",{class:"ic"},[svg(ICON.scale)])];
+  if(here==null&&!f){
+    kids.push(el("span",{class:"tx"},[
+      el("b",{text:"Dodaj wagę"}),
+      el("s",{text:"kilka pomiarów i cel policzy się z Twoich danych, nie ze wzoru"})
+    ]));
+  }else{
+    var sub=[];
+    if(here==null)sub.push("dziś bez pomiaru");
+    if(f&&f.n>=2){
+      var kw=kgWeek(f.slope);
+      sub.push("trend "+f.now.toFixed(1).replace(".",",")+" kg");
+      sub.push((kw>0?"+":kw<0?"−":"±")+Math.abs(kw).toFixed(2).replace(".",",")+" kg/tyg");
+    }else{
+      sub.push("jeden pomiar — trend liczy się od dwóch");
+    }
+    kids.push(el("span",{class:"tx"},[
+      el("b",{text:"Waga · "+(here!=null?(+here).toFixed(1).replace(".",",")+" kg":"—")}),
+      el("s",{text:sub.join(" · ")})
+    ]));
+  }
+  return el("button",{class:"nlcard",onclick:weightSheet},kids);
+}
+
 function promptSheet(title,label,value,onOk){
   openSheet(function(root){
     root.appendChild(el("h3",{id:"sheetTitle",text:title}));
@@ -1464,6 +1605,7 @@ function viewToday(){
     ]));
   }
   wrap.appendChild(nlCard());
+  wrap.appendChild(weightRow());
   wrap.appendChild(el("div",{class:"sec"},[
     el("div",{class:"sechead"},[
       el("h3",{text:ranked().length?"Twoje najczęstsze":"Na start"}),
@@ -1788,6 +1930,44 @@ function viewMe(){
     }})
   ]));
 
+  /* Wzór opisuje statystycznego człowieka o Twoich wymiarach, a mnożnik
+     aktywności i tak zgadujesz. To samo można zmierzyć: przy znanym spożyciu
+     tempo zmiany wagi mówi, ile realnie spalasz. */
+  var R=tdeeReal();
+  var kal=[el("div",{class:"eyebrow",text:"Cel z Twoich danych"})];
+  if(R.ok){
+    var kw=kgWeek(R.fit.slope);
+    var aimK=Math.round((R.tdee*(1+((S.profile&&S.profile.aim)||0)))/10)*10;
+    kal.push(el("div",{class:"preview"},[
+      el("span",{class:"v num",text:fmt(R.tdee)}),
+      el("span",{class:"u",text:"kcal · tyle realnie spalasz"})
+    ]));
+    kal.push(el("div",{class:"note",html:
+      "Z <b class='num'>"+R.logged+"</b> "+plural(R.logged,"dnia","dni","dni")+
+      " zapisanego jedzenia (średnio <b class='num'>"+fmt(R.mean)+"</b> kcal) i tempa "+
+      "<b class='num'>"+(kw>0?"+":kw<0?"−":"±")+Math.abs(kw).toFixed(2).replace(".",",")+
+      "</b> kg na tydzień, na przestrzeni <b class='num'>"+R.span+"</b> dni."+
+      (R.miss?" Dni bez zapisu ("+R.miss+") są pominięte — jeśli w nich jadłeś, wynik jest zaniżony.":"")}));
+    kal.push(el("div",{class:"note",html:
+      "Wzór daje <b class='num'>"+fmt(calc())+"</b> kcal przy Twoim celu, pomiar — "+
+      "<b class='num'>"+fmt(aimK)+"</b> kcal. Różnica to Twój metabolizm i aktywność, "+
+      "których wzór nie zna."}));
+    kal.push(el("button",{class:"btn",text:"Ustaw cel z pomiaru: "+fmt(aimK)+" kcal",onclick:function(){
+      S.goal.k=aimK;applySplit();saveNow();render();
+      toast("Cel z pomiaru: "+fmt(aimK)+" kcal");
+    }}));
+  }else{
+    var need={wagi:"jeszcze "+R.need+" "+plural(R.need,"pomiar wagi","pomiary wagi","pomiarów wagi"),
+              czas:"jeszcze "+R.need+" "+plural(R.need,"dzień","dni","dni")+" odstępu między pierwszym a ostatnim pomiarem",
+              dni:"jeszcze "+R.need+" "+plural(R.need,"dzień","dni","dni")+" z zapisanym jedzeniem"}[R.why];
+    kal.push(el("div",{class:"note",html:
+      "Zamiast wierzyć wzorowi, można to zmierzyć: przy znanym spożyciu tempo zmiany "+
+      "wagi mówi, ile realnie spalasz. Potrzebuję do tego <b>"+need+"</b>."+
+      (R.why==="dni"?" Liczą się dni, w których zapisałeś cały dzień — średnia z połowy dni to nie średnie spożycie.":"")}));
+    kal.push(el("button",{class:"btn alt",text:"Wpisz wagę",onclick:function(){go("today");setTimeout(weightSheet,220)}}));
+  }
+  wrap.appendChild(el("div",{class:"card"},kal));
+
   var splitBox=el("div",{class:"seg"});
   Object.keys(SPLITS).forEach(function(k){
     var s=SPLITS[k];
@@ -1823,7 +2003,7 @@ function viewMe(){
           el("button",{class:"btn danger",text:"Usuń wszystko",onclick:function(){
             localStorage.removeItem(KEY);
             dropSnapshot();
-            S={log:{},custom:[],sets:[],usage:{},goal:{k:2200,p:150,c:230,f:70},profile:null,theme:S.theme,split:"bal"};
+            S={log:{},custom:[],sets:[],usage:{},wt:{},goal:{k:2200,p:150,c:230,f:70},profile:null,theme:S.theme,split:"bal"};
             closeSheet();day=dkey(new Date());render();toast("Wyczyszczone");
           }})
         ]));
@@ -1871,7 +2051,7 @@ function backupSheet(){
         try{
           var r=JSON.parse(ta.value);
           if(!r||typeof r!=="object")throw 0;
-          ["log","custom","sets","usage","goal","profile","theme","split"].forEach(function(k){if(r[k]!=null)S[k]=r[k]});
+          ["log","custom","sets","usage","goal","profile","theme","split","wt"].forEach(function(k){if(r[k]!=null)S[k]=r[k]});
           save();applyTheme();closeSheet();render();toast("Dane wczytane");
         }catch(e){toast("To nie wygląda na poprawną kopię")}
       }})
@@ -2684,7 +2864,7 @@ document.getElementById("themeBtn").addEventListener("click",function(){
 
 /* uchwyt dla testów — parser bywa jedyną częścią, którą warto sprawdzić
    bez klikania po ekranach */
-window.MAKRO={parse:parseMeal,alias:ALIAS,foods:allFoods,byId:byId,scale:scale,cats:CATS,dbg:{STOP:STOP,QUAL:QUAL}};
+window.MAKRO={parse:parseMeal,alias:ALIAS,foods:allFoods,byId:byId,scale:scale,cats:CATS,tdee:tdeeReal,wtFit:function(){return wtFit(WT_WINDOW)},dbg:{STOP:STOP,QUAL:QUAL}};
 
 /* Offline. Rejestrujemy service workera tylko wtedy, gdy strona jest
    hostowana i ma manifest — wersja jednoplikowa (Artifact, file://) nie ma
@@ -2763,7 +2943,7 @@ function transferSheet(sn,n){
       el("button",{class:"btn alt",text:"Nie teraz",onclick:closeSheet}),
       el("button",{class:"btn",text:"Przenieś tutaj",onclick:function(){
         var r=sn.data||{};
-        ["log","custom","sets","usage","goal","profile","theme","split"].forEach(function(k){
+        ["log","custom","sets","usage","goal","profile","theme","split","wt"].forEach(function(k){
           if(r[k]!=null)S[k]=r[k];
         });
         saveNow();applyTheme();closeSheet();day=dkey(new Date());render();
