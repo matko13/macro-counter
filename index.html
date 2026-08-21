@@ -1797,25 +1797,98 @@ function customSheet(opts){
   opts=opts||{};
   var base=opts.base;
   openSheet(function(root){
+    /* Etykiety odżywek, batonów i saszetek podają wartości NA PORCJĘ, nie na
+       100 g. Wymuszanie przeliczania w głowie to najkrótsza droga do złych
+       liczb w bazie, więc apka pyta, na co podane są wartości, i przelicza
+       sama. W bazie i tak siedzi wszystko na 100 g. */
+    var perPor=false;
     root.appendChild(el("h3",{id:"sheetTitle",text:"Własny produkt"}));
-    root.appendChild(el("div",{class:"per",text:base
-      ? "Wartości są przepisane z „"+base.n+"” — popraw te, które się różnią. Produkt zostanie w bazie na stałe."
-      : "Podaj wartości z etykiety, na 100 g. Raz wpisane — potem dodajesz jednym tapnięciem."}));
-    var f={},pre={n:opts.name||"",k:base?base.k:"",p:base?base.p:"",c:base?base.c:"",f:base?base.f:"",s:base?base.s:100};
-    [["n","Nazwa","text"],["k","kcal / 100 g","number"],["p","Białko / 100 g","number"],["c","Węglowodany / 100 g","number"],["f","Tłuszcz / 100 g","number"],["s","Twoja porcja (g)","number"]].forEach(function(x){
-      var i=el("input",{type:x[2],inputmode:x[2]==="number"?"decimal":null,value:pre[x[0]]});
-      f[x[0]]=i;
-      root.appendChild(el("div",{class:"field"},[el("label",{text:x[1]}),i]));
+    var per=el("div",{class:"per"});
+    root.appendChild(per);
+
+    var f={},lab={};
+    var pre={n:opts.name||"",k:base?base.k:"",p:base?base.p:"",c:base?base.c:"",f:base?base.f:"",
+             s:base?base.s:(opts.portion||100)};
+    var mode=el("div",{class:"seg"});
+    var out=el("div",{class:"note"});
+
+    function unitTxt(){return perPor?"porcję":"100 g"}
+    function paint(){
+      [].forEach.call(mode.children,function(b,i){
+        b.setAttribute("aria-pressed",(i===1)===perPor?"true":"false");
+      });
+      lab.k.textContent="kcal / "+unitTxt();
+      lab.p.textContent="Białko (g) / "+unitTxt();
+      lab.c.textContent="Węglowodany (g) / "+unitTxt();
+      lab.f.textContent="Tłuszcz (g) / "+unitTxt();
+      lab.s.textContent=perPor?"Ile waży porcja (g)":"Twoja porcja (g)";
+      per.textContent=base
+        ? "Wartości przepisane z „"+base.n+"” — popraw te, które się różnią. Produkt zostanie w bazie na stałe."
+        : (perPor
+          ? "Przepisz liczby wprost z etykiety, dla jednej porcji — apka przeliczy je na 100 g sama."
+          : "Podaj wartości z etykiety. Raz wpisane — potem dodajesz jednym tapnięciem.");
+      recalc();
+    }
+    /* Na bieżąco pokazujemy, co wyląduje w bazie — inaczej przeliczanie jest
+       magią, której nie da się sprawdzić. */
+    function factor(){
+      if(!perPor)return 1;
+      var g=+f.s.value;
+      return g>0?100/g:0;
+    }
+    function recalc(){
+      var fa=factor();
+      if(!perPor){out.textContent="";out.style.display="none";return}
+      out.style.display="";
+      if(!fa){out.textContent="Podaj jeszcze, ile gramów waży jedna porcja.";return}
+      var k=Math.round((+f.k.value||0)*fa);
+      var pp=Math.round((+f.p.value||0)*fa*10)/10;
+      var cc=Math.round((+f.c.value||0)*fa*10)/10;
+      var ff=Math.round((+f.f.value||0)*fa*10)/10;
+      out.innerHTML="W bazie zapisze się: <b class='num'>"+fmt(k)+"</b> kcal · B <b class='num'>"+
+        String(pp).replace(".",",")+"</b> · W <b class='num'>"+String(cc).replace(".",",")+
+        "</b> · T <b class='num'>"+String(ff).replace(".",",")+"</b> na 100 g, a porcja to <b class='num'>"+
+        fmt(+f.s.value||0)+" g</b>.";
+    }
+    [["100 g",false],["porcję",true]].forEach(function(o){
+      mode.appendChild(el("button",{text:o[0],onclick:function(){
+        if(o[1]&&!perPor&&(+f.s.value===100||!f.s.value))f.s.value="";
+        if(!o[1]&&perPor&&!f.s.value)f.s.value=100;
+        perPor=o[1];paint();
+        if(o[1])f.s.focus();
+      }}));
     });
+
+    [["n","Nazwa","text"],["k","kcal","number"],["p","Białko (g)","number"],
+     ["c","Węglowodany (g)","number"],["f","Tłuszcz (g)","number"],["s","Porcja (g)","number"]].forEach(function(x){
+      var i=el("input",{type:x[2],inputmode:x[2]==="number"?"decimal":null,value:pre[x[0]],
+        oninput:x[0]==="n"?null:recalc});
+      var l=el("label",{text:x[1]});
+      f[x[0]]=i;lab[x[0]]=l;
+      root.appendChild(el("div",{class:"field"},[l,i]));
+      if(x[0]==="n")root.appendChild(el("div",{class:"field"},[el("label",{text:"Wartości podane na"}),mode]));
+    });
+    root.appendChild(out);
+    paint();
+
     root.appendChild(el("div",{class:"sheetrow"},[
       el("button",{class:"btn alt",text:"Anuluj",onclick:closeSheet}),
       el("button",{class:"btn",text:"Zapisz",onclick:function(){
         var name=f.n.value.trim();
         if(!name)return f.n.focus();
+        var por=Math.max(1,+f.s.value||100);
+        if(perPor&&!(+f.s.value>0)){
+          out.textContent="Podaj jeszcze, ile gramów waży jedna porcja.";
+          return f.s.focus();
+        }
+        var fa=perPor?100/por:1;
         var food={id:"own-"+slug(name)+"-"+Date.now().toString(36),n:name,cat:"own",
-          k:+f.k.value||0,p:+f.p.value||0,c:+f.c.value||0,f:+f.f.value||0,
-          s:Math.max(1,+f.s.value||100),u:base?base.u:"g",pc:base?base.pc:0,own:true};
-        S.custom.push(food);save();closeSheet();
+          k:Math.round((+f.k.value||0)*fa*10)/10,
+          p:Math.round((+f.p.value||0)*fa*100)/100,
+          c:Math.round((+f.c.value||0)*fa*100)/100,
+          f:Math.round((+f.f.value||0)*fa*100)/100,
+          s:por,u:base?base.u:"g",pc:base?base.pc:0,own:true};
+        S.custom.push(food);saveNow();closeSheet();
         if(opts.onFood)opts.onFood(food);
         else{addEntry(food,food.s);render()}
       }})

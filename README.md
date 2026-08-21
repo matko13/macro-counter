@@ -28,7 +28,12 @@ hostingu dokłada instalację na ekranie głównym i pracę offline — patrz
 
 Klawiatura jest potrzebna dokładnie w dwóch miejscach: szukanie produktu
 (z pominięciem polskich znaków — `zolty` znajduje `Ser żółty`) i jednorazowe
-dodanie własnego produktu z etykiety.
+dodanie własnego produktu z etykiety. Przy tym drugim wybierasz, **na co
+podane są wartości** — na 100 g czy na porcję. Etykiety odżywek, batonów
+i saszetek podają je na porcję (miarka 30 g, baton 27 g), więc przepisujesz
+liczby wprost, a apka przelicza je na 100 g sama i pokazuje, co zapisze.
+Bez tego trzeba było dzielić w głowie, a pomyłka w takim przeliczeniu wchodzi
+do bazy na stałe i nikt jej potem nie wyłapie.
 
 ## Opis posiłku zdaniem
 
@@ -395,8 +400,8 @@ nie zalecenie medyczne.
   deuteranopia / trytanopia) w obu motywach; kolor nigdy nie jest jedynym
   nośnikiem znaczenia — każdy pasek i słupek ma etykietę tekstową.
 - Cele tapania ≥ 44 px (minimum z wytycznych Apple, pilnowane testem), widoczny focus klawiatury, `prefers-reduced-motion`.
-- Testy: **229 przypadków** przez Playwright (headless Chromium, część na
-  emulowanym iPhone 13), w czternastu zestawach. Całość leży w `test/`
+- Testy: **247 przypadków** przez Playwright (headless Chromium, część na
+  emulowanym iPhone 13), w piętnastu zestawach. Całość leży w `test/`
   i uruchamia się jednym poleceniem:
 
   ```
@@ -424,6 +429,7 @@ nie zalecenie medyczne.
   | danie a składnik | 11 | burger z wołowiną kontra chleb z masłem kontra przepis z ilościami, nazwy pięciowyrazowe, porcje jadalne owoców |
   | dotyk | 11 | żadna reguła `:hover` poza `@media (hover:hover)` (na iOS pierwsze tapnięcie na takim elemencie tylko „najeżdża", a klika dopiero drugie), pojedyncze tapnięcie zatwierdza posiłek i dodaje produkt, **każdy element dotykowy ma ≥44 px** na wszystkich ekranach |
   | podgląd bez dubli | 8 | spóźnione zamknięcie sesji mowy po zatwierdzeniu, zamknięcie arkusza w trakcie dyktowania, podwójne kliknięcie w „Dodaj" |
+  | własny produkt | 18 | wartości z etykiety podane na porcję przeliczone na 100 g (miarka 30 g i baton 27 g wracają w odczycie zgodne z etykietą), podgląd tego, co wyląduje w bazie, wyczyszczone domyślne 100 g przy przejściu na tryb porcji (inaczej ciche przeliczenie 1:1), odmowa zapisu bez wagi porcji i bez nazwy, oraz tryb „na 100 g" działający bez zmian |
   | waga i cel z pomiaru | 24 | wzór na zapotrzebowanie sprawdzony na czterech scenariuszach co do kilokalorii (spadek, utrzymanie, szybki spadek, przyrost), odporność tempa na szum ±0,9 kg, **odmowa policzenia** przy jednym pomiarze / za krótkim oknie / połowie dni bez zapisu, wiersz wagi na Dziś, karta kalibracji, ustawienie celu z pomiaru wraz z przeliczeniem makro, stepper startujący od ostatniego pomiaru, synchronizacja wagi z kalkulatorem, usuwanie pomiaru i obecność wagi w kopii zapasowej |
   | przenoszenie posiłku | 18 | wybór posiłku w arkuszu wpisu, zaznaczony ten właściwy, przeniesienie zmieniające grupę bez ruszania kalorii i gramatury, zniknięcie pustej grupy, trwałość po przeładowaniu, powrót do pierwotnego posiłku, rozdzielenie dwóch wpisów na dwie grupy z osobnymi sumami, oraz „Usuń" nadal działające w tym samym arkuszu |
   | ratunek danych | 20 | migawka w Cache Storage, propozycja przeniesienia przy pustym starcie (i to, że nic nie wczytuje się samo), „Nie teraz" nieusuwające migawki, „Wyczyść wszystko" usuwające ją naprawdę, wyjaśnienie w trybie z ekranu głównego pokazywane raz, brak zaczepki w zwykłej karcie, oraz uszkodzony zapis odkładany na bok zamiast nadpisania |
