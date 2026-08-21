@@ -1193,6 +1193,23 @@ function countEntries(log){
 window.addEventListener("pagehide",function(){flush(true)});
 document.addEventListener("visibilitychange",function(){if(document.hidden)flush(true)});
 function allFoods(){return DB.concat(S.custom)}
+/* Wpisy w dzienniku trzymają własną kopię wartości, więc zmiana produktu ich
+   nie rusza — i to jest dobrze, bo dziennik jest zapisem tego, co było.
+   Ale trzeba wiedzieć, ilu pozycji dotyczy zmiana, żeby móc o nią zapytać. */
+/* Nazwa produktu jest zapamiętana w dwóch miejscach: w indeksie fraz (IDX)
+   i w słowach do wyszukiwarki cache'owanych na samym produkcie (_sw). Oba
+   przeliczają się dopiero, gdy zmieni się LICZBA własnych produktów — przy
+   edycji liczba zostaje ta sama, więc trzeba je unieważnić wprost. Bez tego
+   po zmianie nazwy produkt znika z wyszukiwarki: szuka się starej nazwy. */
+function forgetFood(food){
+  if(food)delete food._sw;
+  IDX=null;
+}
+function entriesOf(fid){
+  var out=[];
+  for(var d in S.log)(S.log[d]||[]).forEach(function(e){if(e.fid===fid)out.push(e)});
+  return out;
+}
 function byId(id){
   var a=allFoods();
   for(var i=0;i<a.length;i++)if(a[i].id===id)return a[i];
@@ -1783,32 +1800,87 @@ function viewAdd(){
           el("b",{text:f.n}),
           el("s",{class:"num",text:addLabel(f)+" · "+fmt(m.k)+" kcal · B "+fmt(m.p)+" W "+fmt(m.c)+" T "+fmt(m.f)})
         ]),
+        f.own?el("button",{class:"iconbtn","aria-label":"Popraw albo usuń "+f.n,
+          onclick:function(){customSheet({edit:f})}},[svg(ICON.pen)]):null,
         el("button",{class:"addbtn","aria-label":"Dodaj "+f.n,onclick:function(){addEntry(f,f.s);renderChrome()}},[
           svg(ICON.plus),el("span",{class:"num",text:addLabel(f)})
         ])
-      ]));
+      ].filter(Boolean)));
     });
     holder.appendChild(el("button",{class:"btn alt",style:"margin-top:16px",text:"+ Dodaj własny produkt",onclick:function(){customSheet()}}));
   }
   repaintList();
   return wrap;
 }
+/* Usuwanie własnego produktu. Historia zostaje: wpisy w dzienniku i zestawy
+   trzymają własną kopię wartości, więc kasowanie produktu z bazy nie przepisuje
+   przeszłości — znika tylko z listy do dodawania. */
+function deleteCustom(food){
+  var hits=entriesOf(food.id).length;
+  openSheet(function(root){
+    root.appendChild(el("h3",{id:"sheetTitle",text:"Usunąć „"+food.n+"”?"}));
+    root.appendChild(el("div",{class:"per",text:hits
+      ? "Zniknie z listy produktów. "+hits+" "+plural(hits,"zapisana pozycja","zapisane pozycje","zapisanych pozycji")+
+        " w dzienniku "+(hits===1?"zostaje":"zostają")+" bez zmian — dziennik jest zapisem tego, co zjadłeś."
+      : "Zniknie z listy produktów. W dzienniku nie ma ani jednej pozycji z tym produktem."}));
+    root.appendChild(el("div",{class:"sheetrow"},[
+      el("button",{class:"btn alt",text:"Zostaw",onclick:closeSheet}),
+      el("button",{class:"btn danger",text:"Usuń",onclick:function(){
+        var i=S.custom.indexOf(food);
+        if(i<0)return closeSheet();
+        S.custom.splice(i,1);forgetFood(food);saveNow();closeSheet();render();
+        toast("Usunięto „"+food.n+"”","Cofnij",function(){
+          S.custom.splice(Math.min(i,S.custom.length),0,food);forgetFood(food);saveNow();render();
+        });
+      }})
+    ]));
+  });
+}
+
+/* Po zmianie wartości pytamy, co z już zapisanymi pozycjami. Cicha przeróbka
+   dziennika byłaby fałszowaniem historii, a cicha jej pominięcie zostawiałoby
+   dziś zapisany posiłek z błędnymi liczbami — więc decyzja należy do
+   użytkownika, z liczbą pozycji na wierzchu. */
+function askRecalc(food,hits){
+  openSheet(function(root){
+    var before=hits.reduce(function(a,e){return a+e.k},0);
+    var after=hits.reduce(function(a,e){return a+scale(food,e.g).k},0);
+    root.appendChild(el("h3",{id:"sheetTitle",text:"Przeliczyć zapisane pozycje?"}));
+    root.appendChild(el("div",{class:"per",text:
+      "„"+food.n+"” jest w "+hits.length+" "+plural(hits.length,"zapisanej pozycji","zapisanych pozycjach","zapisanych pozycjach")+
+      ". Nowe wartości dają dla nich "+fmt(after)+" kcal zamiast "+fmt(before)+
+      ". Dziennik jest zapisem tego, co było — przelicz tylko wtedy, gdy poprzednie liczby były po prostu błędne."}));
+    root.appendChild(el("div",{class:"sheetrow"},[
+      el("button",{class:"btn alt",text:"Zostaw jak było",onclick:function(){closeSheet();toast("Poprawione: "+food.n)}}),
+      el("button",{class:"btn",text:"Przelicz "+hits.length,onclick:function(){
+        hits.forEach(function(e){
+          var m=scale(food,e.g);
+          e.n=food.n;e.k=m.k;e.p=m.p;e.c=m.c;e.f=m.f;e.u=food.u;e.s=food.s;
+        });
+        saveNow();closeSheet();render();
+        toast("Przeliczone: "+hits.length+" "+plural(hits.length,"pozycja","pozycje","pozycji"));
+      }})
+    ]));
+  });
+}
+
 function customSheet(opts){
   opts=opts||{};
-  var base=opts.base;
+  var base=opts.base, ed=opts.edit;
   openSheet(function(root){
     /* Etykiety odżywek, batonów i saszetek podają wartości NA PORCJĘ, nie na
        100 g. Wymuszanie przeliczania w głowie to najkrótsza droga do złych
        liczb w bazie, więc apka pyta, na co podane są wartości, i przelicza
        sama. W bazie i tak siedzi wszystko na 100 g. */
     var perPor=false;
-    root.appendChild(el("h3",{id:"sheetTitle",text:"Własny produkt"}));
+    root.appendChild(el("h3",{id:"sheetTitle",text:ed?"Popraw produkt":"Własny produkt"}));
     var per=el("div",{class:"per"});
     root.appendChild(per);
 
     var f={},lab={};
-    var pre={n:opts.name||"",k:base?base.k:"",p:base?base.p:"",c:base?base.c:"",f:base?base.f:"",
-             s:base?base.s:(opts.portion||100)};
+    var src=ed||base;
+    var pre={n:ed?ed.n:(opts.name||""),k:src?src.k:"",p:src?src.p:"",c:src?src.c:"",f:src?src.f:"",
+             s:src?src.s:(opts.portion||100)};
     var mode=el("div",{class:"seg"});
     var out=el("div",{class:"note"});
 
@@ -1822,7 +1894,9 @@ function customSheet(opts){
       lab.c.textContent="Węglowodany (g) / "+unitTxt();
       lab.f.textContent="Tłuszcz (g) / "+unitTxt();
       lab.s.textContent=perPor?"Ile waży porcja (g)":"Twoja porcja (g)";
-      per.textContent=base
+      per.textContent=ed
+        ? "Zmiana dotyczy przyszłych dodań. Już zapisane pozycje w dzienniku zostają takie, jakie były — chyba że poproszisz o przeliczenie."
+        : base
         ? "Wartości przepisane z „"+base.n+"” — popraw te, które się różnią. Produkt zostanie w bazie na stałe."
         : (perPor
           ? "Przepisz liczby wprost z etykiety, dla jednej porcji — apka przeliczy je na 100 g sama."
@@ -1871,28 +1945,47 @@ function customSheet(opts){
     root.appendChild(out);
     paint();
 
-    root.appendChild(el("div",{class:"sheetrow"},[
-      el("button",{class:"btn alt",text:"Anuluj",onclick:closeSheet}),
-      el("button",{class:"btn",text:"Zapisz",onclick:function(){
-        var name=f.n.value.trim();
-        if(!name)return f.n.focus();
-        var por=Math.max(1,+f.s.value||100);
-        if(perPor&&!(+f.s.value>0)){
-          out.textContent="Podaj jeszcze, ile gramów waży jedna porcja.";
-          return f.s.focus();
-        }
-        var fa=perPor?100/por:1;
-        var food={id:"own-"+slug(name)+"-"+Date.now().toString(36),n:name,cat:"own",
-          k:Math.round((+f.k.value||0)*fa*10)/10,
-          p:Math.round((+f.p.value||0)*fa*100)/100,
-          c:Math.round((+f.c.value||0)*fa*100)/100,
-          f:Math.round((+f.f.value||0)*fa*100)/100,
-          s:por,u:base?base.u:"g",pc:base?base.pc:0,own:true};
-        S.custom.push(food);saveNow();closeSheet();
-        if(opts.onFood)opts.onFood(food);
-        else{addEntry(food,food.s);render()}
-      }})
-    ]));
+    var row=el("div",{class:"sheetrow"});
+    if(ed){
+      row.appendChild(el("button",{class:"btn danger",text:"Usuń produkt",onclick:function(){
+        closeSheet();deleteCustom(ed);
+      }}));
+    }else{
+      row.appendChild(el("button",{class:"btn alt",text:"Anuluj",onclick:closeSheet}));
+    }
+    row.appendChild(el("button",{class:"btn",text:ed?"Zapisz zmiany":"Zapisz",onclick:function(){
+      var name=f.n.value.trim();
+      if(!name)return f.n.focus();
+      var por=Math.max(1,+f.s.value||100);
+      if(perPor&&!(+f.s.value>0)){
+        out.textContent="Podaj jeszcze, ile gramów waży jedna porcja.";
+        return f.s.focus();
+      }
+      var fa=perPor?100/por:1;
+      var vals={n:name,
+        k:Math.round((+f.k.value||0)*fa*10)/10,
+        p:Math.round((+f.p.value||0)*fa*100)/100,
+        c:Math.round((+f.c.value||0)*fa*100)/100,
+        f:Math.round((+f.f.value||0)*fa*100)/100,
+        s:por};
+      if(ed){
+        var moved=["k","p","c","f"].some(function(x){return ed[x]!==vals[x]});
+        ["n","k","p","c","f","s"].forEach(function(x){ed[x]=vals[x]});
+        forgetFood(ed);
+        saveNow();closeSheet();render();
+        var hits=entriesOf(ed.id);
+        if(moved&&hits.length)askRecalc(ed,hits);
+        else toast("Poprawione: "+ed.n);
+        return;
+      }
+      var food={id:"own-"+slug(name)+"-"+Date.now().toString(36),n:name,cat:"own",
+        k:vals.k,p:vals.p,c:vals.c,f:vals.f,
+        s:por,u:base?base.u:"g",pc:base?base.pc:0,own:true};
+      S.custom.push(food);saveNow();closeSheet();
+      if(opts.onFood)opts.onFood(food);
+      else{addEntry(food,food.s);render()}
+    }}));
+    root.appendChild(row);
   });
 }
 

@@ -112,6 +112,103 @@ await inp(0).fill('');
 await p.locator('#sheet .sheetrow .btn').nth(1).tap(); await p.waitForTimeout(300);
 ok('bez nazwy też nie zapisuje', await p.locator('#sheet.on').count()===1);
 
+// ── poprawianie i usuwanie własnego produktu ───────────────────────────────
+/* Do tej pory własny produkt raz utworzony zostawał na zawsze — jedyną drogą
+   było „Wyczyść wszystko", czyli skasowanie całej historii razem z nim.
+   A błąd w wartościach własnego produktu liczy się dalej przy każdym dodaniu. */
+await wipe(); await p.reload(); await p.waitForTimeout(600);
+await openForm();
+await inp(0).fill('Odżywka test');
+await inp(1).fill('400'); await inp(2).fill('80'); await inp(3).fill('8'); await inp(4).fill('5');
+await inp(5).fill('30');
+await p.locator('#sheet .sheetrow .btn').last().tap(); await p.waitForTimeout(500);
+st = await store();
+ok('produkt utworzony i dodany do dnia  ['+Math.round(st.last.k)+' kcal]', Math.round(st.last.k)===120);
+
+await p.locator('.tab').nth(1).tap(); await p.waitForTimeout(300);
+await p.locator('.search input').fill('odżywka test'); await p.waitForTimeout(350);
+ok('własny produkt ma na wierszu przycisk poprawiania', await p.locator('.food .iconbtn').count()===1);
+await p.locator('.search input').fill('jajko'); await p.waitForTimeout(350);
+ok('a produkt z bazy go nie ma  ['+await p.locator('.food').count()+' wierszy]',
+   await p.locator('.food').count()>0 && await p.locator('.food .iconbtn').count()===0);
+
+await p.locator('.search input').fill('odżywka test'); await p.waitForTimeout(350);
+await p.locator('.food .iconbtn').first().tap(); await p.waitForTimeout(450);
+ok('otwiera się poprawianie, nie tworzenie nowego',
+   (await p.locator('#sheet h3').innerText())==='Popraw produkt');
+ok('z wypełnionymi wartościami  ['+await inp(1).inputValue()+' kcal, porcja '+await inp(5).inputValue()+']',
+   (await inp(1).inputValue())==='400' && (await inp(5).inputValue())==='30');
+
+await inp(1).fill('370');
+await p.locator('#sheet .sheetrow .btn').last().tap(); await p.waitForTimeout(500);
+ok('po zmianie wartości apka pyta o zapisane pozycje',
+   (await p.locator('#sheet h3').innerText())==='Przeliczyć zapisane pozycje?');
+const per = await p.locator('#sheet .per').innerText();
+ok('podaje ile pozycji i jaka będzie różnica  ['+per.slice(0,60)+'…]',
+   /1 zapisanej pozycji/.test(per) && /111/.test(per) && /120/.test(per));
+
+// „Zostaw jak było” nie rusza dziennika
+await p.locator('#sheet button:has-text("Zostaw jak było")').tap(); await p.waitForTimeout(400);
+st = await store();
+ok('„Zostaw jak było” nie przepisuje historii  ['+Math.round(st.last.k)+' kcal]', Math.round(st.last.k)===120);
+ok('ale produkt jest już poprawiony  ['+st.custom[0].k+' kcal/100 g]', st.custom[0].k===370);
+
+// nowe dodanie liczy się już nową wartością
+await p.locator('.tab').nth(1).tap(); await p.waitForTimeout(300);
+await p.locator('.search input').fill('odżywka test'); await p.waitForTimeout(350);
+await p.locator('.addbtn').first().tap(); await p.waitForTimeout(450);
+st = await store();
+ok('kolejne dodanie używa nowej wartości  ['+Math.round(st.last.k)+' kcal]', Math.round(st.last.k)===111);
+
+// przeliczenie historii, gdy poprzednie liczby były po prostu błędne
+await p.locator('.food .iconbtn').first().tap(); await p.waitForTimeout(450);
+await inp(1).fill('300');
+await p.locator('#sheet .sheetrow .btn').last().tap(); await p.waitForTimeout(500);
+await p.locator('#sheet button:has-text("Przelicz")').tap(); await p.waitForTimeout(500);
+st = await store();
+const allK = await p.evaluate(()=>Object.values(JSON.parse(localStorage.getItem('makro.v1')).log)
+  .flat().map(e=>Math.round(e.k)));
+ok('„Przelicz” poprawia wszystkie pozycje tego produktu  ['+allK.join(', ')+']',
+   allK.length===2 && allK.every(k=>k===90));
+
+// ── zmiana nazwy musi odświeżyć wyszukiwanie ───────────────────────────────
+/* Indeks przeliczał się, gdy zmieniała się LICZBA własnych produktów — przy
+   edycji liczba zostaje ta sama, więc stara nazwa dalej by się dopasowywała. */
+await p.locator('.food .iconbtn').first().tap(); await p.waitForTimeout(450);
+await inp(0).fill('Maślanka babci');
+await p.locator('#sheet .sheetrow .btn').last().tap(); await p.waitForTimeout(600);
+if (await p.locator('#sheet.on').count()) { await p.locator('#sheet .btn.alt').tap(); await p.waitForTimeout(300) }
+const found = await p.evaluate(()=>window.MAKRO.parse('maślanka babci').items.map(i=>i.f.n));
+ok('nowa nazwa jest do znalezienia od razu  ['+found.join(',')+']', found[0]==='Maślanka babci');
+const gone = await p.evaluate(()=>window.MAKRO.parse('odżywka test').items.map(i=>i.f.n));
+ok('a stara nazwa nie wskazuje już na ten produkt  ['+(gone.join(',')||'nic')+']',
+   !gone.some(n=>/Odżywka test/.test(n)));
+/* Wyszukiwarka to inna ścieżka niż parser i ma własny cache (słowa nazwy
+   zapamiętane na produkcie) — po zmianie nazwy produkt z niej wypadał. */
+await p.locator('.tab').nth(1).tap(); await p.waitForTimeout(300);
+await p.locator('.search input').fill('maślanka babci'); await p.waitForTimeout(400);
+ok('i wyszukiwarka też widzi nową nazwę  ['+(await p.locator('.food b').allInnerTexts()).join(', ')+']',
+   (await p.locator('.food b').allInnerTexts()).some(t=>t==='Maślanka babci'));
+
+// ── usuwanie ───────────────────────────────────────────────────────────────
+await p.locator('.tab').nth(1).tap(); await p.waitForTimeout(300);
+await p.locator('.search input').fill('maślanka babci'); await p.waitForTimeout(350);
+await p.locator('.food .iconbtn').first().tap(); await p.waitForTimeout(450);
+await p.locator('#sheet button:has-text("Usuń produkt")').tap(); await p.waitForTimeout(450);
+ok('usuwanie prosi o potwierdzenie', /Usunąć/.test(await p.locator('#sheet h3').innerText()));
+const warn = await p.locator('#sheet .per').innerText();
+ok('i mówi wprost, że dziennik zostaje  ['+warn.slice(0,50)+'…]',
+   /2 zapisane pozycje/.test(warn) && /bez zmian/.test(warn));
+await p.locator('#sheet button:has-text("Usuń")').last().tap(); await p.waitForTimeout(500);
+st = await store();
+ok('produkt zniknął z bazy  ['+st.custom.length+' własnych]', st.custom.length===0);
+const kept = await p.evaluate(()=>Object.values(JSON.parse(localStorage.getItem('makro.v1')).log).flat().length);
+ok('a historia została nietknięta  ['+kept+' pozycji w dzienniku]', kept===2);
+ok('jest Cofnij', /Cofnij/.test(await p.locator('.toast').innerText()));
+await p.locator('.toast button').tap(); await p.waitForTimeout(450);
+st = await store();
+ok('Cofnij przywraca produkt  ['+st.custom.length+' własnych]', st.custom.length===1);
+
 console.log('\n'+T.filter(t=>t.startsWith('PASS')).length+'/'+T.length+' PASS');
 console.log(errs.length?'błędy JS: '+errs.join('; '):'błędy JS: brak');
 await b.close();
