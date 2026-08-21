@@ -127,13 +127,13 @@ ok('produkt utworzony i dodany do dnia  ['+Math.round(st.last.k)+' kcal]', Math.
 
 await p.locator('.tab').nth(1).tap(); await p.waitForTimeout(300);
 await p.locator('.search input').fill('odżywka test'); await p.waitForTimeout(350);
-ok('własny produkt ma na wierszu przycisk poprawiania', await p.locator('.food .iconbtn').count()===1);
+ok('własny produkt ma na wierszu przycisk poprawiania', await p.locator('.food .edit').count()===1);
 await p.locator('.search input').fill('jajko'); await p.waitForTimeout(350);
 ok('a produkt z bazy go nie ma  ['+await p.locator('.food').count()+' wierszy]',
-   await p.locator('.food').count()>0 && await p.locator('.food .iconbtn').count()===0);
+   await p.locator('.food').count()>0 && await p.locator('.food .edit').count()===0);
 
 await p.locator('.search input').fill('odżywka test'); await p.waitForTimeout(350);
-await p.locator('.food .iconbtn').first().tap(); await p.waitForTimeout(450);
+await p.locator('.food .edit').first().tap(); await p.waitForTimeout(450);
 ok('otwiera się poprawianie, nie tworzenie nowego',
    (await p.locator('#sheet h3').innerText())==='Popraw produkt');
 ok('z wypełnionymi wartościami  ['+await inp(1).inputValue()+' kcal, porcja '+await inp(5).inputValue()+']',
@@ -161,7 +161,7 @@ st = await store();
 ok('kolejne dodanie używa nowej wartości  ['+Math.round(st.last.k)+' kcal]', Math.round(st.last.k)===111);
 
 // przeliczenie historii, gdy poprzednie liczby były po prostu błędne
-await p.locator('.food .iconbtn').first().tap(); await p.waitForTimeout(450);
+await p.locator('.food .edit').first().tap(); await p.waitForTimeout(450);
 await inp(1).fill('300');
 await p.locator('#sheet .sheetrow .btn').last().tap(); await p.waitForTimeout(500);
 await p.locator('#sheet button:has-text("Przelicz")').tap(); await p.waitForTimeout(500);
@@ -174,7 +174,7 @@ ok('„Przelicz” poprawia wszystkie pozycje tego produktu  ['+allK.join(', ')+
 // ── zmiana nazwy musi odświeżyć wyszukiwanie ───────────────────────────────
 /* Indeks przeliczał się, gdy zmieniała się LICZBA własnych produktów — przy
    edycji liczba zostaje ta sama, więc stara nazwa dalej by się dopasowywała. */
-await p.locator('.food .iconbtn').first().tap(); await p.waitForTimeout(450);
+await p.locator('.food .edit').first().tap(); await p.waitForTimeout(450);
 await inp(0).fill('Maślanka babci');
 await p.locator('#sheet .sheetrow .btn').last().tap(); await p.waitForTimeout(600);
 if (await p.locator('#sheet.on').count()) { await p.locator('#sheet .btn.alt').tap(); await p.waitForTimeout(300) }
@@ -193,7 +193,7 @@ ok('i wyszukiwarka też widzi nową nazwę  ['+(await p.locator('.food b').allIn
 // ── usuwanie ───────────────────────────────────────────────────────────────
 await p.locator('.tab').nth(1).tap(); await p.waitForTimeout(300);
 await p.locator('.search input').fill('maślanka babci'); await p.waitForTimeout(350);
-await p.locator('.food .iconbtn').first().tap(); await p.waitForTimeout(450);
+await p.locator('.food .edit').first().tap(); await p.waitForTimeout(450);
 await p.locator('#sheet button:has-text("Usuń produkt")').tap(); await p.waitForTimeout(450);
 ok('usuwanie prosi o potwierdzenie', /Usunąć/.test(await p.locator('#sheet h3').innerText()));
 const warn = await p.locator('#sheet .per').innerText();

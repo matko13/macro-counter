@@ -67,12 +67,12 @@ h1,h2,h3{margin:0;font-weight:700;letter-spacing:-.025em;text-wrap:balance}
 .num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
 /* dotyk zamiast hovera: wgniecenie pod palcem */
 .chip,.addbtn,.btn,.tab,.nav button,.seg button,.dictate,.nlmain,.nlmic,.rm,
-.stepper button,.iconbtn,.cat,.toggle,.entry,.food .body,.day,.update button{
+.stepper button,.iconbtn,.edit,.cat,.toggle,.entry,.food .body,.day,.update button{
   transition:transform .09s ease, background-color .15s ease, opacity .15s ease;
 }
 .chip:active,.addbtn:active,.btn:active,.nav button:active,.seg button:active,
 .dictate:active,.nlmain:active,.nlmic:active,.rm:active,.stepper button:active,
-.iconbtn:active,.cat:active,.toggle:active,.update button:active{transform:scale(.965)}
+.iconbtn:active,.edit:active,.cat:active,.toggle:active,.update button:active{transform:scale(.965)}
 
 /* ─────────── powłoka ─────────── */
 .app{
@@ -93,6 +93,15 @@ h1,h2,h3{margin:0;font-weight:700;letter-spacing:-.025em;text-wrap:balance}
   width:44px;height:44px;flex:none;display:grid;place-items:center;
   border-radius:var(--pill);background:var(--sunk);color:var(--ink-2);
 }
+/* svg() nie podaje wymiarów, więc bez tego glif rozciąga się na całe pole. */
+.iconbtn svg{width:19px;height:19px}
+/* Poprawianie własnego produktu to czynność drugorzędna wobec dodania go —
+   pole dotyku pełne (44 px), ale wygląd lekki: bez tła i w szarości. */
+.edit{
+  width:44px;height:44px;flex:none;display:grid;place-items:center;
+  border-radius:var(--pill);background:transparent;color:var(--ink-3);
+}
+.edit svg{width:17px;height:17px}
 main{flex:1;padding:6px 18px 28px;display:flex;flex-direction:column;gap:26px}
 
 /* ─────────── zakładki ─────────── */
@@ -263,7 +272,7 @@ main{flex:1;padding:6px 18px 28px;display:flex;flex-direction:column;gap:26px}
 
 /* ─────────── opis / dyktowanie ─────────── */
 .nlcard{background:var(--sunk);border-radius:var(--r-lg);display:flex;align-items:stretch;width:100%;overflow:hidden}
-.nlmain{flex:1;min-width:0;display:flex;align-items:center;gap:14px;padding:16px}
+.nlmain,.wtrow{flex:1;min-width:0;display:flex;align-items:center;gap:14px;padding:16px}
 .nlmic{flex:none;width:64px;display:grid;place-items:center;color:var(--ink)}
 .nlmic svg{width:24px;height:24px}
 .nlcard .ic{flex:none;width:38px;height:38px;border-radius:var(--pill);background:var(--bg);display:grid;place-items:center;color:var(--ink)}
@@ -357,6 +366,7 @@ body.hasupd .toast{bottom:calc(136px + env(safe-area-inset-bottom))}
    go "najeżdża", a dopiero drugie klika. */
 @media (hover:hover) and (pointer:fine){
 .iconbtn:hover{background:var(--tint);color:var(--ink)}
+  .edit:hover{background:var(--tint);color:var(--ink)}
 .nav button:hover:not(:disabled){background:var(--tint);color:var(--ink)}
 .chip:hover{background:var(--tint)}
 .entry:hover{background:var(--sunk)}
@@ -1537,7 +1547,9 @@ function weightRow(){
       el("s",{text:sub.join(" · ")})
     ]));
   }
-  return el("button",{class:"nlcard",onclick:weightSheet},kids);
+  /* Padding karty siedzi na .nlmain, nie na .nlcard — bez tej warstwy
+     treść kleiła się do krawędzi. */
+  return el("button",{class:"nlcard",onclick:weightSheet},[el("span",{class:"wtrow"},kids)]);
 }
 
 function promptSheet(title,label,value,onOk){
@@ -1807,7 +1819,7 @@ function viewAdd(){
           el("b",{text:f.n}),
           el("s",{class:"num",text:addLabel(f)+" · "+fmt(m.k)+" kcal · B "+fmt(m.p)+" W "+fmt(m.c)+" T "+fmt(m.f)})
         ]),
-        f.own?el("button",{class:"iconbtn","aria-label":"Popraw albo usuń "+f.n,
+        f.own?el("button",{class:"edit","aria-label":"Popraw albo usuń "+f.n,
           onclick:function(){customSheet({edit:f})}},[svg(ICON.pen)]):null,
         el("button",{class:"addbtn","aria-label":"Dodaj "+f.n,onclick:function(){addEntry(f,f.s);renderChrome()}},[
           svg(ICON.plus),el("span",{class:"num",text:addLabel(f)})
