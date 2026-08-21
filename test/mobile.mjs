@@ -70,6 +70,36 @@ const b=await chromium.launch();
     return out;
   });
   ok('każdy element dotykowy ma ≥44 px wysokości  ['+(tapz.join(', ')||'wszystkie ok')+']', tapz.length===0);
+  /* Toast miał left:50% bez right — a to przycina dostępną szerokość do POŁOWY
+     ekranu, więc max-width nigdy nie wchodził w grę i nazwa produktu łamała się
+     na cztery linijki w wąskim pasku. Geometria pasków cicho się psuje przy
+     każdej zmianie CSS, więc jest mierzona. */
+  const tgeo = async (msg,act) => {
+    await p.evaluate(a=>window.MAKRO.toast(a[0],a[1],()=>{}),[msg,act]);
+    await p.waitForTimeout(380);
+    return p.evaluate(()=>{
+      const t=document.querySelector('.toast'), r=t.getBoundingClientRect();
+      const tx=t.querySelector('.tx'), b=t.querySelector('button');
+      const lh=parseFloat(getComputedStyle(tx).lineHeight);
+      return {w:Math.round(r.width), left:Math.round(r.left),
+              right:Math.round(innerWidth-r.right), vw:innerWidth,
+              lines:Math.round(tx.getBoundingClientRect().height/lh),
+              btn:b?Math.round(b.getBoundingClientRect().width):0,
+              btnH:b?Math.round(b.getBoundingClientRect().height):0,
+              over:r.right>innerWidth+1||r.left<-1};
+    });
+  };
+  let g=await tgeo('Zapisane');
+  ok('toast zajmuje szerokość treści, nie połowę ekranu  ['+g.w+' z '+g.vw+' px]',
+     g.w>=g.vw-40 || g.w>=420);
+  ok('i ma równe marginesy  [lewy '+g.left+', prawy '+g.right+']', Math.abs(g.left-g.right)<=1);
+  g=await tgeo('Odżywka białkowa (wanilia) · 120 kcal','Cofnij');
+  ok('długa nazwa mieści się w dwóch linijkach  ['+g.lines+']', g.lines<=2);
+  ok('„Cofnij” nie jest ściśnięty  ['+g.btn+'×'+g.btnH+' px]', g.btn>=60 && g.btnH>=44);
+  ok('szerokość nie zmienia się od treści  ['+g.w+' px]', g.w>=g.vw-40 || g.w>=420);
+  g=await tgeo('Bardzo długa nazwa produktu która się nie zmieści w żadnym rozsądnym toaście · 1234 kcal','Cofnij');
+  ok('skrajnie długi komunikat nie rozpycha toastu poza ekran  ['+g.lines+' linijki]',
+     !g.over && g.lines<=2);
   ok('brak błędów JS na dotyku  ['+(errs.join(' | ')||'brak')+']', errs.length===0);
   await ctx.close();
 }

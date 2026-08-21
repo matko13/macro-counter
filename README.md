@@ -409,7 +409,7 @@ nie zalecenie medyczne.
   deuteranopia / trytanopia) w obu motywach; kolor nigdy nie jest jedynym
   nośnikiem znaczenia — każdy pasek i słupek ma etykietę tekstową.
 - Cele tapania ≥ 44 px (minimum z wytycznych Apple, pilnowane testem), widoczny focus klawiatury, `prefers-reduced-motion`.
-- Testy: **267 przypadków** przez Playwright (headless Chromium, część na
+- Testy: **273 przypadków** przez Playwright (headless Chromium, część na
   emulowanym iPhone 13), w piętnastu zestawach. Całość leży w `test/`
   i uruchamia się jednym poleceniem:
 
@@ -436,7 +436,7 @@ nie zalecenie medyczne.
   | spójność bazy | 18 | 651 produktów: unikalne identyfikatory i nazwy, znane kategorie i jednostki, porcje > 0, brak liczb ujemnych, **kcal zgodne z makro w regule 4/4/9**, alkohol liczony z 7 kcal/g, porcja poniżej 1100 kcal, owoce jako część jadalna, aliasy wskazujące na istniejące produkty i — najważniejsze — **każdy produkt osiągalny własną nazwą** |
   | dyktowanie | 18 | język i tryb nasłuchu, tekst częściowy na żywo, przejście do podglądu po stopie, zdanie bez przecinków, odmowa mikrofonu po polsku i bez pętli ponowień, samoczynny koniec frazy (iOS), wygaszenie mikrofonu przy zamknięciu arkusza, przeglądarka bez rozpoznawania mowy |
   | danie a składnik | 11 | burger z wołowiną kontra chleb z masłem kontra przepis z ilościami, nazwy pięciowyrazowe, porcje jadalne owoców |
-  | dotyk | 11 | żadna reguła `:hover` poza `@media (hover:hover)` (na iOS pierwsze tapnięcie na takim elemencie tylko „najeżdża", a klika dopiero drugie), pojedyncze tapnięcie zatwierdza posiłek i dodaje produkt, **każdy element dotykowy ma ≥44 px** na wszystkich ekranach |
+  | dotyk i geometria | 17 | żadna reguła `:hover` poza `@media (hover:hover)` (na iOS pierwsze tapnięcie na takim elemencie tylko „najeżdża", a klika dopiero drugie), pojedyncze tapnięcie zatwierdza posiłek i dodaje produkt, **każdy element dotykowy ma ≥44 px** na wszystkich ekranach, oraz szerokość toastu: pełna szerokość treści zamiast połowy ekranu, równe marginesy, najwyżej dwie linijki tekstu i nieściśnięty „Cofnij" |
   | podgląd bez dubli | 8 | spóźnione zamknięcie sesji mowy po zatwierdzeniu, zamknięcie arkusza w trakcie dyktowania, podwójne kliknięcie w „Dodaj" |
   | własny produkt | 38 | wartości z etykiety podane na porcję przeliczone na 100 g (miarka 30 g i baton 27 g wracają w odczycie zgodne z etykietą), podgląd tego, co wyląduje w bazie, wyczyszczone domyślne 100 g przy przejściu na tryb porcji (inaczej ciche przeliczenie 1:1), odmowa zapisu bez wagi porcji i bez nazwy, oraz tryb „na 100 g" działający bez zmian. Do tego poprawianie i usuwanie: ołówek tylko przy własnych produktach, pytanie o przeliczenie zapisanych pozycji z liczbą i różnicą kalorii, „zostaw jak było" nieruszające dziennika, kolejne dodanie liczone już nową wartością, usunięcie nietykające historii, Cofnij — i **odświeżenie obu cache'ów nazwy** (indeksu fraz i słów wyszukiwarki), bez którego po zmianie nazwy produkt z wyszukiwarki wypadał |
   | waga i cel z pomiaru | 24 | wzór na zapotrzebowanie sprawdzony na czterech scenariuszach co do kilokalorii (spadek, utrzymanie, szybki spadek, przyrost), odporność tempa na szum ±0,9 kg, **odmowa policzenia** przy jednym pomiarze / za krótkim oknie / połowie dni bez zapisu, wiersz wagi na Dziś, karta kalibracji, ustawienie celu z pomiaru wraz z przeliczeniem makro, stepper startujący od ostatniego pomiaru, synchronizacja wagi z kalkulatorem, usuwanie pomiaru i obecność wagi w kopii zapasowej |
