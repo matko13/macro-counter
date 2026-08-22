@@ -17,13 +17,13 @@ hostingu dokłada instalację na ekranie głównym i pracę offline — patrz
 | Zamiast wpisywać | Robisz to |
 | --- | --- |
 | cały złożony posiłek | **mówisz albo piszesz zdaniem** — patrz niżej |
-| nazwę i wartości produktu | 651 gotowych produktów z polskiej kuchni w bazie |
+| nazwę i wartości produktu | 655 gotowych produktów z polskiej kuchni w bazie |
 | gramaturę | każdy produkt ma domyślną porcję — tapnięcie w `+ 1 szt` / `+ 150 g` i gotowe. A gdy chcesz dokładnie: liczba w stepperze jest **polem do wpisania**, bo dojechanie plusem do 275 g to kilkadziesiąt tapnięć |
 | ciągle to samo śniadanie | sekcja **Twoje najczęstsze** sama wypycha na wierzch to, co jesz realnie |
 | cały posiłek po kawałku | **zestawy** — raz zapisany posiłek dodajesz jednym tapnięciem, a ołówek pozwala go poprawić: nazwa, gramatura każdego składnika, wyrzucenie i dorzucenie produktu |
 | wczorajszy dzień od nowa | **Powtórz wczoraj** kopiuje cały dzień |
 | swój cel kaloryczny | kalkulator (Mifflin-St Jeor) — same plusy/minusy, żadnej klawiatury; a po kilku tygodniach cel przelicza się z **Twoich** danych, patrz „Cel z pomiaru" |
-| przypisanie do posiłku | posiłek (śniadanie / obiad / kolacja / przekąska) zgaduje się z godziny, a tapnięcie wpisu pozwala go przenieść |
+| przypisanie do posiłku | posiłek (śniadanie / obiad / kolacja / przekąska) zgaduje się z godziny — a wybrać go można od razu przy dodawaniu albo zmienić później, tapnięciem wpisu |
 | korektę pomyłki | każde dodanie i usunięcie ma **Cofnij** |
 
 Klawiatura jest potrzebna dokładnie w dwóch miejscach: szukanie produktu
@@ -165,6 +165,10 @@ Rozstrzyga to, co jest w zdaniu, a nie kolejność w bazie:
 - **łącznik i obce znaki**: `chleb pszenno-żytni`, `crème brûlée`, `piña colada`
 - **słowo, które jest zarazem miarą**: `pomidory z puszki` to produkt,
   `puszka pomidorów` to miara — jedno nie psuje drugiego
+- **ta sama nazwa potoczna dla dwóch różnych rzeczy**: samo `kakao` to proszek
+  (343 kcal/100 g, liczony z łyżki), a `kakao na mleku` czy `kakao z mlekiem`
+  to napój (90 kcal/100 ml). Wcześniej w bazie był tylko napój, a alias „kakao”
+  prowadził do niego — więc „2 łyżki kakao” liczyły napój
 
 ### Przymiotniki, które zmieniają liczby
 
@@ -374,7 +378,7 @@ na historię niż zakładka.
 
 ## Szersza baza produktów
 
-Wbudowane 651 pozycji to produkty ogólne. Konkretny jogurt konkretnej marki
+Wbudowane 655 pozycji to produkty ogólne. Konkretny jogurt konkretnej marki
 dodaje się raz ręcznie i zostaje na stałe. Jeśli to za mało, są dwie drogi —
 różnią się nie ilością pracy, a tym, co się przy nich traci:
 
@@ -409,7 +413,7 @@ nie zalecenie medyczne.
   deuteranopia / trytanopia) w obu motywach; kolor nigdy nie jest jedynym
   nośnikiem znaczenia — każdy pasek i słupek ma etykietę tekstową.
 - Cele tapania ≥ 44 px (minimum z wytycznych Apple, pilnowane testem), widoczny focus klawiatury, `prefers-reduced-motion`.
-- Testy: **318 przypadków** przez Playwright (headless Chromium, część na
+- Testy: **330 przypadków** przez Playwright (headless Chromium, część na
   emulowanym iPhone 13), w siedemnastu zestawach. Całość leży w `test/`
   i uruchamia się jednym poleceniem:
 
@@ -433,7 +437,7 @@ nie zalecenie medyczne.
   | opis posiłku zdaniem | 19 | rozpoznanie składników, gramatura, nazwa dania, część zjedzona, posiłek i dzień ze zdania, korekta i usuwanie pozycji, zapis zestawu, cofnięcie całego posiłku, uczciwy komunikat przy zerowym wyniku |
   | przymiotniki i aliasy | 18 | „piwo zero" i „mleko odtłuszczone" trafiające w wariant, ostrzeżenie przy braku wariantu, „bez cukru" bez cukru, brak fałszywych trafień na zwykłych słowach, oraz przypadki, w których przymiotnik nie może sam zostać produktem (`ser wędzony`, `marchewka surowa`, `solone orzeszki`) |
   | warianty produktu | 18 | procent tłuszczu, warianty z nawiasu (suchy / ugotowany, grill / surowy), nazwy zaczynające się słowem pomijanym (`sos sojowy`), łącznik, obce znaki diakrytyczne, słowo będące zarazem miarą, całe zdanie z trzema wariantami naraz |
-  | spójność bazy | 18 | 651 produktów: unikalne identyfikatory i nazwy, znane kategorie i jednostki, porcje > 0, brak liczb ujemnych, **kcal zgodne z makro w regule 4/4/9**, alkohol liczony z 7 kcal/g, porcja poniżej 1100 kcal, owoce jako część jadalna, aliasy wskazujące na istniejące produkty i — najważniejsze — **każdy produkt osiągalny własną nazwą** |
+  | spójność bazy | 26 | 655 produktów: unikalne identyfikatory i nazwy, znane kategorie i jednostki, porcje > 0, brak liczb ujemnych, **kcal zgodne z makro w regule 4/4/9**, alkohol liczony z 7 kcal/g, porcja poniżej 1100 kcal, owoce jako część jadalna, aliasy wskazujące na istniejące produkty i — najważniejsze — **każdy produkt osiągalny własną nazwą** |
   | dyktowanie | 18 | język i tryb nasłuchu, tekst częściowy na żywo, przejście do podglądu po stopie, zdanie bez przecinków, odmowa mikrofonu po polsku i bez pętli ponowień, samoczynny koniec frazy (iOS), wygaszenie mikrofonu przy zamknięciu arkusza, przeglądarka bez rozpoznawania mowy |
   | danie a składnik | 11 | burger z wołowiną kontra chleb z masłem kontra przepis z ilościami, nazwy pięciowyrazowe, porcje jadalne owoców |
   | dotyk i geometria | 17 | żadna reguła `:hover` poza `@media (hover:hover)` (na iOS pierwsze tapnięcie na takim elemencie tylko „najeżdża", a klika dopiero drugie), pojedyncze tapnięcie zatwierdza posiłek i dodaje produkt, **każdy element dotykowy ma ≥44 px** na wszystkich ekranach, oraz szerokość toastu: pełna szerokość treści zamiast połowy ekranu, równe marginesy, najwyżej dwie linijki tekstu i nieściśnięty „Cofnij" |
@@ -442,7 +446,7 @@ nie zalecenie medyczne.
   | edycja zestawu | 23 | nazwa, gramatura składnika z przeliczeniem kcal, wyrzucenie i dorzucenie produktu przez szukanie, „Anuluj" naprawdę nic nie zmieniające (praca na kopii), odmowa zapisu pustego zestawu i bez nazwy, poprawiona wersja wpadająca do dnia, oraz składnik po usuniętym produkcie skalowany proporcjonalnie zamiast blokować edycję |
   | własny produkt | 38 | wartości z etykiety podane na porcję przeliczone na 100 g (miarka 30 g i baton 27 g wracają w odczycie zgodne z etykietą), podgląd tego, co wyląduje w bazie, wyczyszczone domyślne 100 g przy przejściu na tryb porcji (inaczej ciche przeliczenie 1:1), odmowa zapisu bez wagi porcji i bez nazwy, oraz tryb „na 100 g" działający bez zmian. Do tego poprawianie i usuwanie: ołówek tylko przy własnych produktach, pytanie o przeliczenie zapisanych pozycji z liczbą i różnicą kalorii, „zostaw jak było" nieruszające dziennika, kolejne dodanie liczone już nową wartością, usunięcie nietykające historii, Cofnij — i **odświeżenie obu cache'ów nazwy** (indeksu fraz i słów wyszukiwarki), bez którego po zmianie nazwy produkt z wyszukiwarki wypadał |
   | waga i cel z pomiaru | 24 | wzór na zapotrzebowanie sprawdzony na czterech scenariuszach co do kilokalorii (spadek, utrzymanie, szybki spadek, przyrost), odporność tempa na szum ±0,9 kg, **odmowa policzenia** przy jednym pomiarze / za krótkim oknie / połowie dni bez zapisu, wiersz wagi na Dziś, karta kalibracji, ustawienie celu z pomiaru wraz z przeliczeniem makro, stepper startujący od ostatniego pomiaru, synchronizacja wagi z kalkulatorem, usuwanie pomiaru i obecność wagi w kopii zapasowej |
-  | przenoszenie posiłku | 18 | wybór posiłku w arkuszu wpisu, zaznaczony ten właściwy, przeniesienie zmieniające grupę bez ruszania kalorii i gramatury, zniknięcie pustej grupy, trwałość po przeładowaniu, powrót do pierwotnego posiłku, rozdzielenie dwóch wpisów na dwie grupy z osobnymi sumami, oraz „Usuń" nadal działające w tym samym arkuszu |
+  | przenoszenie posiłku | 22 | wybór posiłku w arkuszu wpisu, zaznaczony ten właściwy, przeniesienie zmieniające grupę bez ruszania kalorii i gramatury, zniknięcie pustej grupy, trwałość po przeładowaniu, powrót do pierwotnego posiłku, rozdzielenie dwóch wpisów na dwie grupy z osobnymi sumami, oraz „Usuń" nadal działające w tym samym arkuszu. Do tego wybór posiłku już przy dodawaniu produktu z listy: zaznaczony jest ten zgadnięty z godziny, ale wpis ląduje w wybranym |
   | ratunek danych | 20 | migawka w Cache Storage, propozycja przeniesienia przy pustym starcie (i to, że nic nie wczytuje się samo), „Nie teraz" nieusuwające migawki, „Wyczyść wszystko" usuwające ją naprawdę, wyjaśnienie w trybie z ekranu głównego pokazywane raz, brak zaczepki w zwykłej karcie, oraz uszkodzony zapis odkładany na bok zamiast nadpisania |
   | aktualizacja (prawdziwy SW) | 15 | brak paska przy pierwszej instalacji, pojawienie się po podmianie wdrożenia, brak samoczynnej podmiany kodu, wejście nowej wersji po tapnięciu, przełączenie cache'u, przetrwanie danych, **nietykalność cache'u z migawką** |
   | offline na serwerze HTTP | 10 | rejestracja i przejęcie kontroli przez SW, zawartość cache, a potem — po **zgaszeniu serwera** — start apki, trwałość danych, parser i zapisywanie bez sieci, także w nowej karcie |
