@@ -244,6 +244,41 @@ Reszta wynika z tego samego:
 - **oba motywy pełnoprawne** — ciemny nie jest przyciemnionym jasnym: ma własne
   wartości kolorów danych, sprawdzone pod kątem daltonizmu tak samo jak jasny
 
+## Bank tygodnia
+
+Dzień to zły horyzont — nikt nie je równo. Zjadłeś 600 kcal pod celem w środę,
+w sobotę jest kolacja; fizjologicznie liczy się **deficyt tygodniowy**. Dlatego
+w karcie odczytu jest jedna linijka: *„Ten tydzień: +1250 kcal zapasu z 5
+zamkniętych dni"*, a tapnięcie rozpisuje tydzień dzień po dniu i mówi, po ile
+wychodzi na dzień, jeśli chcesz rozłożyć zapas równo.
+
+Dwie zasady, bez których byłaby to liczba wzięta z powietrza:
+
+- **liczą się tylko dni już zamknięte** — dzisiejszy jest w toku i wielka liczba
+  wyżej i tak go pokazuje
+- **dzień bez zapisu jest pomijany, nie liczony jako pełny zapas.** Dzień,
+  którego nie zapisałeś, to nie dzień, w którym nie jadłeś — ta sama zasada,
+  co przy liczeniu zapotrzebowania z wagi. Arkusz wypisuje, ile dni pominął
+
+W poniedziałek bank się nie pokazuje, bo nie ma jeszcze czego bilansować.
+
+## Czym domknąć dzień
+
+Wieczorem zostaje budżet i luka w białku. Apka ma 655 produktów i zna obie te
+liczby, więc **liczy to zamiast kazać zgadywać**: pokazuje kilka produktów
+z konkretną gramaturą („Twaróg chudy 200 g · B 40 g · 198 kcal"), a tapnięcie
+otwiera arkusz porcji z już wpisaną ilością.
+
+Samo „białko na kalorię" to zły ranking — wygrywa nim kolagen i pół kilo
+krewetek. Podpowiedź ma być **jedzeniem**, więc liczy się też, czy porcja jest
+normalna (nie więcej niż dwie domyślne), czy produkt bywa posiłkiem, i czy Ty go
+w ogóle jadasz — pozycje z Twojej historii idą wyżej. Jedna propozycja na
+kategorię, żeby nie wychodziło pięć rodzajów twarogu.
+
+Karta pojawia się, gdy dzień jest już za połowę (zjedzone 40% budżetu, co
+najmniej dwie pozycje) i brakuje co najmniej 15 g białka. Rano cały dzień jest
+„luką" i lista produktów wysokobiałkowych o ósmej byłaby szumem.
+
 ## Cel z pomiaru, nie ze wzoru
 
 Mifflin-St Jeor opisuje statystycznego człowieka o Twoich wymiarach, a mnożnik
@@ -413,8 +448,8 @@ nie zalecenie medyczne.
   deuteranopia / trytanopia) w obu motywach; kolor nigdy nie jest jedynym
   nośnikiem znaczenia — każdy pasek i słupek ma etykietę tekstową.
 - Cele tapania ≥ 44 px (minimum z wytycznych Apple, pilnowane testem), widoczny focus klawiatury, `prefers-reduced-motion`.
-- Testy: **333 przypadków** przez Playwright (headless Chromium, część na
-  emulowanym iPhone 13), w siedemnastu zestawach. Całość leży w `test/`
+- Testy: **361 przypadków** przez Playwright (headless Chromium, część na
+  emulowanym iPhone 13), w osiemnastu zestawach. Całość leży w `test/`
   i uruchamia się jednym poleceniem:
 
   ```
@@ -442,6 +477,7 @@ nie zalecenie medyczne.
   | danie a składnik | 11 | burger z wołowiną kontra chleb z masłem kontra przepis z ilościami, nazwy pięciowyrazowe, porcje jadalne owoców |
   | dotyk i geometria | 18 | żadna reguła `:hover` poza `@media (hover:hover)` (na iOS pierwsze tapnięcie na takim elemencie tylko „najeżdża", a klika dopiero drugie), pojedyncze tapnięcie zatwierdza posiłek i dodaje produkt, **każdy element dotykowy ma ≥44 px** na wszystkich ekranach, oraz szerokość toastu: pełna szerokość treści zamiast połowy ekranu, równe marginesy, najwyżej dwie linijki tekstu i nieściśnięty „Cofnij". Do tego **rozmiary wszystkich ikon na każdym ekranie** — funkcja rysująca ikony nie podaje wymiarów, a bezwymiarowy SVG w gridzie rozciąga się na całe pole, a we fleksie zapada do zera i po prostu znika |
   | podgląd bez dubli | 8 | spóźnione zamknięcie sesji mowy po zatwierdzeniu, zamknięcie arkusza w trakcie dyktowania, podwójne kliknięcie w „Dodaj" |
+  | tydzień i domykanie dnia | 28 | arytmetyka banku (suma odstępstw, dni zamknięte bez dzisiejszego, bank ujemny), **dzień bez zapisu pomijany a nie liczony jako zapas**, ukrycie banku w poniedziałek, rozpisanie tygodnia na siedem dni, oraz podpowiedzi domykające: budżet i luka białka, żadna nie przekracza budżetu, porcje realne, bez powtórzonych kategorii, historia podnosząca pozycje wyżej, trzy przypadki kiedy NIE podpowiadać, i odmiana jednostek. Zegar jest przypięty do znanej środy — zestaw zależny od dnia tygodnia sprawdzałby co innego każdego dnia |
   | wpisywanie liczb | 22 | gramatura wpisywana z klawiatury we wszystkich pięciu miejscach ze stepperem, **znak po znaku** (nie ustawieniem wartości na raz — to jedyny sposób, żeby złapać utratę fokusu), plus liczy dalej od wpisanej wartości, granice i śmieciowy tekst, przecinek w wadze, oraz wyłączony double-tap zoom na każdej kontrolce przy zachowanym zsuwaniu palcami |
   | edycja zestawu | 25 | nazwa, gramatura składnika z przeliczeniem kcal, wyrzucenie i dorzucenie produktu przez szukanie, „Anuluj" naprawdę nic nie zmieniające (praca na kopii), odmowa zapisu pustego zestawu i bez nazwy, poprawiona wersja wpadająca do dnia, oraz składnik po usuniętym produkcie skalowany proporcjonalnie zamiast blokować edycję |
   | własny produkt | 38 | wartości z etykiety podane na porcję przeliczone na 100 g (miarka 30 g i baton 27 g wracają w odczycie zgodne z etykietą), podgląd tego, co wyląduje w bazie, wyczyszczone domyślne 100 g przy przejściu na tryb porcji (inaczej ciche przeliczenie 1:1), odmowa zapisu bez wagi porcji i bez nazwy, oraz tryb „na 100 g" działający bez zmian. Do tego poprawianie i usuwanie: ołówek tylko przy własnych produktach, pytanie o przeliczenie zapisanych pozycji z liczbą i różnicą kalorii, „zostaw jak było" nieruszające dziennika, kolejne dodanie liczone już nową wartością, usunięcie nietykające historii, Cofnij — i **odświeżenie obu cache'ów nazwy** (indeksu fraz i słów wyszukiwarki), bez którego po zmianie nazwy produkt z wyszukiwarki wypadał |

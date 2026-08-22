@@ -145,6 +145,24 @@ main{flex:1;padding:6px 18px 28px;display:flex;flex-direction:column;gap:26px}
 .bignum .u{font-size:15px;font-weight:600;color:var(--ink-3);padding-bottom:7px}
 .bignum .cap{font-size:13px;color:var(--ink-3);padding-bottom:9px;margin-left:auto}
 .readout.over .bignum .v{color:var(--over)}
+/* Bilans tygodnia w karcie odczytu: jedna linijka, bo to kontekst dla wielkiej
+   liczby wyżej, a nie osobny temat. */
+.wkbank{display:flex;align-items:center;gap:8px;width:100%;margin-top:12px;
+  padding:11px 12px;border-radius:var(--r-sm);background:var(--tint);
+  font-size:13.5px;color:var(--ink-2);text-align:left}
+.wkbank b{color:var(--ink);font-weight:700}
+.wkbank .go{margin-left:auto;flex:none;color:var(--ink-3)}
+.wkbank .go svg{width:15px;height:15px}
+/* Podpowiedzi domykające dzień — lista produktów z gramaturą. */
+.closer{background:var(--sunk);border-radius:var(--r-lg);padding:16px;display:flex;
+  flex-direction:column;gap:10px}
+.closer .hd b{display:block;font-size:16px;font-weight:600}
+.closer .hd s{display:block;text-decoration:none;font-size:13px;color:var(--ink-3);margin-top:2px}
+.closer .opt{display:flex;align-items:center;gap:10px;padding:11px 13px;border-radius:var(--r-sm);
+  background:var(--bg);text-align:left;width:100%}
+.closer .opt .n{flex:1;min-width:0;font-size:15px;font-weight:500}
+.closer .opt .n s{display:block;text-decoration:none;font-size:12.5px;color:var(--ink-3);font-weight:400;margin-top:1px}
+.closer .opt .kc{flex:none;font-size:14px;font-weight:700}
 .sub{font-size:14px;color:var(--ink-3);display:flex;gap:6px;flex-wrap:wrap;margin-top:-4px}
 .sub b{font-weight:600;color:var(--ink-2)}
 .gauge{position:relative;height:10px;background:var(--sunk);border-radius:var(--pill);overflow:hidden}
@@ -1280,6 +1298,84 @@ function totals(k){
   entries(k).forEach(function(e){t.k+=e.k;t.p+=e.p;t.c+=e.c;t.f+=e.f});
   return t;
 }
+/* ═══════════════ bank tygodnia i domykanie dnia ═══════════════
+   Dzień to zły horyzont: nikt nie je równo, a fizjologicznie liczy się deficyt
+   tygodniowy. Bank pokazuje, ile zostało zapasu z dni już zamkniętych — dzięki
+   temu sobotnia kolacja przestaje być porażką, a staje się wydatkiem z konta.
+
+   Dni BEZ ZAPISU są pomijane, a nie liczone jako pełny zapas: dzień, którego
+   nie zapisałeś, to nie dzień, w którym nie jadłeś. To ta sama zasada, co przy
+   liczeniu zapotrzebowania z wagi. */
+function weekStart(k){
+  var d=parseKey(k), dow=d.getDay();      /* 0 = niedziela */
+  return shiftKey(k,-((dow+6)%7));        /* tydzień od poniedziałku */
+}
+function weekBank(k){
+  var mon=weekStart(k), days=[], i, key;
+  for(i=0;i<7;i++)days.push(shiftKey(mon,i));
+  var idx=days.indexOf(k);
+  var closed=[], bank=0, skipped=0;
+  for(i=0;i<idx;i++){
+    key=days[i];
+    var eaten=totals(key).k;
+    if(!entries(key).length){skipped++;continue}
+    closed.push({d:key,eaten:eaten,diff:S.goal.k-eaten});
+    bank+=S.goal.k-eaten;
+  }
+  var leftDays=7-idx;                     /* z dzisiejszym włącznie */
+  return {days:days,from:mon,to:days[6],closed:closed,skipped:skipped,
+          bank:Math.round(bank),leftDays:leftDays,
+          perDay:Math.round(S.goal.k+bank/leftDays)};
+}
+
+/* Wieczorem zostaje budżet i luka w białku. Apka ma 655 produktów i zna oba te
+   liczby, więc może to policzyć zamiast kazać zgadywać.
+
+   Samo „białko na kalorię” to zły ranking — wygrywa nim kolagen i pół kilo
+   krewetek. Podpowiedź musi być JEDZENIEM, więc liczy się też, czy porcja jest
+   normalna, czy produkt bywa posiłkiem i czy Ty go w ogóle jadasz. */
+var CLOSE_PRIOR={mieso:1,nabial:1,straczkowe:.9,gotowe:.65,zboza:.5,supl:.55,
+                 tluszcze:.4,napoje:.35,warzywa:.3,owoce:.2,slodycze:.1,own:.9};
+function closeDay(k){
+  var t=totals(k), G=S.goal;
+  var room=Math.round(G.k-t.k), need=Math.round(G.p-t.p);
+  var out={room:room,need:need,picks:[]};
+  if(room<80||need<8)return out;    /* nie ma czego domykać */
+  var use=S.usage||{};
+  allFoods().forEach(function(f){
+    if(f.p<4)return;                /* nie proponujemy samych węgli */
+    /* Ile trzeba, by domknąć lukę — ale nie więcej niż dwie porcje,
+       bo podpowiedź „450 g krewetek” to nie podpowiedź. */
+    var g=Math.min(f.s*2,Math.max(f.s*0.5,need*100/f.p));
+    var m=scale(f,g);
+    if(m.k>room){
+      g=room*100/f.k;
+      if(g<f.s*0.5)return;
+      m=scale(f,g);
+    }
+    var step=(f.u==="g"||f.u==="ml")?10:Math.max(1,Math.round(f.s/2));
+    g=Math.max(step,Math.round(g/step)*step);
+    m=scale(f,g);
+    if(m.k>room||m.p<8)return;
+    var practical=1/(1+Math.abs(g/f.s-1));           /* porcja blisko domyślnej */
+    var density=m.p/Math.max(1,m.k);                 /* białko na kalorię */
+    var covers=Math.min(m.p,need)/need;              /* ile luki domyka */
+    var known=Math.min((use[f.id]||{}).n||0,8)/8;    /* czy to jadasz */
+    var prior=CLOSE_PRIOR[f.cat]||.5;
+    out.picks.push({f:f,g:g,k:m.k,p:m.p,
+      score:(density*300+covers*60)*practical*(0.7+0.3*prior)*(1+0.6*known)});
+  });
+  out.picks.sort(function(a,b){return b.score-a.score});
+  /* Jeden produkt na kategorię — inaczej wychodzi pięć rodzajów twarogu. */
+  var seen={},uniq=[];
+  out.picks.forEach(function(x){
+    if(seen[x.f.cat])return;
+    seen[x.f.cat]=1;uniq.push(x);
+  });
+  out.picks=uniq.slice(0,4);
+  return out;
+}
+
 function scale(food,g){
   var r=g/100;
   return {k:food.k*r,p:food.p*r,c:food.c*r,f:food.f*r};
@@ -1357,14 +1453,35 @@ function slot(ts){
 function slotOf(e){return e.sl||slot(e.t)}
 function pieceWeight(food){return food.pc||food.s}
 function bump(id){var u=S.usage[id]||{n:0,last:0};u.n++;u.last=Date.now();S.usage[id]=u}
+/* Jednostki domowe odmieniają się: „2 łyżki”, nie „2 łyżka”. Kolumny to
+   liczba pojedyncza, 2–4, 5 i więcej, oraz dopełniacz dla ułamków („½ łyżki”). */
+var UNITF={
+  "szt":       ["szt","szt","szt","szt"],
+  "kromka":    ["kromka","kromki","kromek","kromki"],
+  "garść":     ["garść","garście","garści","garści"],
+  "łyżka":     ["łyżka","łyżki","łyżek","łyżki"],
+  "łyżeczka":  ["łyżeczka","łyżeczki","łyżeczek","łyżeczki"],
+  "porcja":    ["porcja","porcje","porcji","porcji"],
+  "miarka":    ["miarka","miarki","miarek","miarki"],
+  "ząbek":     ["ząbek","ząbki","ząbków","ząbka"]
+};
+function unitWord(u,q){
+  var f=UNITF[u];
+  if(!f)return u;
+  if(q!==Math.round(q))return f[3];          /* ułamek → dopełniacz */
+  var n=Math.abs(Math.round(q));
+  if(n===1)return f[0];
+  if(n%10>=2&&n%10<=4&&(n%100<12||n%100>14))return f[1];
+  return f[2];
+}
 function unitLabel(food,g){
   if(food.u==="g"||food.u==="ml")return fmt(g)+" "+food.u;
   var q=g/food.s, s=q===1?"1":(Math.abs(q-0.5)<0.01?"½":(Math.abs(q-1.5)<0.01?"1½":String(Math.round(q*10)/10).replace(".",",")));
-  return s+" "+food.u+" · "+fmt(g)+" g";
+  return s+" "+unitWord(food.u,q)+" · "+fmt(g)+" g";
 }
 function addLabel(food){
   if(food.u==="g"||food.u==="ml")return fmt(food.s)+" "+food.u;
-  return "1 "+food.u;
+  return "1 "+unitWord(food.u,1);
 }
 function pushEntry(dk,food,g,sl,tOff){
   var m=scale(food,g);
@@ -1620,6 +1737,38 @@ function weightRow(){
   return el("button",{class:"nlcard",onclick:weightSheet},[el("span",{class:"wtrow"},kids)]);
 }
 
+/* Bank bez rozpisania na dni to liczba wzięta z powietrza — arkusz pokazuje,
+   skąd się wzięła, i które dni zostały pominięte. */
+function weekSheet(wb){
+  openSheet(function(root){
+    root.appendChild(el("h3",{id:"sheetTitle",text:"Ten tydzień"}));
+    root.appendChild(el("div",{class:"per",text:
+      "Od poniedziałku. Liczą się tylko dni z zapisem — dzień, którego nie "+
+      "zapisałeś, to nie dzień, w którym nie jadłeś."}));
+    wb.days.forEach(function(k,i){
+      var has=entries(k).length, eaten=totals(k).k, diff=S.goal.k-eaten;
+      var isDay=k===day, future=k>dkey(new Date());
+      var right=has?(diff>=0?"+":"−")+fmt(Math.abs(diff)):(future?"—":"bez zapisu");
+      root.appendChild(el("div",{class:"nlrow"},[
+        el("span",{class:"n"},[
+          el("b",{text:DOW[parseKey(k).getDay()]+(isDay?" · ten dzień":"")}),
+          el("s",{text:has?fmt(eaten)+" z "+fmt(S.goal.k)+" kcal":"—"})
+        ]),
+        el("span",{class:"kc num",style:has?(diff>=0?"":"color:var(--over)"):"color:var(--ink-3);font-weight:500",
+          text:right})
+      ]));
+    });
+    root.appendChild(el("div",{class:"note",html:
+      "Bilans: <b class='num'>"+(wb.bank>=0?"+":"−")+fmt(Math.abs(wb.bank))+"</b> kcal. "+
+      "Zostały "+wb.leftDays+" "+plural(wb.leftDays,"dzień","dni","dni")+
+      ", czyli po <b class='num'>"+fmt(wb.perDay)+"</b> kcal, jeśli chcesz to rozłożyć równo."+
+      (wb.skipped?" Dni bez zapisu pominięte: "+wb.skipped+".":"")}));
+    root.appendChild(el("div",{class:"sheetrow"},[
+      el("button",{class:"btn",text:"Rozumiem",onclick:closeSheet})
+    ]));
+  });
+}
+
 function promptSheet(title,label,value,onOk){
   openSheet(function(root){
     root.appendChild(el("h3",{id:"sheetTitle",text:title}));
@@ -1669,6 +1818,17 @@ function viewToday(){
     el("div",{class:"sub",html:"<b class='num'>"+fmt(t.k)+"</b> z <b class='num'>"+fmt(G.k)+"</b> kcal"+(entries(day).length?" · "+entries(day).length+" "+plural(entries(day).length,"pozycja","pozycje","pozycji"):"")}),
     gauge
   ]);
+  /* Dzień to zły horyzont — liczy się bilans tygodnia. */
+  var wb=weekBank(day);
+  if(wb.closed.length){
+    var plus=wb.bank>=0;
+    readout.appendChild(el("button",{class:"wkbank",onclick:function(){weekSheet(wb)}},[
+      el("span",{html:"Ten tydzień: <b>"+(plus?"+":"−")+fmt(Math.abs(wb.bank))+" kcal</b> "+
+        (plus?"zapasu":"do odrobienia")+" z "+wb.closed.length+" "+
+        plural(wb.closed.length,"zamkniętego dnia","zamkniętych dni","zamkniętych dni")}),
+      el("span",{class:"go"},[svg(ICON.right)])
+    ]));
+  }
   wrap.appendChild(readout);
 
   /* makro */
@@ -1709,6 +1869,31 @@ function viewToday(){
     ]));
   }
   wrap.appendChild(nlCard());
+  /* Pokazujemy dopiero, gdy dzień jest w toku i naprawdę jest co domykać: rano
+     cały dzień jest „luką”, a lista produktów wysokobiałkowych o ósmej to szum.
+     Progiem jest zjedzone 40% budżetu i co najmniej dwie pozycje — czyli dzień
+     za połowę, nie kalendarzowa godzina, bo dawny dzień też da się oglądać. */
+  var cd=closeDay(day);
+  if(entries(day).length>=2&&cd.picks.length&&cd.need>=15&&cd.room<=G.k*0.6){
+    var box=el("div",{class:"closer"},[
+      el("div",{class:"hd"},[
+        el("b",{text:"Czym domknąć dzień"}),
+        el("s",{text:"zostało "+fmt(cd.room)+" kcal i "+fmt(cd.need)+" g białka"})
+      ])
+    ]);
+    cd.picks.forEach(function(x){
+      box.appendChild(el("button",{class:"opt",onclick:function(){
+        portionSheet(x.f,{g:x.g});
+      }},[
+        el("span",{class:"n"},[
+          el("span",{text:x.f.n}),
+          el("s",{text:unitLabel(x.f,x.g)+" · B "+fmt(x.p)+" g"})
+        ]),
+        el("span",{class:"kc num",text:fmt(x.k)+" kcal"})
+      ]));
+    });
+    wrap.appendChild(box);
+  }
   wrap.appendChild(weightRow());
   wrap.appendChild(el("div",{class:"sec"},[
     el("div",{class:"sechead"},[
@@ -3246,7 +3431,7 @@ document.getElementById("themeBtn").addEventListener("click",function(){
 
 /* uchwyt dla testów — parser bywa jedyną częścią, którą warto sprawdzić
    bez klikania po ekranach */
-window.MAKRO={parse:parseMeal,alias:ALIAS,foods:allFoods,byId:byId,scale:scale,cats:CATS,tdee:tdeeReal,toast:toast,wtFit:function(){return wtFit(WT_WINDOW)},dbg:{STOP:STOP,QUAL:QUAL}};
+window.MAKRO={parse:parseMeal,alias:ALIAS,foods:allFoods,byId:byId,scale:scale,cats:CATS,tdee:tdeeReal,toast:toast,unitLabel:unitLabel,week:function(){return weekBank(dkey(new Date()))},close:function(){return closeDay(dkey(new Date()))},wtFit:function(){return wtFit(WT_WINDOW)},dbg:{STOP:STOP,QUAL:QUAL}};
 
 /* Offline. Rejestrujemy service workera tylko wtedy, gdy strona jest
    hostowana i ma manifest — wersja jednoplikowa (Artifact, file://) nie ma
