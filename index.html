@@ -253,8 +253,25 @@ main{flex:1;padding:6px 18px 28px;display:flex;flex-direction:column;gap:26px}
 .stepper{display:flex;align-items:center;gap:12px}
 .stepper button{width:44px;height:44px;flex:none;display:grid;place-items:center;border-radius:var(--pill);background:var(--tint);font-size:22px;font-weight:500}
 .card .stepper button{background:var(--bg)}
-.stepper .val{flex:1;text-align:center;font-size:21px;font-weight:700;letter-spacing:-.03em}
-.stepper .val s{text-decoration:none;font-size:13px;color:var(--ink-3);font-weight:500;margin-left:4px}
+.stepper .val{flex:1;display:flex;align-items:baseline;justify-content:center;gap:7px;
+  text-align:center;font-size:21px;font-weight:700;letter-spacing:-.03em}
+.stepper .val s{text-decoration:none;font-size:13px;color:var(--ink-3);font-weight:500;flex:none}
+/* Liczba jest polem do wpisania, nie tylko wyświetlaczem: dojeżdżanie plusem
+   do 200 g to czterdzieści tapnięć. Wygląda jak tekst, działa jak input. */
+.val input,.nlrow .g .v input{
+  font:inherit;color:inherit;letter-spacing:inherit;text-align:center;
+  background:transparent;border:0;padding:0;margin:0;min-width:0;
+  /* To pole jest celem tapnięcia, więc obowiązuje je to samo minimum co
+     przyciski — 44 px. Stepper i tak jest tej wysokości. */
+  min-height:44px;
+  -moz-appearance:textfield;
+}
+.val input::-webkit-outer-spin-button,.val input::-webkit-inner-spin-button,
+.nlrow .g .v input::-webkit-outer-spin-button,.nlrow .g .v input::-webkit-inner-spin-button{
+  -webkit-appearance:none;margin:0;
+}
+.stepper .val input{width:3.9em}
+.nlrow .g .v input{width:3.4em}
 .btn{
   display:flex;align-items:center;justify-content:center;gap:8px;padding:15px 18px;
   border-radius:var(--r-sm);background:var(--accent);color:var(--accent-ink);
@@ -302,7 +319,8 @@ main{flex:1;padding:6px 18px 28px;display:flex;flex-direction:column;gap:26px}
 .nlrow .rm svg{width:13px;height:13px;stroke-width:2.4}
 .nlrow .g{grid-column:1/-1;display:flex;align-items:center;gap:8px;padding-top:8px}
 .nlrow .g button{width:44px;height:44px;flex:none;border-radius:var(--pill);background:var(--tint);display:grid;place-items:center;font-size:18px;font-weight:500}
-.nlrow .g .v{min-width:68px;text-align:center;font-size:15px;font-weight:600}
+.nlrow .g .v{min-width:68px;display:flex;align-items:baseline;justify-content:center;gap:7px;
+  text-align:center;font-size:15px;font-weight:600}
 .nlrow .g .v s{text-decoration:none;font-size:12.5px;color:var(--ink-3);font-weight:500;margin-left:3px}
 .nlrow .warn{grid-column:1/-1;display:flex;align-items:flex-start;gap:7px;font-size:13px;color:var(--over);line-height:1.45;padding-top:8px}
 .nlrow .warn svg{width:14px;height:14px;flex:none;margin-top:2px}
@@ -361,6 +379,10 @@ body.hasupd .toast{bottom:calc(136px + env(safe-area-inset-bottom))}
    przycisk zostaje przy prawej krawędzi i nigdy się nie zwęża. */
 .toast .tx{flex:1;min-width:0;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .toast button{flex:none;font-weight:600;font-size:14.5px;min-height:44px;display:inline-flex;align-items:center;padding:0 14px;border-radius:var(--pill);background:color-mix(in srgb,var(--bg) 22%,transparent);color:inherit}
+
+/* Szybkie tapnięcia w ten sam przycisk iOS bierze za podwójne tapnięcie
+   i przybliża stronę. To wyłącza sam ten gest — zsuwanie palcami zostaje. */
+button,input,select,textarea,a,[role="button"],.entry,.food .body,.day{touch-action:manipulation}
 
 /* Reguły :hover tylko tam, gdzie kursor naprawdę istnieje. Na ekranie
    dotykowym iOS pierwsze tapnięcie na elemencie ze stylem :hover jedynie
@@ -1364,6 +1386,41 @@ function ranked(){
   });
   return out;
 }
+/* Liczba w stepperze jako pole do wpisania. Jeden komponent dla wszystkich
+   pięciu miejsc, w których apka pyta o liczbę — inaczej każdy ekran zachowywałby
+   się trochę inaczej, a to widać w użyciu.
+     dec  — czy dopuszczamy ułamek (waga tak, gramatura nie)
+     min/max — twarde granice; przy wpisywaniu ograniczamy wartość, ale nie
+     przepisujemy tekstu pod palcami — porządkujemy go po wyjściu z pola. */
+function numBox(o){
+  /* Cyfry tabularne, żeby liczba nie „skakała” przy zmianie wartości. */
+  var inp=el("input",{type:"text",class:"num",inputmode:o.dec?"decimal":"numeric",
+    autocomplete:"off","aria-label":o.label||"Wartość"});
+  var uni=o.unit?el("s",{text:o.unit}):null;
+  var box=el("div",{class:o.cls||"val"},uni?[inp,uni]:[inp]);
+  var cur=o.value;
+  function clamp(v){
+    if(o.min!=null&&v<o.min)v=o.min;
+    if(o.max!=null&&v>o.max)v=o.max;
+    return o.dec?Math.round(v*10)/10:Math.round(v);
+  }
+  function show(){inp.value=o.dec?cur.toFixed(1).replace(".",","):String(cur)}
+  inp.addEventListener("input",function(){
+    var raw=String(inp.value).replace(",",".");
+    var v=parseFloat(raw);
+    if(!isFinite(v))return;      /* pole w trakcie pisania bywa puste */
+    cur=clamp(v);
+    if(o.onChange)o.onChange(cur);
+  });
+  inp.addEventListener("blur",show);
+  inp.addEventListener("focus",function(){inp.select()});
+  show();
+  return {el:box,input:inp,
+    get:function(){return cur},
+    set:function(v,unit){cur=clamp(v);show();if(uni&&unit!=null)uni.textContent=unit},
+    unit:function(u){if(uni)uni.textContent=u}};
+}
+
 function toast(msg,actLbl,act){
   var t=document.getElementById("toast");
   t.innerHTML="";
@@ -1395,6 +1452,9 @@ function portionSheet(food,opts){
   var g=opts.g||food.s;
   openSheet(function(root){
     var pv,pvm;
+    /* Gramaturę można wpisać z klawiatury albo dojechać plusem — to samo pole. */
+    var gBox=numBox({value:g,unit:food.u==="ml"?"ml":"g",min:1,max:5000,label:"Ilość w gramach",
+      onChange:function(v){g=v;upd();paint()}});
     function upd(){
       var m=scale(food,g);
       pv.innerHTML="";
@@ -1404,9 +1464,7 @@ function portionSheet(food,opts){
       [["B",m.p,"var(--p)"],["W",m.c,"var(--c)"],["T",m.f,"var(--f)"]].forEach(function(x){
         pvm.appendChild(el("span",{html:'<span style="color:'+x[2]+';font-weight:700">'+x[0]+'</span> <i class="num">'+fmt(x[1])+" g</i>"}));
       });
-      valEl.innerHTML="";
-      valEl.appendChild(el("span",{class:"num",text:fmt(g)}));
-      valEl.appendChild(el("s",{text:"g"}));
+      if(gBox.get()!==g)gBox.set(g);
     }
     root.appendChild(el("h3",{id:"sheetTitle",text:food.n}));
     root.appendChild(el("div",{class:"per",text:"100 g = "+fmt(food.k)+" kcal · B "+food.p+" · W "+food.c+" · T "+food.f}));
@@ -1428,10 +1486,9 @@ function portionSheet(food,opts){
     }
     root.appendChild(chips);
 
-    var valEl=el("div",{class:"val"});
     var step=el("div",{class:"stepper"},[
       el("button",{text:"−","aria-label":"Mniej",onclick:function(){g=Math.max(1,g-(g>60?10:5));upd();paint()}}),
-      valEl,
+      gBox.el,
       el("button",{text:"+","aria-label":"Więcej",onclick:function(){g=g+(g>=60?10:5);upd();paint()}})
     ]);
     root.appendChild(el("div",{class:"field"},[el("label",{text:"Ilość w gramach"}),step]));
@@ -1477,14 +1534,10 @@ function portionSheet(food,opts){
 function weightSheet(){
   var d=day, cur=S.wt[d]!=null?+S.wt[d]:(lastWeight()||(S.profile&&S.profile.w)||75);
   openSheet(function(root){
-    var v=el("div",{class:"val"});
-    function paint(){
-      v.innerHTML="";
-      v.appendChild(el("span",{class:"num",text:cur.toFixed(1).replace(".",",")}));
-      v.appendChild(el("s",{text:"kg"}));
-    }
-    function nudge(x){cur=Math.round(Math.min(300,Math.max(25,cur+x))*10)/10;paint()}
-    paint();
+    /* Waga ma ułamek — 81,4 wpisuje się szybciej niż dojeżdża. */
+    var box=numBox({value:cur,unit:"kg",min:25,max:300,dec:true,label:"Waga w kilogramach",
+      onChange:function(x){cur=x}});
+    function nudge(x){cur=Math.round(Math.min(300,Math.max(25,cur+x))*10)/10;box.set(cur)}
     root.appendChild(el("h3",{id:"sheetTitle",text:"Waga"}));
     root.appendChild(el("div",{class:"per",text:
       new Date(d+"T12:00:00").toLocaleDateString("pl-PL",{weekday:"long",day:"numeric",month:"long"})+
@@ -1492,7 +1545,7 @@ function weightSheet(){
     root.appendChild(el("div",{class:"field"},[el("label",{text:"Pomiar"}),
       el("div",{class:"stepper"},[
         el("button",{text:"−","aria-label":"Mniej",onclick:function(){nudge(-0.1)}}),
-        v,
+        box.el,
         el("button",{text:"+","aria-label":"Więcej",onclick:function(){nudge(0.1)}})
       ])]));
     var jump=el("div",{class:"seg"});
@@ -2051,21 +2104,16 @@ function setSheet(st){
       list.innerHTML="";
       items.forEach(function(it,idx){
         var f=byId(it.fid);
-        var val=el("div",{class:"v"});
         var kcalEl=el("s",{text:fmt(it.k)+" kcal"});
-        function show(){
-          val.innerHTML="";
-          val.appendChild(el("span",{class:"num",text:fmt(it.g)}));
-          val.appendChild(el("s",{text:f&&f.u!=="g"&&f.u!=="ml"?"g":(f?f.u:"g")}));
-          kcalEl.textContent=fmt(it.k)+" kcal";
-        }
-        function nudge(d){
-          var g=Math.max(1,it.g+d);
+        function apply(g){
           var m=reGram(it,g);
           it.g=g;it.k=m.k;it.p=m.p;it.c=m.c;it.f=m.f;
-          show();total();
+          kcalEl.textContent=fmt(it.k)+" kcal";
+          total();
         }
-        show();
+        var val=numBox({cls:"v",value:it.g,unit:f&&f.u==="ml"?"ml":"g",min:1,max:5000,
+          label:"Gramatura "+it.n,onChange:apply});
+        function nudge(d){var g=Math.max(1,it.g+d);val.set(g);apply(g)}
         list.appendChild(el("div",{class:"nlrow"},[
           el("span",{class:"n"},[
             el("b",{text:it.n}),
@@ -2076,7 +2124,7 @@ function setSheet(st){
           }},[svg(ICON.x)]),
           el("div",{class:"g"},[
             el("button",{text:"−","aria-label":"Mniej",onclick:function(){nudge(it.g>60?-10:-5)}}),
-            val,
+            val.el,
             el("button",{text:"+","aria-label":"Więcej",onclick:function(){nudge(it.g>=60?10:5)}})
           ])
         ]));
@@ -2176,13 +2224,16 @@ function viewMe(){
 
   var P=S.profile||{sex:"m",age:30,w:75,h:178,act:1.55,aim:0};
   function stepper(label,key,step,unit,min,max){
-    var v=el("div",{class:"val"});
-    function paint(){v.innerHTML="";v.appendChild(el("span",{class:"num",text:String(P[key]).replace(".",",")}));v.appendChild(el("s",{text:unit}))}
-    paint();
+    var box=numBox({value:P[key],unit:unit,min:min,max:max,dec:step<1,label:label,
+      onChange:function(v){P[key]=v;refresh()}});
+    function nudge(d){
+      P[key]=Math.min(max,Math.max(min,Math.round((P[key]+d)*10)/10));
+      box.set(P[key]);refresh();
+    }
     return el("div",{class:"field"},[el("label",{text:label}),el("div",{class:"stepper"},[
-      el("button",{text:"−","aria-label":"Mniej "+label,onclick:function(){P[key]=Math.max(min,Math.round((P[key]-step)*10)/10);paint()}}),
-      v,
-      el("button",{text:"+","aria-label":"Więcej "+label,onclick:function(){P[key]=Math.min(max,Math.round((P[key]+step)*10)/10);paint()}})
+      el("button",{text:"−","aria-label":"Mniej "+label,onclick:function(){nudge(-step)}}),
+      box.el,
+      el("button",{text:"+","aria-label":"Więcej "+label,onclick:function(){nudge(step)}})
     ])]);
   }
   function segs(label,opts,key,after){
@@ -3011,6 +3062,10 @@ function nlSheet(prefill,autoDictate){
         });
         root.appendChild(el("div",{class:"field"},[el("label",{text:"Posiłek"}),slBox]));
 
+        var live=[];   /* elementy do odświeżenia bez przebudowy arkusza */
+        function repaint(){
+          live.forEach(function(f){f()});
+        }
         items.forEach(function(it,ix){
           /* produkty na sztuki/garście chodzą po pół porcji, żeby nie
              wychodziło "3,8 szt" — w gramach normalnie po 10 g */
@@ -3020,16 +3075,25 @@ function nlSheet(prefill,autoDictate){
               var q=Math.round(it.g/it.f.s*2)/2;
               it.g=Math.round(Math.max(0.5,q+dir*0.5)*it.f.s);
             }else it.g=Math.max(1,it.g+dir*(it.g>=60?10:5));
-            draw();
+            gBox.set(it.g);rowPaint();repaint();
           };
           var m=scale(it.f,it.g);
+          var unitEl=el("s",{text:unitLabel(it.f,it.g)});
+          var kcEl=el("div",{class:"kc num",text:fmt(m.k)+" kcal"});
+          function rowPaint(){
+            var mm=scale(it.f,it.g);
+            unitEl.textContent=unitLabel(it.f,it.g);
+            kcEl.textContent=fmt(mm.k)+" kcal";
+          }
+          var gBox=numBox({cls:"v",value:it.g,unit:it.f.u==="ml"?"ml":"g",min:1,max:5000,
+            label:"Gramatura "+it.f.n,onChange:function(v){it.g=v;rowPaint();repaint()}});
           var kids=[
-            el("div",{class:"n"},[el("b",{text:it.f.n}),el("s",{text:unitLabel(it.f,it.g)})]),
-            el("div",{class:"kc num",text:fmt(m.k)+" kcal"}),
+            el("div",{class:"n"},[el("b",{text:it.f.n}),unitEl]),
+            kcEl,
             el("button",{class:"rm","aria-label":"Usuń "+it.f.n,onclick:function(){items.splice(ix,1);draw()}},[svg(ICON.x)]),
             el("div",{class:"g"},[
               el("button",{text:"−","aria-label":"Mniej "+it.f.n,onclick:function(){bump(-1)}}),
-              el("span",{class:"v num",text:fmt(it.g)+" "+(it.f.u==="ml"?"ml":"g")}),
+              gBox.el,
               el("button",{text:"+","aria-label":"Więcej "+it.f.n,onclick:function(){bump(1)}})
             ])
           ];
@@ -3055,15 +3119,21 @@ function nlSheet(prefill,autoDictate){
         root.appendChild(el("div",{class:"field",style:"margin-top:14px"},[
           el("label",{text:"Ile z tego zjadłeś"}),pBox]));
 
-        var t=total(part);
-        root.appendChild(el("div",{class:"nltot"},[
-          el("span",{class:"v num",text:fmt(t.k)}),
-          el("span",{class:"u",text:part<1?"kcal — z całości "+fmt(total(1).k):"kcal"})
-        ]));
-        root.appendChild(el("div",{class:"pvmac",html:
-          "<span style='color:var(--p);font-weight:700'>B</span> <i class='num'>"+fmt(t.p)+" g</i>"+
-          "<span style='color:var(--c);font-weight:700'>W</span> <i class='num'>"+fmt(t.c)+" g</i>"+
-          "<span style='color:var(--f);font-weight:700'>T</span> <i class='num'>"+fmt(t.f)+" g</i>"}));
+        var totK=el("span",{class:"v num"}),totU=el("span",{class:"u"});
+        var totM=el("div",{class:"pvmac"});
+        function paintTot(){
+          var t=total(part);
+          totK.textContent=fmt(t.k);
+          totU.textContent=part<1?"kcal — z całości "+fmt(total(1).k):"kcal";
+          totM.innerHTML=
+            "<span style='color:var(--p);font-weight:700'>B</span> <i class='num'>"+fmt(t.p)+" g</i>"+
+            "<span style='color:var(--c);font-weight:700'>W</span> <i class='num'>"+fmt(t.c)+" g</i>"+
+            "<span style='color:var(--f);font-weight:700'>T</span> <i class='num'>"+fmt(t.f)+" g</i>";
+        }
+        live.push(paintTot);
+        paintTot();
+        root.appendChild(el("div",{class:"nltot"},[totK,totU]));
+        root.appendChild(totM);
 
         /* Decyzja "to jest w środku dania" musi być widoczna, bo inaczej
            wygląda jak zgubiony składnik. */

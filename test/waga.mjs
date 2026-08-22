@@ -108,12 +108,13 @@ ok('bez pomiarów apka zaprasza, nie pokazuje zera  ['+empty.replace(/\n/g,' · 
    /Dodaj wagę/.test(empty));
 await p.locator('.nlcard').last().tap(); await p.waitForTimeout(450);
 ok('arkusz wagi otwarty', (await p.locator('#sheet.on h3').innerText())==='Waga');
-const shown = await p.locator('#sheet .stepper .val').innerText();
-ok('startuje od wagi z profilu, nie od zera  ['+shown.replace(/\n/g,' ')+']', /80,0/.test(shown));
+/* Liczba jest teraz wartością pola, nie tekstem — da się ją też wpisać. */
+const wInp = p.locator('#sheet .stepper .val input');
+ok('startuje od wagi z profilu, nie od zera  ['+await wInp.inputValue()+']',
+   (await wInp.inputValue())==='80,0');
 await p.locator('#sheet .seg button:has-text("+1")').tap(); await p.waitForTimeout(150);
 await p.locator('#sheet .stepper button').last().tap(); await p.waitForTimeout(150);
-ok('skok i krok po 0,1 kg  ['+(await p.locator('#sheet .stepper .val').innerText()).replace(/\n/g,' ')+']',
-   /81,1/.test(await p.locator('#sheet .stepper .val').innerText()));
+ok('skok i krok po 0,1 kg  ['+await wInp.inputValue()+']', (await wInp.inputValue())==='81,1');
 await p.locator('#sheet .sheetrow .btn').last().tap(); await p.waitForTimeout(500);
 const saved = await p.evaluate(()=>{const d=JSON.parse(localStorage.getItem('makro.v1'));
   return {wt:Object.values(d.wt)[0],prof:d.profile.w}});

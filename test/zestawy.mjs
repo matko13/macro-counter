@@ -43,7 +43,8 @@ await first.locator('.g button').last().tap();
 await first.locator('.g button').last().tap();
 await p.waitForTimeout(250);
 const ftxt = (await first.innerText()).replace(/\n/g,' ');
-ok('stepper zmienia gramaturę składnika  ['+ftxt+']', /60/.test(ftxt));
+const fval = await first.locator('.g .v input').inputValue();
+ok('stepper zmienia gramaturę składnika  ['+fval+' g]', fval==='60');
 ok('i kcal składnika idzie za nią, nie zostaje na starej  ['+ftxt+']', /223 kcal/.test(ftxt));
 ok('suma przelicza się od razu  ['+await p.locator('#sheet .per').innerText()+']',
    /455 kcal/.test(await p.locator('#sheet .per').innerText()));
@@ -74,7 +75,7 @@ await openSet();
 await p.locator('#sheet .nlrow').first().locator('.g button').last().tap();
 await p.locator('#sheet .nlrow').filter({hasText:'Banan'}).locator('.rm').tap();
 await p.waitForTimeout(200);
-await p.locator('#sheet .field input[type="text"]').fill('Owsianka mocniejsza');
+await p.locator('#sheet .field > input[type="text"]').fill('Owsianka mocniejsza');
 await p.locator('#sheet .sheetrow .btn').last().tap(); await p.waitForTimeout(500);
 st = await stored();
 ok('zapis zmienia nazwę  ['+st.n+']', st.n==='Owsianka mocniejsza');
@@ -110,7 +111,7 @@ ok('zestaw w pamięci nietknięty  ['+st.items.length+' składniki]', st.items.l
 // ── nazwa jest wymagana ────────────────────────────────────────────────────
 await p.locator('#sheet input[type="search"]').fill('banan'); await p.waitForTimeout(300);
 await p.locator('#sheet .chip').first().tap(); await p.waitForTimeout(250);
-await p.locator('#sheet .field input[type="text"]').fill('');
+await p.locator('#sheet .field > input[type="text"]').fill('');
 await p.locator('#sheet .sheetrow .btn').last().tap(); await p.waitForTimeout(400);
 ok('bez nazwy też nie zapisuje', await p.locator('#sheet.on').count()===1);
 
@@ -125,9 +126,10 @@ await p.reload(); await p.waitForTimeout(600);
 await openSet();
 await p.locator('#sheet .nlrow').first().locator('.g button').last().tap();
 await p.waitForTimeout(250);
+const orphG = await p.locator('#sheet .nlrow .g .v input').first().inputValue();
 const orph = (await p.locator('#sheet .nlrow').first().innerText()).replace(/\n/g,' ');
-ok('składnik po usuniętym produkcie nadal skaluje się proporcjonalnie  ['+orph+']',
-   /110/.test(orph) && /220 kcal/.test(orph));
+ok('składnik po usuniętym produkcie nadal skaluje się proporcjonalnie  ['+orphG+' g / '+orph+']',
+   orphG==='110' && /220 kcal/.test(orph));
 
 console.log('\n'+T.filter(t=>t.startsWith('PASS')).length+'/'+T.length+' PASS');
 console.log(errs.length?'błędy JS: '+errs.join('; '):'błędy JS: brak');
