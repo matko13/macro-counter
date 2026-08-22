@@ -93,7 +93,12 @@ h1,h2,h3{margin:0;font-weight:700;letter-spacing:-.025em;text-wrap:balance}
   width:44px;height:44px;flex:none;display:grid;place-items:center;
   border-radius:var(--pill);background:var(--sunk);color:var(--ink-2);
 }
-/* svg() nie podaje wymiarów, więc bez tego glif rozciąga się na całe pole. */
+/* svg() nie podaje wymiarów, a bezwymiarowy inline-SVG zachowuje się zależnie
+   od kontenera: w gridzie rozciąga się na całe pole, we fleksie ZAPADA DO ZERA
+   i ikona po prostu znika. Dlatego rozmiar bazowy jest tu, a nie w każdym
+   komponencie osobno — wszystkie reguły niżej mają wyższą specyficzność
+   i nadpisują go tam, gdzie potrzeba czegoś innego. */
+button svg,.warn svg{width:19px;height:19px;flex:none}
 .iconbtn svg{width:19px;height:19px}
 /* Poprawianie własnego produktu to czynność drugorzędna wobec dodania go —
    pole dotyku pełne (44 px), ale wygląd lekki: bez tła i w szarości. */
@@ -102,6 +107,10 @@ h1,h2,h3{margin:0;font-weight:700;letter-spacing:-.025em;text-wrap:balance}
   border-radius:var(--pill);background:transparent;color:var(--ink-3);
 }
 .edit svg{width:17px;height:17px}
+/* Usuwanie jest równie drugorzędne jak poprawianie — ta sama forma, inny
+   kolor. Trzy różne kształty przycisków w jednym wierszu to trzy różne
+   sygnały o tej samej wadze. */
+.edit.danger{color:var(--over)}
 main{flex:1;padding:6px 18px 28px;display:flex;flex-direction:column;gap:26px}
 
 /* ─────────── zakładki ─────────── */
@@ -2207,7 +2216,7 @@ function viewSets(){
           });
         }}),
         el("button",{class:"edit","aria-label":"Popraw zestaw "+st.n,onclick:function(){setSheet(st)}},[svg(ICON.pen)]),
-        el("button",{class:"btn danger",style:"flex:0 0 auto;padding:13px 15px","aria-label":"Usuń zestaw",onclick:function(){
+        el("button",{class:"edit danger","aria-label":"Usuń zestaw "+st.n,onclick:function(){
           var i=S.sets.indexOf(st);S.sets.splice(i,1);save();render();
           toast("Usunięto zestaw","Cofnij",function(){S.sets.splice(i,0,st);save();render()});
         }},[svg(ICON.trash)])

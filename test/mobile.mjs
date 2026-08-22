@@ -100,6 +100,30 @@ const b=await chromium.launch();
   g=await tgeo('Bardzo długa nazwa produktu która się nie zmieści w żadnym rozsądnym toaście · 1234 kcal','Cofnij');
   ok('skrajnie długi komunikat nie rozpycha toastu poza ekran  ['+g.lines+' linijki]',
      !g.over && g.lines<=2);
+  /* Funkcja svg() nie podaje wymiarów, a bezwymiarowy inline-SVG zachowuje się
+     zależnie od kontenera: w gridzie rozciąga się na całe pole (ołówek wyszedł
+     44 px), we fleksie ZAPADA DO ZERA i ikona znika (kosz przy zestawie).
+     Ta pułapka wystąpiła trzy razy, więc rozmiary ikon są mierzone na każdym
+     ekranie, a nie oglądane. */
+  const iconScan = async () => p.evaluate(()=>{
+    const bad=[];
+    document.querySelectorAll('svg').forEach(sv=>{
+      const r=sv.getBoundingClientRect();
+      const host=sv.closest('button,div')||{};
+      const where=(host.className||'')||host.getAttribute&&host.getAttribute('aria-label')||'?';
+      if(!r.width&&!r.height){bad.push('ZERO w .'+where);return}
+      if(r.width<11||r.width>28)bad.push(Math.round(r.width)+'px w .'+where);
+    });
+    return bad;
+  });
+  const screens=[['Dziś',0],['Dodaj',1],['Zestawy',2],['Ja',3]];
+  const iconBad=[];
+  for (const [name,ix] of screens){
+    await p.locator('.tab').nth(ix).tap(); await p.waitForTimeout(350);
+    (await iconScan()).forEach(x=>iconBad.push(name+': '+x));
+  }
+  ok('żadna ikona nie zapada do zera ani nie rozpycha się na cały przycisk  ['+
+     (iconBad.slice(0,3).join(', ')||'wszystkie 11–28 px')+']', iconBad.length===0);
   ok('brak błędów JS na dotyku  ['+(errs.join(' | ')||'brak')+']', errs.length===0);
   await ctx.close();
 }

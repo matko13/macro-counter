@@ -30,7 +30,22 @@ await seed(); await p.reload(); await p.waitForTimeout(600);
 
 // ── wejście w edycję ───────────────────────────────────────────────────────
 await p.locator('.tab').nth(2).tap(); await p.waitForTimeout(400);
-ok('karta zestawu ma przycisk poprawiania', await p.locator('.card .edit').count()===1);
+ok('karta zestawu ma przycisk poprawiania i usuwania  ['+await p.locator('.card .edit').count()+']',
+   await p.locator('.card .edit').count()===2);
+/* Kosz był tu wcześniej innym kształtem przycisku niż ołówek, a jego ikona
+   zapadała do zera — czyli przycisk bez żadnego oznaczenia. */
+const actGeo = await p.evaluate(()=>[...document.querySelector('.card .sheetrow').children].map(e=>{
+  const r=e.getBoundingClientRect(), sv=e.querySelector('svg');
+  const sr=sv?sv.getBoundingClientRect():null;
+  return {cls:e.className, w:Math.round(r.width), h:Math.round(r.height),
+          icon:sr?Math.round(sr.width):0};
+}));
+ok('kosz ma widoczną ikonę  ['+actGeo.map(a=>a.cls+':'+a.icon+'px').join(', ')+']',
+   actGeo.filter(a=>/edit/.test(a.cls)).every(a=>a.icon>=12));
+ok('oba przyciski drugorzędne mają tę samą formę  ['+
+   actGeo.filter(a=>/edit/.test(a.cls)).map(a=>a.w+'×'+a.h).join(' i ')+']',
+   (function(){var e=actGeo.filter(a=>/edit/.test(a.cls));
+     return e.length===2 && e[0].w===e[1].w && e[0].h===e[1].h})());
 await p.locator('.card .edit').first().tap(); await p.waitForTimeout(450);
 ok('arkusz zestawu otwarty', (await p.locator('#sheet h3').innerText())==='Zestaw');
 ok('widać wszystkie składniki  ['+(await rows()).join(', ')+']', (await rows()).length===3);
