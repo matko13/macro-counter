@@ -75,6 +75,26 @@ ok('jabłko ≈ 78 kcal za sztukę  ['+fr['Jabłko']+']', fr['Jabłko']>=70 && f
 const fatFruit = Object.keys(fr).filter(k=>fr[k]>260).map(k=>k+':'+fr[k]);
 ok('żaden owoc nie wychodzi na >260 kcal  ['+(fatFruit.join(',')||'-')+']', fatFruit.length===0);
 
+/* Kakao w proszku i napój z kakao to dwie różne rzeczy o tej samej nazwie
+   potocznej: 343 kcal na 100 g proszku kontra 90 kcal na 100 ml napoju.
+   Samo „kakao” to składnik z łyżki — napój ma pełną nazwę. */
+const byName = n => F.filter(f=>f.n===n)[0];
+[["Kakao ciemne (proszek)",343],["Kakao odtłuszczone (proszek)",250],
+ ["Mąka orkiszowa",352],["Mąka gryczana",343]].forEach(function(x){
+  const f=byName(x[0]);
+  ok('jest w bazie: '+x[0]+'  ['+(f?f.k+' kcal/100 g':'BRAK')+']', !!f && f.k===x[1]);
+});
+const kk=byName("Kakao ciemne (proszek)");
+ok('kakao w proszku liczy się z łyżki, nie z 100 g  ['+(kk?kk.s+' g / '+kk.u:'—')+']',
+   !!kk && kk.u==="łyżka" && kk.s<=10);
+
+const kakaoHit = await p.evaluate(()=>window.MAKRO.parse('kakao').items.map(i=>i.f.n));
+ok('samo „kakao” to proszek, nie napój  ['+kakaoHit.join(',')+']', /proszek/.test(kakaoHit[0]||''));
+const kakaoDrink = await p.evaluate(()=>window.MAKRO.parse('kakao na mleku').items.map(i=>i.f.n));
+ok('„kakao na mleku” to nadal napój  ['+kakaoDrink.join(',')+']', kakaoDrink[0]==='Kakao na mleku');
+const orkisz = await p.evaluate(()=>window.MAKRO.parse('100 g mąki orkiszowej').items.map(i=>i.f.n));
+ok('„mąki orkiszowej” trafia w mąkę orkiszową  ['+orkisz.join(',')+']', orkisz[0]==='Mąka orkiszowa');
+
 /* Aliasy: każdy musi wskazywać na istniejący produkt i nie może być pusty. */
 const AL = await p.evaluate(()=>window.MAKRO.alias);
 const orphan = Object.keys(AL).filter(k=>!ids[k]);

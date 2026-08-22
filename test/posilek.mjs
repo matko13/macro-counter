@@ -98,6 +98,28 @@ await p.locator('#sheet .btn.danger').tap(); await p.waitForTimeout(500);
 ok('„Usuń” w tym samym arkuszu nadal usuwa  ['+await p.locator('.entry').count()+']',
    await p.locator('.entry').count()===1);
 
+// ── wybór posiłku już przy DODAWANIU, nie tylko przy poprawianiu ───────────
+/* Zgadywanie z godziny myli się dokładnie w tych porach, w których i tak się
+   je. Poprawianie wpisu po fakcie to o dwa tapnięcia więcej niż wybór od razu. */
+await p.evaluate(()=>localStorage.removeItem('makro.v1'));
+await p.reload(); await p.waitForTimeout(600);
+await p.locator('.tab').nth(1).tap(); await p.waitForTimeout(300);
+await p.locator('.food .body').first().tap(); await p.waitForTimeout(450);
+const labs2 = await p.locator('#sheet .field label').allInnerTexts();
+ok('arkusz dodawania ma wybór posiłku  ['+labs2.join(', ')+']', labs2.some(l=>/Posiłek/i.test(l)));
+const preset = await p.locator('#sheet .seg button[aria-pressed="true"]').last().innerText();
+ok('zaznaczony jest ten zgadnięty z godziny  ['+preset+']',
+   ['Śniadanie','Obiad','Kolacja','Przekąska'].includes(preset));
+const other = ['Śniadanie','Obiad','Kolacja','Przekąska'].find(x=>x!==preset);
+await p.locator('#sheet .seg button:has-text("'+other+'")').tap(); await p.waitForTimeout(200);
+await p.locator('#sheet .sheetrow .btn').last().tap(); await p.waitForTimeout(500);
+await p.locator('.tab').nth(0).tap(); await p.waitForTimeout(400);
+ok('wpis ląduje w wybranym posiłku, nie w zgadniętym  ['+(await groups()).join(', ')+']',
+   (await groups()).length===1 && (await groups())[0].toUpperCase()===other.toUpperCase());
+ok('i wybór jest zapisany wprost',
+   await p.evaluate(a=>{const L=JSON.parse(localStorage.getItem('makro.v1')).log;
+     return Object.values(L).flat()[0].sl===a},other));
+
 console.log('\n'+T.filter(t=>t.startsWith('PASS')).length+'/'+T.length+' PASS');
 console.log(errs.length?'błędy JS: '+errs.join('; '):'błędy JS: brak');
 await b.close();

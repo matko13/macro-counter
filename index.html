@@ -894,6 +894,10 @@ var RAW=[
 ["Mąka pszenna","zboza",364,10,76,1,100,"g"],
 ["Mąka żytnia","zboza",350,8,73,1.7,100,"g"],
 ["Mąka owsiana","zboza",380,13,60,7,100,"g"],
+["Mąka orkiszowa","zboza",352,14,66,2.4,100,"g"],
+["Mąka gryczana","zboza",343,13,62,3.1,100,"g"],
+["Kakao ciemne (proszek)","zboza",343,22,12,21,6,"łyżka"],
+["Kakao odtłuszczone (proszek)","zboza",250,24,12,11,6,"łyżka"],
 ["Cebula czerwona","warzywa",40,1,9,0.1,50,"g"],
 ["Czosnek","warzywa",149,6.4,33,0.5,5,"ząbek"],
 ["Imbir","warzywa",80,1.8,18,0.8,5,"g"],
@@ -1362,8 +1366,8 @@ function pushEntry(dk,food,g,sl,tOff){
   bump(food.id);
   return e;
 }
-function addEntry(food,g,silent){
-  var e=pushEntry(day,food,g);
+function addEntry(food,g,silent,sl){
+  var e=pushEntry(day,food,g,sl);
   save();
   if(!silent){
     undo=function(){var a=S.log[day];var i=a.indexOf(e);if(i>-1)a.splice(i,1);save();render()};
@@ -1493,23 +1497,22 @@ function portionSheet(food,opts){
     ]);
     root.appendChild(el("div",{class:"field"},[el("label",{text:"Ilość w gramach"}),step]));
 
-    /* Posiłek jest zgadywany z godziny, więc musi być jak go poprawić:
-       kanapka zjedzona o 15:00 to nadal może być śniadanie. */
-    var pickedSlot=null;
-    if(opts.entry){
-      pickedSlot=slotOf(opts.entry);
-      var slotSeg=el("div",{class:"seg"});
-      var paintSlot=function(){
-        [].forEach.call(slotSeg.children,function(b){
-          b.setAttribute("aria-pressed",b.textContent===pickedSlot?"true":"false");
-        });
-      };
-      SLOTS.forEach(function(sn){
-        slotSeg.appendChild(el("button",{text:sn,onclick:function(){pickedSlot=sn;paintSlot()}}));
+    /* Posiłek jest zgadywany z godziny, więc musi być jak go zmienić — i to
+       zarówno przy poprawianiu wpisu, jak i przy dodawaniu. Zgadywanie bywa
+       nietrafione dokładnie w tych porach, w których i tak się je: kanapka
+       o 15:00 to nadal może być śniadanie. */
+    var pickedSlot=opts.entry?slotOf(opts.entry):slot(Date.now());
+    var slotSeg=el("div",{class:"seg"});
+    var paintSlot=function(){
+      [].forEach.call(slotSeg.children,function(b){
+        b.setAttribute("aria-pressed",b.textContent===pickedSlot?"true":"false");
       });
-      paintSlot();
-      root.appendChild(el("div",{class:"field"},[el("label",{text:"Posiłek"}),slotSeg]));
-    }
+    };
+    SLOTS.forEach(function(sn){
+      slotSeg.appendChild(el("button",{text:sn,onclick:function(){pickedSlot=sn;paintSlot()}}));
+    });
+    paintSlot();
+    root.appendChild(el("div",{class:"field"},[el("label",{text:"Posiłek"}),slotSeg]));
 
     var row=el("div",{class:"sheetrow"});
     if(opts.entry){
@@ -1522,7 +1525,9 @@ function portionSheet(food,opts){
       }}));
     }else{
       row.appendChild(el("button",{class:"btn alt",text:"Anuluj",onclick:closeSheet}));
-      row.appendChild(el("button",{class:"btn",text:"Dodaj",onclick:function(){closeSheet();addEntry(food,g);render()}}));
+      row.appendChild(el("button",{class:"btn",text:"Dodaj",onclick:function(){
+        closeSheet();addEntry(food,g,false,pickedSlot);render();
+      }}));
     }
     root.appendChild(row);
     upd();paint();
@@ -2517,7 +2522,9 @@ var ALIAS={
 "dzem-truskawkowy":"dzem|dzemu|konfitura",
 "kaczka-pieczona":"kaczka|kaczki",
 "jajko-na-twardo":"jajka na twardo|jajko twarde",
-"kakao-na-mleku":"kakao",
+"kakao-na-mleku":"kakao z mlekiem|gorace kakao|kakao na cieplo",
+"kakao-ciemne-proszek":"kakao|kakao w proszku|kakao sypkie|kakao do ciasta",
+"maka-orkiszowa":"orkiszowa|maka z orkiszu",
 "tatar-wolowy":"tatar|tatara",
 "sok-marchwiowy":"sok z marchwi",
 "otreby-owsiane":"otreby",
