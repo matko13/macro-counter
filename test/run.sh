@@ -10,7 +10,7 @@ set -u
 cd "$(dirname "$0")"
 ROOT="$(cd .. && pwd)"
 WORK="$(mktemp -d)"
-LOCAL=(test nl qual wariant db dict dish mobile reopen posilek waga wlasny)
+LOCAL=(test nl qual wariant db dict dish mobile reopen posilek waga wlasny zestawy)
 SERVED=(updbar ratunek offline)
 HTTP="$(command -v http-server || echo /opt/node22/lib/node_modules/http-server/bin/http-server)"
 

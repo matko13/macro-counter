@@ -303,6 +303,7 @@ main{flex:1;padding:6px 18px 28px;display:flex;flex-direction:column;gap:26px}
 .nlrow .g{grid-column:1/-1;display:flex;align-items:center;gap:8px;padding-top:8px}
 .nlrow .g button{width:44px;height:44px;flex:none;border-radius:var(--pill);background:var(--tint);display:grid;place-items:center;font-size:18px;font-weight:500}
 .nlrow .g .v{min-width:68px;text-align:center;font-size:15px;font-weight:600}
+.nlrow .g .v s{text-decoration:none;font-size:12.5px;color:var(--ink-3);font-weight:500;margin-left:3px}
 .nlrow .warn{grid-column:1/-1;display:flex;align-items:flex-start;gap:7px;font-size:13px;color:var(--over);line-height:1.45;padding-top:8px}
 .nlrow .warn svg{width:14px;height:14px;flex:none;margin-top:2px}
 .nlrow .warn button{color:var(--over);font-weight:700;text-decoration:underline;font-size:13px}
@@ -2009,6 +2010,113 @@ function customSheet(opts){
 }
 
 /* ═══════════════════════ 8. widok: Zestawy ═══════════════════════ */
+/* Zestaw dawało się tylko dodać albo usunąć w całości. Zmiana gramatury,
+   wyrzucenie jednego składnika albo poprawienie nazwy wymagały zbudowania
+   posiłku od nowa w dzienniku i zapisania go jeszcze raz — czyli tej samej
+   pracy, którą zestaw miał oszczędzić. */
+function reGram(it,g){
+  var f=byId(it.fid);
+  if(f){var m=scale(f,g);return {k:m.k,p:m.p,c:m.c,f:m.f}}
+  /* Produkt mógł zostać usunięty z bazy. Zestaw trzyma własne wartości, więc
+     skalujemy proporcjonalnie — lepsze to niż zablokowana edycja. */
+  var r=it.g>0?g/it.g:1;
+  return {k:it.k*r,p:it.p*r,c:it.c*r,f:it.f*r};
+}
+function setSheet(st){
+  openSheet(function(root){
+    /* Pracujemy na kopii: „Anuluj” musi naprawdę nic nie zmieniać. */
+    var items=st.items.map(function(i){var c={};for(var k in i)c[k]=i[k];return c});
+    var name=st.n;
+    root.appendChild(el("h3",{id:"sheetTitle",text:"Zestaw"}));
+    var sum=el("div",{class:"per"});
+    root.appendChild(sum);
+
+    var nameInp=el("input",{type:"text",value:name,oninput:function(){name=this.value}});
+    root.appendChild(el("div",{class:"field"},[el("label",{text:"Nazwa"}),nameInp]));
+
+    var list=el("div");
+    root.appendChild(el("div",{class:"field"},[el("label",{text:"Składniki"}),list]));
+
+    function total(){
+      var k=items.reduce(function(a,i){return a+i.k},0);
+      var pp=items.reduce(function(a,i){return a+i.p},0);
+      var cc=items.reduce(function(a,i){return a+i.c},0);
+      var ff=items.reduce(function(a,i){return a+i.f},0);
+      sum.innerHTML=items.length
+        ? "<b class='num'>"+fmt(k)+"</b> kcal · B <b class='num'>"+fmt(pp)+
+          "</b> · W <b class='num'>"+fmt(cc)+"</b> · T <b class='num'>"+fmt(ff)+"</b>"
+        : "Zestaw bez składników nie ma czego dodawać — dorzuć coś albo usuń go.";
+    }
+    function paint(){
+      list.innerHTML="";
+      items.forEach(function(it,idx){
+        var f=byId(it.fid);
+        var val=el("div",{class:"v"});
+        var kcalEl=el("s",{text:fmt(it.k)+" kcal"});
+        function show(){
+          val.innerHTML="";
+          val.appendChild(el("span",{class:"num",text:fmt(it.g)}));
+          val.appendChild(el("s",{text:f&&f.u!=="g"&&f.u!=="ml"?"g":(f?f.u:"g")}));
+          kcalEl.textContent=fmt(it.k)+" kcal";
+        }
+        function nudge(d){
+          var g=Math.max(1,it.g+d);
+          var m=reGram(it,g);
+          it.g=g;it.k=m.k;it.p=m.p;it.c=m.c;it.f=m.f;
+          show();total();
+        }
+        show();
+        list.appendChild(el("div",{class:"nlrow"},[
+          el("span",{class:"n"},[
+            el("b",{text:it.n}),
+            kcalEl
+          ]),
+          el("button",{class:"rm","aria-label":"Usuń "+it.n,onclick:function(){
+            items.splice(idx,1);paint();total();
+          }},[svg(ICON.x)]),
+          el("div",{class:"g"},[
+            el("button",{text:"−","aria-label":"Mniej",onclick:function(){nudge(it.g>60?-10:-5)}}),
+            val,
+            el("button",{text:"+","aria-label":"Więcej",onclick:function(){nudge(it.g>=60?10:5)}})
+          ])
+        ]));
+      });
+      if(!items.length)list.appendChild(el("div",{class:"note",text:"Nic tu nie zostało."}));
+    }
+    paint();total();
+
+    /* Dokładanie składnika bez wychodzenia z arkusza — inaczej „edycja”
+       znaczyłaby tylko „ujmowanie”. */
+    var found=el("div");
+    var q=el("input",{type:"search",placeholder:"Dorzuć produkt — np. banan",autocomplete:"off",
+      oninput:function(){
+        var v=norm(this.value).split(/\s+/).filter(Boolean);
+        found.innerHTML="";
+        if(!v.length)return;
+        allFoods().filter(function(f){return searchHit(f,v)}).slice(0,6).forEach(function(f){
+          found.appendChild(el("button",{class:"chip ghost",onclick:function(){
+            var m=scale(f,f.s);
+            items.push({fid:f.id,n:f.n,g:f.s,u:f.u,s:f.s,k:m.k,p:m.p,c:m.c,f:m.f});
+            q.value="";found.innerHTML="";paint();total();
+          }},[el("span",{class:"n",text:f.n+" · "+addLabel(f)})]));
+        });
+      }});
+    root.appendChild(el("div",{class:"field"},[el("label",{text:"Dodaj składnik"}),q,found]));
+
+    root.appendChild(el("div",{class:"sheetrow"},[
+      el("button",{class:"btn alt",text:"Anuluj",onclick:closeSheet}),
+      el("button",{class:"btn",text:"Zapisz zestaw",onclick:function(){
+        var nm=String(name).trim();
+        if(!nm)return nameInp.focus();
+        if(!items.length){total();return}
+        st.n=nm;st.items=items;
+        saveNow();closeSheet();render();
+        toast("Zapisane: "+nm);
+      }})
+    ]));
+  });
+}
+
 function viewSets(){
   var wrap=document.createDocumentFragment();
   wrap.appendChild(el("h2",{text:"Zestawy"}));
@@ -2026,7 +2134,9 @@ function viewSets(){
         el("h3",{text:st.n}),
         el("span",{class:"num",style:"font-weight:600",text:fmt(tk)+" kcal"})
       ]),
-      el("div",{class:"note",text:st.items.map(function(i){return i.n+" ("+fmt(i.g)+" g)"}).join(" · ")}),
+      el("div",{class:"note",text:st.items.map(function(i){
+        return i.n+" ("+fmt(i.g)+" "+(i.u==="ml"?"ml":"g")+")";
+      }).join(" · ")}),
       el("div",{class:"pvmac",style:"padding:0",html:"<span style='color:var(--p);font-weight:700'>B</span> <i class='num'>"+fmt(tp)+" g</i><span style='color:var(--c);font-weight:700'>W</span> <i class='num'>"+fmt(tc)+" g</i><span style='color:var(--f);font-weight:700'>T</span> <i class='num'>"+fmt(tf)+" g</i>"}),
       el("div",{class:"sheetrow",style:"padding-top:0"},[
         el("button",{class:"btn",text:"Dodaj do "+dayTitle(day).toLowerCase(),onclick:function(){
@@ -2043,6 +2153,7 @@ function viewSets(){
             S.log[day]=S.log[day].filter(function(e){return added.indexOf(e)<0});save();render();
           });
         }}),
+        el("button",{class:"edit","aria-label":"Popraw zestaw "+st.n,onclick:function(){setSheet(st)}},[svg(ICON.pen)]),
         el("button",{class:"btn danger",style:"flex:0 0 auto;padding:13px 15px","aria-label":"Usuń zestaw",onclick:function(){
           var i=S.sets.indexOf(st);S.sets.splice(i,1);save();render();
           toast("Usunięto zestaw","Cofnij",function(){S.sets.splice(i,0,st);save();render()});

@@ -20,7 +20,7 @@ hostingu dokłada instalację na ekranie głównym i pracę offline — patrz
 | nazwę i wartości produktu | 651 gotowych produktów z polskiej kuchni w bazie |
 | gramaturę | każdy produkt ma domyślną porcję — tapnięcie w `+ 1 szt` / `+ 150 g` i gotowe |
 | ciągle to samo śniadanie | sekcja **Twoje najczęstsze** sama wypycha na wierzch to, co jesz realnie |
-| cały posiłek po kawałku | **zestawy** — raz zapisany posiłek dodajesz jednym tapnięciem |
+| cały posiłek po kawałku | **zestawy** — raz zapisany posiłek dodajesz jednym tapnięciem, a ołówek pozwala go poprawić: nazwa, gramatura każdego składnika, wyrzucenie i dorzucenie produktu |
 | wczorajszy dzień od nowa | **Powtórz wczoraj** kopiuje cały dzień |
 | swój cel kaloryczny | kalkulator (Mifflin-St Jeor) — same plusy/minusy, żadnej klawiatury; a po kilku tygodniach cel przelicza się z **Twoich** danych, patrz „Cel z pomiaru" |
 | przypisanie do posiłku | posiłek (śniadanie / obiad / kolacja / przekąska) zgaduje się z godziny, a tapnięcie wpisu pozwala go przenieść |
@@ -409,8 +409,8 @@ nie zalecenie medyczne.
   deuteranopia / trytanopia) w obu motywach; kolor nigdy nie jest jedynym
   nośnikiem znaczenia — każdy pasek i słupek ma etykietę tekstową.
 - Cele tapania ≥ 44 px (minimum z wytycznych Apple, pilnowane testem), widoczny focus klawiatury, `prefers-reduced-motion`.
-- Testy: **273 przypadków** przez Playwright (headless Chromium, część na
-  emulowanym iPhone 13), w piętnastu zestawach. Całość leży w `test/`
+- Testy: **296 przypadków** przez Playwright (headless Chromium, część na
+  emulowanym iPhone 13), w szesnastu zestawach. Całość leży w `test/`
   i uruchamia się jednym poleceniem:
 
   ```
@@ -438,6 +438,7 @@ nie zalecenie medyczne.
   | danie a składnik | 11 | burger z wołowiną kontra chleb z masłem kontra przepis z ilościami, nazwy pięciowyrazowe, porcje jadalne owoców |
   | dotyk i geometria | 17 | żadna reguła `:hover` poza `@media (hover:hover)` (na iOS pierwsze tapnięcie na takim elemencie tylko „najeżdża", a klika dopiero drugie), pojedyncze tapnięcie zatwierdza posiłek i dodaje produkt, **każdy element dotykowy ma ≥44 px** na wszystkich ekranach, oraz szerokość toastu: pełna szerokość treści zamiast połowy ekranu, równe marginesy, najwyżej dwie linijki tekstu i nieściśnięty „Cofnij" |
   | podgląd bez dubli | 8 | spóźnione zamknięcie sesji mowy po zatwierdzeniu, zamknięcie arkusza w trakcie dyktowania, podwójne kliknięcie w „Dodaj" |
+  | edycja zestawu | 23 | nazwa, gramatura składnika z przeliczeniem kcal, wyrzucenie i dorzucenie produktu przez szukanie, „Anuluj" naprawdę nic nie zmieniające (praca na kopii), odmowa zapisu pustego zestawu i bez nazwy, poprawiona wersja wpadająca do dnia, oraz składnik po usuniętym produkcie skalowany proporcjonalnie zamiast blokować edycję |
   | własny produkt | 38 | wartości z etykiety podane na porcję przeliczone na 100 g (miarka 30 g i baton 27 g wracają w odczycie zgodne z etykietą), podgląd tego, co wyląduje w bazie, wyczyszczone domyślne 100 g przy przejściu na tryb porcji (inaczej ciche przeliczenie 1:1), odmowa zapisu bez wagi porcji i bez nazwy, oraz tryb „na 100 g" działający bez zmian. Do tego poprawianie i usuwanie: ołówek tylko przy własnych produktach, pytanie o przeliczenie zapisanych pozycji z liczbą i różnicą kalorii, „zostaw jak było" nieruszające dziennika, kolejne dodanie liczone już nową wartością, usunięcie nietykające historii, Cofnij — i **odświeżenie obu cache'ów nazwy** (indeksu fraz i słów wyszukiwarki), bez którego po zmianie nazwy produkt z wyszukiwarki wypadał |
   | waga i cel z pomiaru | 24 | wzór na zapotrzebowanie sprawdzony na czterech scenariuszach co do kilokalorii (spadek, utrzymanie, szybki spadek, przyrost), odporność tempa na szum ±0,9 kg, **odmowa policzenia** przy jednym pomiarze / za krótkim oknie / połowie dni bez zapisu, wiersz wagi na Dziś, karta kalibracji, ustawienie celu z pomiaru wraz z przeliczeniem makro, stepper startujący od ostatniego pomiaru, synchronizacja wagi z kalkulatorem, usuwanie pomiaru i obecność wagi w kopii zapasowej |
   | przenoszenie posiłku | 18 | wybór posiłku w arkuszu wpisu, zaznaczony ten właściwy, przeniesienie zmieniające grupę bez ruszania kalorii i gramatury, zniknięcie pustej grupy, trwałość po przeładowaniu, powrót do pierwotnego posiłku, rozdzielenie dwóch wpisów na dwie grupy z osobnymi sumami, oraz „Usuń" nadal działające w tym samym arkuszu |
