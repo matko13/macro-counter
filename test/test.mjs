@@ -17,9 +17,12 @@ ok('render zakładek', await p.locator('.tab').count() === 4);
 ok('odczyt kcal widoczny', await p.locator('.bignum .v').isVisible());
 ok('pasek 7 dni ma 7 słupków', await p.locator('.week .day').count() === 7);
 
-// 1) szybkie dodanie jednym tapnięciem
-await p.locator('.scroller .chip').first().click();
-await p.waitForTimeout(150);
+// 1) szybkie dodanie jednym tapnięciem (pasek „najczęstszych” usunięty —
+//    jedno tapnięcie zostało na liście produktów w „Dodaj”)
+await p.locator('.tab').nth(1).click(); await p.waitForTimeout(250);
+await p.locator('.addbtn').first().click(); await p.waitForTimeout(200);
+await p.locator('.tab').nth(0).click();
+await p.waitForTimeout(200);
 ok('wpis pojawił się w logu', await p.locator('.entry').count() === 1);
 ok('toast z Cofnij', await p.locator('.toast.on button').innerText() === 'Cofnij');
 

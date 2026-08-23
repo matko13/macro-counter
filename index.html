@@ -210,8 +210,6 @@ main{flex:1;padding:6px 18px 28px;display:flex;flex-direction:column;gap:26px}
 .wkfoot b{color:var(--ink-2);font-weight:600}
 
 /* ─────────── kafle szybkiego dodania ─────────── */
-.scroller{display:flex;gap:10px;overflow-x:auto;margin:0 -18px;padding:2px 18px 8px;scrollbar-width:none;scroll-snap-type:x proximity}
-.scroller::-webkit-scrollbar{display:none}
 .chip{
   flex:none;display:flex;flex-direction:column;justify-content:center;gap:3px;
   padding:12px 15px;min-width:132px;background:var(--sunk);border-radius:var(--r);scroll-snap-align:start;
@@ -1850,31 +1848,14 @@ function viewToday(){
   });
   readout.appendChild(mac);
 
-  /* szybkie dodawanie */
-  var quick=ranked().slice(0,10);
-  var sc=el("div",{class:"scroller"});
-  if(!quick.length){
-    DB.filter(function(f){return ["jajko","platki-owsiane","piers-z-kurczaka-grill","ryz-bialy-ugotowany","banan","chleb-zytni-razowy","jogurt-grecki-10","kawa-z-mlekiem"].indexOf(f.id)>-1}).forEach(function(f){quick.push(f)});
-  }
-  quick.forEach(function(f){
-    sc.appendChild(el("button",{class:"chip",onclick:function(){addEntry(f,f.s);render()}},[
-      el("span",{class:"n",text:f.n}),
-      el("span",{class:"m num",text:"+ "+addLabel(f)+" · "+fmt(scale(f,f.s).k)+" kcal"})
-    ]));
-  });
-  var y=shiftKey(day,-1);
-  if(entries(y).length){
-    sc.appendChild(el("button",{class:"chip ghost",onclick:function(){copyDay(y)}},[
-      el("span",{class:"n",text:"↺ Powtórz wczoraj"})
-    ]));
-  }
   wrap.appendChild(nlCard());
   /* Pokazujemy dopiero, gdy dzień jest w toku i naprawdę jest co domykać: rano
      cały dzień jest „luką”, a lista produktów wysokobiałkowych o ósmej to szum.
-     Progiem jest zjedzone 40% budżetu i co najmniej dwie pozycje — czyli dzień
-     za połowę, nie kalendarzowa godzina, bo dawny dzień też da się oglądać. */
+     Progiem nie jest godzina (dawny dzień też da się oglądać), tylko dwa posiłki
+     za sobą: co najmniej trzy pozycje i zjedzone 30% budżetu. Po obiedzie
+     planowanie reszty dnia ma sens, po samym śniadaniu jeszcze nie. */
   var cd=closeDay(day);
-  if(entries(day).length>=2&&cd.picks.length&&cd.need>=15&&cd.room<=G.k*0.6){
+  if(entries(day).length>=3&&cd.picks.length&&cd.need>=15&&cd.room<=G.k*0.7){
     var box=el("div",{class:"closer"},[
       el("div",{class:"hd"},[
         el("b",{text:"Czym domknąć dzień"}),
@@ -1895,13 +1876,14 @@ function viewToday(){
     wrap.appendChild(box);
   }
   wrap.appendChild(weightRow());
-  wrap.appendChild(el("div",{class:"sec"},[
-    el("div",{class:"sechead"},[
-      el("h3",{text:ranked().length?"Twoje najczęstsze":"Na start"}),
-      el("button",{class:"act",text:"Wszystko →",onclick:function(){go("add")}})
-    ]),
-    sc
-  ]));
+  /* Powtórzenie wczorajszego dnia siedziało w pasku „najczęstszych”, którego
+     tu już nie ma. Zostaje jako pojedynczy przycisk, bo to inna funkcja niż
+     lista produktów — a druga jego kopia jest na ekranie Zestawy. */
+  var y=shiftKey(day,-1);
+  if(entries(y).length&&!entries(day).length){
+    wrap.appendChild(el("button",{class:"btn alt",text:"↺ Powtórz wczoraj",
+      onclick:function(){copyDay(y)}}));
+  }
 
   /* wykres 7 dni */
   wrap.appendChild(weekStrip());

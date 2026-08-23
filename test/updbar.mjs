@@ -17,7 +17,9 @@ ok('przy pierwszej instalacji nie ma paska aktualizacji', await p.locator('#updb
 ok('marka to „Makro” (wersja A)', (await p.locator('.brand b').innerText())==='Makro');
 
 // zapisujemy dane, żeby sprawdzić, że aktualizacja ich nie gubi
-await p.locator('.scroller .chip').first().tap(); await p.waitForTimeout(300);
+await p.locator('.tab').nth(1).tap(); await p.waitForTimeout(250);
+await p.locator('.addbtn').first().tap(); await p.waitForTimeout(250);
+await p.locator('.tab').nth(0).tap(); await p.waitForTimeout(250);
 const before=await p.locator('.entry').count();
 ok('wpis dodany przed aktualizacją  ['+before+']', before===1);
 

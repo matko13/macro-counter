@@ -19,7 +19,7 @@ hostingu dokłada instalację na ekranie głównym i pracę offline — patrz
 | cały złożony posiłek | **mówisz albo piszesz zdaniem** — patrz niżej |
 | nazwę i wartości produktu | 655 gotowych produktów z polskiej kuchni w bazie |
 | gramaturę | każdy produkt ma domyślną porcję — tapnięcie w `+ 1 szt` / `+ 150 g` i gotowe. A gdy chcesz dokładnie: liczba w stepperze jest **polem do wpisania**, bo dojechanie plusem do 275 g to kilkadziesiąt tapnięć |
-| ciągle to samo śniadanie | sekcja **Twoje najczęstsze** sama wypycha na wierzch to, co jesz realnie |
+| ciągle to samo śniadanie | na liście produktów to, co jesz realnie, idzie na wierzch — bez osobnej sekcji na ekranie Dziś |
 | cały posiłek po kawałku | **zestawy** — raz zapisany posiłek dodajesz jednym tapnięciem, a ołówek pozwala go poprawić: nazwa, gramatura każdego składnika, wyrzucenie i dorzucenie produktu |
 | wczorajszy dzień od nowa | **Powtórz wczoraj** kopiuje cały dzień |
 | swój cel kaloryczny | kalkulator (Mifflin-St Jeor) — same plusy/minusy, żadnej klawiatury; a po kilku tygodniach cel przelicza się z **Twoich** danych, patrz „Cel z pomiaru" |
@@ -275,9 +275,11 @@ normalna (nie więcej niż dwie domyślne), czy produkt bywa posiłkiem, i czy T
 w ogóle jadasz — pozycje z Twojej historii idą wyżej. Jedna propozycja na
 kategorię, żeby nie wychodziło pięć rodzajów twarogu.
 
-Karta pojawia się, gdy dzień jest już za połowę (zjedzone 40% budżetu, co
-najmniej dwie pozycje) i brakuje co najmniej 15 g białka. Rano cały dzień jest
-„luką" i lista produktów wysokobiałkowych o ósmej byłaby szumem.
+Karta pojawia się po **dwóch posiłkach za sobą** (co najmniej trzy pozycje,
+zjedzone 30% budżetu) i gdy brakuje co najmniej 15 g białka. Nie po godzinie,
+bo dawny dzień też da się oglądać. Po obiedzie planowanie reszty dnia ma sens,
+po samym śniadaniu jeszcze nie — a rano cały dzień jest „luką" i taka lista
+byłaby szumem.
 
 ## Cel z pomiaru, nie ze wzoru
 
