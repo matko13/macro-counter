@@ -62,6 +62,53 @@ ok('zdanie z trzema wariantami  ['+r.map(x=>x.n+' '+x.kcal).join(' | ')+']',
 const sum = r.reduce((a,x)=>a+x.kcal,0);
 ok('suma zdania mieści się w rozsądku  ['+sum+' kcal]', sum>550 && sum<700);
 
+// ── ile waży łyżka zależy od tego, co się nabiera ──────────────────────────
+/* Produkty liczone w łyżkach mają swoją wagę w bazie (oliwa 10 g), ale danie
+   mierzone w porcjach spadało na ogólne 15 g — a czubata łyżka gęstej sałatki
+   to 25–30 g. Efekt był najgorszego rodzaju: liczba wyglądała porządnie i była
+   dwa razy za mała. */
+const spoon = async (txt) => (await P(txt))[0];
+let sp = await spoon('trzy łyżki sałatki jarzynowej');
+ok('łyżka gęstej sałatki to ~28 g, nie 15  ['+sp.g+' g / '+sp.kcal+' kcal]',
+   sp.g===84 && sp.kcal>140);
+sp = await spoon('3 łyżki oliwy');
+ok('a produkt z własną łyżką liczy się po swojemu  ['+sp.g+' g]', sp.g===30);
+sp = await spoon('3 łyżki ryżu');
+ok('ugotowany ryż to nie mąka — łyżka waży 18 g  ['+sp.g+' g]', sp.g===54);
+sp = await spoon('2 łyżki płatków owsianych');
+ok('a płatki są lekkie  ['+sp.g+' g]', sp.g===12);
+sp = await spoon('łyżeczka cukru');
+ok('łyżeczka to trzecia część łyżki  ['+sp.g+' g]', sp.g>=3&&sp.g<=5);
+sp = await spoon('3 łyżki bigosu');
+ok('każde danie dostaje wagę łyżki dania  ['+sp.f0+sp.g+' g]', sp.g===75);
+
+// ── „na oko” w arkuszu dania ───────────────────────────────────────────────
+/* Przy sałatce na imprezie „½ porcji” nic nie znaczy, a „trzy łyżki” znaczy. */
+await p.locator('.tab').nth(1).click(); await p.waitForTimeout(300);
+await p.locator('.search input').fill('sałatka jarzynowa'); await p.waitForTimeout(350);
+await p.locator('.food .body').first().click(); await p.waitForTimeout(450);
+const labs = (await p.locator('#sheet .field label').allInnerTexts()).join(' | ');
+ok('danie ma wybór „na oko”  ['+labs+']', /Na oko/.test(labs));
+const eyeChips = await p.locator('#sheet .field').filter({has:p.locator('label:text-is("Na oko")')})
+  .locator('.seg button').allInnerTexts();
+ok('w mowie potocznej, nie w ułamkach porcji  ['+eyeChips.join(' · ')+']',
+   eyeChips[0]==='łyżka' && eyeChips.includes('3 łyżki') && eyeChips.includes('talerzyk'));
+/* Pięć etykiet nie mieściło się w szerokości ekranu i ostatnia była ucięta. */
+const fit = await p.evaluate(()=>{
+  const seg=[...document.querySelectorAll('#sheet .seg')][0], r=seg.getBoundingClientRect();
+  return [...seg.children].filter(k=>k.getBoundingClientRect().right>r.right+1).length;
+});
+ok('i żadna etykieta nie jest ucięta  ['+eyeChips.length+' zmieściło się]', fit===0);
+await p.locator('#sheet .seg button:has-text("3 łyżki")').click(); await p.waitForTimeout(250);
+const prev = (await p.locator('#sheet .preview').innerText()).replace(/\n/g,' ');
+ok('tapnięcie daje gramy i kcal  ['+prev+']', /84 g/.test(prev) && /151/.test(prev));
+await p.locator('#sheet .btn.alt').click(); await p.waitForTimeout(250);
+await p.locator('.search input').fill('ryż biały ugotowany'); await p.waitForTimeout(350);
+await p.locator('.food .body').first().click(); await p.waitForTimeout(450);
+const gLabs = (await p.locator('#sheet .field label').allInnerTexts()).join(' | ');
+ok('produkt w gramach zostaje przy gramach  ['+gLabs+']', !/Na oko/.test(gLabs));
+await p.locator('#sheet .btn.alt').click(); await p.waitForTimeout(250);
+
 console.log('\n'+T.filter(t=>t.startsWith('PASS')).length+'/'+T.length+' PASS');
 console.log(errs.length?'błędy JS: '+errs.join('; '):'błędy JS: brak');
 await b.close();

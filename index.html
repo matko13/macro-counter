@@ -1599,20 +1599,35 @@ function portionSheet(food,opts){
     pv=el("div",{class:"preview"});root.appendChild(pv);
     pvm=el("div",{class:"pvmac"});root.appendChild(pvm);
 
+    /* Dania nabiera się łyżką z miski, a nie liczy w porcjach — przy sałatce na
+       imprezie „½ porcji” nic nie znaczy, a „trzy łyżki” znaczy. Dla dań dajemy
+       więc wybór w mowie potocznej; gramy i tak są widoczne w podglądzie. */
+    var eye=food.u==="porcja";
     var chips=el("div",{class:"seg"});
-    var mults=(food.u==="g"||food.u==="ml")?[0.5,1,1.5,2]:[0.5,1,1.5,2,3];
-    mults.forEach(function(m){
-      var gg=Math.round(food.s*m);
-      var lbl=(food.u==="g"||food.u==="ml")?fmt(gg)+" "+food.u
-        :(m===0.5?"½":m===1.5?"1½":String(m))+" "+food.u;
-      chips.appendChild(el("button",{text:lbl,onclick:function(){g=gg;upd();paint()}}));
+    var quick=[];
+    if(eye){
+      var sp=spoonGrams(food);
+      /* Cztery, nie pięć: piąta etykieta nie mieszcza się w szerokości ekranu,
+         a cała porcja jest i tak wartością domyślną przy otwarciu arkusza. */
+      quick=[["łyżka",Math.round(sp)],["2 łyżki",Math.round(sp*2)],["3 łyżki",Math.round(sp*3)],
+             ["talerzyk",Math.round(food.s*0.7)]];
+    }else{
+      var mults=(food.u==="g"||food.u==="ml")?[0.5,1,1.5,2]:[0.5,1,1.5,2,3];
+      quick=mults.map(function(m){
+        var gg=Math.round(food.s*m);
+        return [(food.u==="g"||food.u==="ml")?fmt(gg)+" "+food.u
+          :(m===0.5?"½":m===1.5?"1½":String(m))+" "+unitWord(food.u,m),gg];
+      });
+    }
+    quick.forEach(function(o){
+      chips.appendChild(el("button",{text:o[0],onclick:function(){g=o[1];upd();paint()}}));
     });
     function paint(){
       [].forEach.call(chips.children,function(b,i){
-        b.setAttribute("aria-pressed",Math.round(food.s*mults[i])===g?"true":"false");
+        b.setAttribute("aria-pressed",quick[i][1]===g?"true":"false");
       });
     }
-    root.appendChild(chips);
+    root.appendChild(eye?el("div",{class:"field"},[el("label",{text:"Na oko"}),chips]):chips);
 
     var step=el("div",{class:"stepper"},[
       el("button",{text:"−","aria-label":"Mniej",onclick:function(){g=Math.max(1,g-(g>60?10:5));upd();paint()}}),
@@ -2894,7 +2909,31 @@ function searchHit(f,qt){
    jest opisem, a nie dodatkiem. */
 var DISHY={"burger-roslinny":1,"parowki-weganskie":1};
 function isDish(f){return f.cat==="gotowe"||!!DISHY[f.id]}
+/* Łyżka nie waży tyle samo dla wszystkiego. Produkty mierzone łyżkami mają
+   swoją wagę w bazie (oliwa 10 g), ale dla dania mierzonego w porcjach łyżka
+   spadała na ogólne 15 g — a czubata łyżka gęstej sałatki to 25–30 g. Efekt
+   był najgorszego rodzaju: liczba wyglądała porządnie i była dwa razy za mała.
+
+   Wartości to gramy na płaską łyżkę stołową (~15 ml) dla typowej gęstości
+   kategorii; nazwa produktu może to nadpisać, gdy kategoria kłamie. */
+var SPOON={"salatka-jarzynowa":28,"salatka-ziemniaczana":28,"salatka-cezar":22,
+  "surowka-coleslaw":22,"platki-owsiane":6,"cukier":12,"hummus":22,"tzatziki":22,
+  "twarog-chudy":25,"twarog-poltlusty":25,"serek-wiejski":25,"ryz-bialy-suchy":12};
+var SPOON_CAT={gotowe:25,nabial:22,straczkowe:22,slodycze:20,mieso:20,
+  warzywa:18,owoce:18,napoje:15,tluszcze:14,zboza:10,supl:8,own:15};
+function spoonGrams(food){
+  if(!food)return 15;
+  if(norm(food.u)==="lyzka")return food.s;          /* produkt liczony w łyżkach */
+  if(SPOON[food.id])return SPOON[food.id];
+  /* Ugotowane kasze, ryże i makarony są w „zbożach”, ale łyżka waży w nich
+     tyle co łyżka dania, nie tyle co łyżka mąki. */
+  if(/ugotowan|gotowan|puree/i.test(food.n))return 18;
+  return SPOON_CAT[food.cat]||15;
+}
 function unitGrams(u,food){
+  /* łyżka i łyżeczka zależą od tego, CO się nabiera */
+  if(u.own==="łyżka")return spoonGrams(food);
+  if(u.own==="łyżeczka")return Math.max(3,Math.round(spoonGrams(food)/3));
   if(u.own==="*")return pieceWeight(food);
   if(u.own==="pc")return food.pc||u.gram;
   if(u.own&&norm(u.own)===norm(food.u))return food.s;
