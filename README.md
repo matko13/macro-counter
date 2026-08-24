@@ -63,7 +63,10 @@ Co parser rozumie:
 - **liczebniki** cyfrą i słowem, razem z odmianą: `4 jaj`, `dwa jajka`,
   `ośmiu oliwek`, `półtora banana`, `1/3 pizzy`
 - **jednostki domowe**: garść, łyżka, łyżeczka, szklanka, kromka, plaster,
-  puszka, kostka, opakowanie, miarka, talerz — a także `200 g`, `0,5 l`, `2 dag`
+  puszka, kostka, opakowanie, miarka, talerz — a także `200 g`, `0,5 l`, `2 dag`.
+  **Łyżka waży tyle, ile to, co się nią nabiera**: 28 g gęstej sałatki, 18 g
+  ugotowanego ryżu, 10 g mąki, 6 g płatków owsianych. Produkty liczone łyżkami
+  mają swoją wagę w bazie (oliwa 10 g) i ona wygrywa
 - **polską odmianę** przez porównanie wspólnego prefiksu z progiem zależnym od
   długości słowa (`fety` = `feta`, ale `ser` ≠ `sernik`), plus tabelę form
   nieregularnych (`kurczak` → „Pierś z kurczaka", `serków` → „Serek wiejski",
@@ -243,6 +246,23 @@ Reszta wynika z tego samego:
 - **cele tapania ≥ 48 px** i zakładki na dole, w zasięgu kciuka
 - **oba motywy pełnoprawne** — ciemny nie jest przyciemnionym jasnym: ma własne
   wartości kolorów danych, sprawdzone pod kątem daltonizmu tak samo jak jasny
+
+## Na oko — kiedy nie ma czego zważyć
+
+Na imprezie stoi miska z sałatką i nabierasz z niej dwie czy trzy łyżki. Nie ma
+wagi, nie ma etykiety, nie wiesz nawet, ile gospodarz dał majonezu.
+
+Dania (kategoria „Dania gotowe", liczone w porcjach) mają w arkuszu rząd
+**„Na oko"**: `łyżka · 2 łyżki · 3 łyżki · talerzyk`. Gramy i kalorie widać od
+razu nad nim, a gdy chcesz dokładniej — pole gramatury jest obok. Dla sałatki
+jarzynowej „3 łyżki" to 84 g i 151 kcal.
+
+Warto przy tym wiedzieć, gdzie naprawdę jest błąd: **nie w porcji, a
+w przepisie**. Sałatka jarzynowa waha się od ~120 do ~250 kcal na 100 g
+w zależności od proporcji majonezu do warzyw — to ±50% na samym produkcie,
+więcej niż cała niepewność co do liczby łyżek. Mierzenie łyżek co do grama jest
+tam fałszywą precyzją; lepiej wziąć wyższą ze swoich ocen i pozwolić, żeby
+**bank tygodnia** rozłożył jeden wieczór na siedem dni.
 
 ## Bank tygodnia
 
@@ -450,7 +470,7 @@ nie zalecenie medyczne.
   deuteranopia / trytanopia) w obu motywach; kolor nigdy nie jest jedynym
   nośnikiem znaczenia — każdy pasek i słupek ma etykietę tekstową.
 - Cele tapania ≥ 44 px (minimum z wytycznych Apple, pilnowane testem), widoczny focus klawiatury, `prefers-reduced-motion`.
-- Testy: **361 przypadków** przez Playwright (headless Chromium, część na
+- Testy: **372 przypadków** przez Playwright (headless Chromium, część na
   emulowanym iPhone 13), w osiemnastu zestawach. Całość leży w `test/`
   i uruchamia się jednym poleceniem:
 
@@ -473,7 +493,7 @@ nie zalecenie medyczne.
   | interfejs | 21 | dodawanie, cofanie, szukanie bez polskich znaków, arkusz porcji, zestawy, kalkulator, trwałość po odświeżeniu, oba motywy, brak poziomego przewijania |
   | opis posiłku zdaniem | 19 | rozpoznanie składników, gramatura, nazwa dania, część zjedzona, posiłek i dzień ze zdania, korekta i usuwanie pozycji, zapis zestawu, cofnięcie całego posiłku, uczciwy komunikat przy zerowym wyniku |
   | przymiotniki i aliasy | 18 | „piwo zero" i „mleko odtłuszczone" trafiające w wariant, ostrzeżenie przy braku wariantu, „bez cukru" bez cukru, brak fałszywych trafień na zwykłych słowach, oraz przypadki, w których przymiotnik nie może sam zostać produktem (`ser wędzony`, `marchewka surowa`, `solone orzeszki`) |
-  | warianty produktu | 18 | procent tłuszczu, warianty z nawiasu (suchy / ugotowany, grill / surowy), nazwy zaczynające się słowem pomijanym (`sos sojowy`), łącznik, obce znaki diakrytyczne, słowo będące zarazem miarą, całe zdanie z trzema wariantami naraz |
+  | warianty produktu | 28 | procent tłuszczu, warianty z nawiasu (suchy / ugotowany, grill / surowy), nazwy zaczynające się słowem pomijanym (`sos sojowy`), łącznik, obce znaki diakrytyczne, słowo będące zarazem miarą, całe zdanie z trzema wariantami naraz. Do tego waga łyżki zależna od tego, co się nabiera (sałatka 28 g, ugotowany ryż 18 g, płatki 6 g, oliwa po swojemu), łyżeczka jako trzecia część łyżki, oraz rząd „Na oko" dla dań — z pilnowaniem, że żadna etykieta nie jest ucięta |
   | spójność bazy | 26 | 655 produktów: unikalne identyfikatory i nazwy, znane kategorie i jednostki, porcje > 0, brak liczb ujemnych, **kcal zgodne z makro w regule 4/4/9**, alkohol liczony z 7 kcal/g, porcja poniżej 1100 kcal, owoce jako część jadalna, aliasy wskazujące na istniejące produkty i — najważniejsze — **każdy produkt osiągalny własną nazwą** |
   | dyktowanie | 18 | język i tryb nasłuchu, tekst częściowy na żywo, przejście do podglądu po stopie, zdanie bez przecinków, odmowa mikrofonu po polsku i bez pętli ponowień, samoczynny koniec frazy (iOS), wygaszenie mikrofonu przy zamknięciu arkusza, przeglądarka bez rozpoznawania mowy |
   | danie a składnik | 11 | burger z wołowiną kontra chleb z masłem kontra przepis z ilościami, nazwy pięciowyrazowe, porcje jadalne owoców |
