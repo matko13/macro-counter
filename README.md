@@ -72,8 +72,10 @@ Co parser rozumie:
   ugotowanego ryżu, 10 g mąki, 6 g płatków owsianych. Produkty liczone łyżkami
   mają swoją wagę w bazie (oliwa 10 g) i ona wygrywa
 - **polską odmianę** przez porównanie wspólnego prefiksu z progiem zależnym od
-  długości słowa (`fety` = `feta`, ale `ser` ≠ `sernik`), plus tabelę form
-  nieregularnych (`kurczak` → „Pierś z kurczaka", `serków` → „Serek wiejski",
+  długości słowa (`fety` = `feta`, ale `ser` ≠ `sernik`). Osobno dopuszczony jest
+  **dopełniacz liczby mnogiej rodzaju żeńskiego**, który zmienia dwie końcowe
+  litery: `śliwki → śliwek`, `truskawki → truskawek`, `borówki → borówek`.
+  Plus tabelę form nieregularnych (`kurczak` → „Pierś z kurczaka", `serków` → „Serek wiejski",
   `kartofle` → „Ziemniaki")
 - **dłuższa nazwa wygrywa z krótszą**: `pomidorków koktajlowych` to
   „Pomidorki koktajlowe", nie „Pomidor"
@@ -474,7 +476,7 @@ nie zalecenie medyczne.
   deuteranopia / trytanopia) w obu motywach; kolor nigdy nie jest jedynym
   nośnikiem znaczenia — każdy pasek i słupek ma etykietę tekstową.
 - Cele tapania ≥ 44 px (minimum z wytycznych Apple, pilnowane testem), widoczny focus klawiatury, `prefers-reduced-motion`.
-- Testy: **386 przypadków** przez Playwright (headless Chromium, część na
+- Testy: **400 przypadków** przez Playwright (headless Chromium, część na
   emulowanym iPhone 13), w osiemnastu zestawach. Całość leży w `test/`
   i uruchamia się jednym poleceniem:
 
@@ -495,7 +497,7 @@ nie zalecenie medyczne.
   | zestaw | ile | co pilnuje |
   | --- | --- | --- |
   | interfejs | 21 | dodawanie, cofanie, szukanie bez polskich znaków, arkusz porcji, zestawy, kalkulator, trwałość po odświeżeniu, oba motywy, brak poziomego przewijania |
-  | opis posiłku zdaniem | 33 | rozpoznanie składników, gramatura, nazwa dania, część zjedzona, posiłek i dzień ze zdania, korekta i usuwanie pozycji, zapis zestawu, cofnięcie całego posiłku, uczciwy komunikat przy zerowym wyniku, oraz trzynaście przypadków na to, żeby liczba nie przeskakiwała na inny produkt — pięć zdań, w których musi zniknąć, i osiem, w których musi zostać |
+  | opis posiłku zdaniem | 47 | rozpoznanie składników, gramatura, nazwa dania, część zjedzona, posiłek i dzień ze zdania, korekta i usuwanie pozycji, zapis zestawu, cofnięcie całego posiłku, uczciwy komunikat przy zerowym wyniku, oraz trzynaście przypadków na to, żeby liczba nie przeskakiwała na inny produkt — pięć zdań, w których musi zniknąć, i osiem, w których musi zostać. Do tego dopełniacz liczby mnogiej (`śliwek`, `truskawek`, `borówek`, `porzeczek`) i druga strona tej samej reguły: dwadzieścia jedno zwykłe słowo, które **nie** może udawać jedzenia — bo poluzowanie odmiany wpuszczało `pralka`→praliny, a `3 serie` na siłowni trafiały w `ser` |
   | przymiotniki i aliasy | 18 | „piwo zero" i „mleko odtłuszczone" trafiające w wariant, ostrzeżenie przy braku wariantu, „bez cukru" bez cukru, brak fałszywych trafień na zwykłych słowach, oraz przypadki, w których przymiotnik nie może sam zostać produktem (`ser wędzony`, `marchewka surowa`, `solone orzeszki`) |
   | warianty produktu | 28 | procent tłuszczu, warianty z nawiasu (suchy / ugotowany, grill / surowy), nazwy zaczynające się słowem pomijanym (`sos sojowy`), łącznik, obce znaki diakrytyczne, słowo będące zarazem miarą, całe zdanie z trzema wariantami naraz. Do tego waga łyżki zależna od tego, co się nabiera (sałatka 28 g, ugotowany ryż 18 g, płatki 6 g, oliwa po swojemu), łyżeczka jako trzecia część łyżki, oraz rząd „Na oko" dla dań — z pilnowaniem, że żadna etykieta nie jest ucięta |
   | spójność bazy | 26 | 655 produktów: unikalne identyfikatory i nazwy, znane kategorie i jednostki, porcje > 0, brak liczb ujemnych, **kcal zgodne z makro w regule 4/4/9**, alkohol liczony z 7 kcal/g, porcja poniżej 1100 kcal, owoce jako część jadalna, aliasy wskazujące na istniejące produkty i — najważniejsze — **każdy produkt osiągalny własną nazwą** |

@@ -2778,6 +2778,16 @@ var STOP={};
    czasownik, pora dnia i nazwa posiłku kończą temat („5 słówek I jabłko”,
    „na 5 osób ZROBIŁEM jabłko”, „o 5 RANO jabłko”). Przymiotnik nie —
    „2 duże jabłka” i „2 średnie pomidory” to nadal dwie sztuki. */
+/* Słowa, które wyglądają jak jedzenie dla dopasowania rozmytego, a nie są nim.
+   „3 serie” na siłowni trafiały w „ser” (przez alias „sera”), „rama” w ramen,
+   „torba” w tort. To ta sama nieostrość, która pozwala „fety” trafić w „feta”,
+   więc nie da się jej zacieśnić bez szkody — łatwiej wymienić te kilka słów.
+   Nie są ciche: trafiają na listę pominiętych, więc widać, że apka je widziała. */
+var NOTFOOD={};
+("seria serie serii seriach kanapa kanape lampa rama ramie torba torbe "+
+ "maszyna maszynie sztanga sztange sztangi hantle powtorka powtorki").split(" ")
+ .forEach(function(w){if(w)NOTFOOD[w]=1});
+
 var BREAK={};
 ("i oraz a na w we z ze do po przy dla o od plus bez potem jeszcze "+
  "zrobilem zrobilam zrobil zrobila zrobilismy zjadlem zjadlam zjadl zjadla "+
@@ -2806,7 +2816,19 @@ function wmatch(a,b){
   while(i<L&&a.charAt(i)===b.charAt(i))i++;
   if(i<3)return 0;
   var mn=Math.min(a.length,b.length),d=Math.abs(a.length-b.length);
-  if(i<mn-1)return 0;
+  /* Zwykle różnić się może jedna końcówka („feta”/„fety”). Wyjątkiem jest
+     dopełniacz liczby mnogiej rodzaju żeńskiego, który zmienia DWA znaki:
+     śliwki→śliwek, truskawki→truskawek, borówki→borówek, marchewka→marchewek.
+     Luzowanie tego na wszystko wpuszczało śmieci („masło”→„maska”,
+     „pralka”→„praliny”), więc dopuszczamy dokładnie ten wzorzec końcówek. */
+  var ea=a.slice(i),eb=b.slice(i);
+  var genPl=(ea==="ek"&&(eb==="ki"||eb==="ka"||eb==="ke"))||
+            (eb==="ek"&&(ea==="ki"||ea==="ka"||ea==="ke"));
+  if(i<mn-1&&!genPl)return 0;
+  /* Słowo wypowiedziane DŁUŻSZE od nazwy w bazie, i to o dwa znaki na końcu,
+     to zwykle inne słowo, nie odmiana: „serie” (na siłowni) nie jest „serem”.
+     W drugą stronę wolno — „4 jaj” to „jajko”. */
+  if(a.length-b.length>=2&&i===b.length&&i<5)return 0;
   /* Gdy słowa rozjeżdżają się w środku (żadne nie jest przedrostkiem
      drugiego), na dwuznakową różnicę długości musi zapracować długi wspólny
      rdzeń: "suszonych"≈"suszone" i "suchego"≈"suchy" tak, ale "solone"≉"sola"
@@ -3030,6 +3052,7 @@ function parseMeal(text){
        "sos sojowy" gubił się i doliczał napój sojowy, a "sos czosnkowy" czosnek. */
     var m=matchAt(toks,a);
     if(m&&STOP[t.n]&&m.len<2)m=null;
+    if(m&&m.len===1&&NOTFOOD[t.n])m=null;
     /* Przymiotnik nie może sam z siebie stać się produktem: "ser wędzony"
        dopisywał łososia, "marchewka surowa" surówkę, "kotlet wege" węgorza.
        Liczy się tylko wtedy, gdy trafia w nazwę dokładnie ("bezalkoholowe")

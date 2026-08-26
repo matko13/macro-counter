@@ -117,6 +117,51 @@ for (const [txt,want] of keep) {
 const half=(await QTY('dwa i pół banana')).join(' + ');
 ok('„i” przed liczbą nie przerywa („dwa i pół banana”)  ['+half+']', /Banan/.test(half));
 
+// ── dopełniacz liczby mnogiej: śliwki → śliwek ─────────────────────────────
+/* „5 śliwek i jabłko” dodawało 5 jabłek: śliwki nie były rozpoznawane, więc
+   liczba została bez właściciela i przeskoczyła dalej. Przyczyna była w regule
+   odmiany — dopuszczała różnicę JEDNEJ końcowej litery, a dopełniacz liczby
+   mnogiej rodzaju żeńskiego zmienia dwie: śliwki→śliwek. „jabłek” i „oliwek”
+   działały tylko dlatego, że miały ręczne aliasy. */
+const infl = [
+  ['5 śliwek i jabłko','Śliwki:500 + Jabłko:150'],
+  ['5 śliwek','Śliwki:500'],
+  ['garść truskawek','Truskawki:30'],
+  ['garść borówek','Borówki:30'],
+  ['garść porzeczek','Porzeczki:30'],
+  ['4 jaj','Jajko:220'],
+  ['garść oliwek','Oliwki:30'],
+  ['5 jabłek','Jabłko:750']
+];
+for (const [txt,want] of infl) {
+  const got=(await QTY(txt)).join(' + ');
+  ok('odmiana rozpoznana: „'+txt+'”  ['+got+']', got===want);
+}
+
+// ── słowa, które tylko wyglądają jak jedzenie ──────────────────────────────
+/* Poluzowanie odmiany wpuszczało śmieci: „pralka”→praliny, „kartka”→ziemniaki.
+   Dlatego dwie końcówki są dopuszczone tylko dla wzorca -ek/-ki, a kilka słów
+   wysokiego ryzyka jest wprost wyłączonych — „3 serie” na siłowni trafiały
+   w „ser” przez alias „sera”. */
+const junk = await p.evaluate(ws=>{
+  const out=[];
+  ws.split(' ').forEach(w=>{const r=window.MAKRO.parse(w); if(r.items.length)out.push(w+'→'+r.items[0].f.n)});
+  return out;
+}, 'maska maszyna kaseta kanapa lampa mapa rama kartka szafka torba pralka komputer telefon zeszyt linijka praca droga seria serie sztanga powtorki');
+ok('zwykłe słowa nie udają jedzenia  ['+(junk.join(', ')||'żadne')+']', junk.length===0);
+const gym=(await QTY('zrobiłem 3 serie i zjadłem jabłko')).join(' + ');
+ok('„3 serie” to nie trzy sery  ['+gym+']', gym==='Jabłko:150');
+const seen=await p.evaluate(()=>window.MAKRO.parse('zrobiłem 3 serie i zjadłem jabłko').skipped);
+ok('a pominięte słowo jest wypisane, nie przemilczane  ['+seen.join(',')+']',
+   seen.some(w=>/seri/i.test(w)));
+/* Prawdziwe jedzenie o podobnych nazwach musi nadal działać. */
+const real = [['2 kanapki','Kanapka z szynką i serem:240'],['ramen','Ramen:400'],
+              ['ser żółty','Ser żółty (gouda):30']];
+for (const [txt,want] of real) {
+  const got=(await QTY(txt)).join(' + ');
+  ok('a prawdziwe jedzenie zostaje: „'+txt+'”  ['+got+']', got===want);
+}
+
 console.log(T.join('\n'));
 console.log(errs.length?'\nBŁĘDY: '+errs.join('\n'):'\nbłędy JS: brak');
 await b.close();
