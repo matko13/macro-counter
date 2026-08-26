@@ -2771,6 +2771,23 @@ var STOP={};
  "wiec no cos duzo malo troche sporo kawalek kawalki reszta pozniej wczesniej caly dzien nie tak owszem").split(" ")
  .forEach(function(w){if(w)STOP[w]=1});
 
+/* Liczba podana dla jednej rzeczy nie może przeskoczyć na inną. „5 słówek
+   i jabłko” to JEDNO jabłko, a nie pięć — a apka doliczała pięć, bo liczba
+   żyła przez trzy kolejne słowa i łapała pierwszy rozpoznany produkt.
+   Odległość jest tu złym kryterium; rozstrzyga RODZAJ słowa. Spójnik,
+   czasownik, pora dnia i nazwa posiłku kończą temat („5 słówek I jabłko”,
+   „na 5 osób ZROBIŁEM jabłko”, „o 5 RANO jabłko”). Przymiotnik nie —
+   „2 duże jabłka” i „2 średnie pomidory” to nadal dwie sztuki. */
+var BREAK={};
+("i oraz a na w we z ze do po przy dla o od plus bez potem jeszcze "+
+ "zrobilem zrobilam zrobil zrobila zrobilismy zjadlem zjadlam zjadl zjadla "+
+ "zjedlem zjedlismy jadlem jadlam wypilem wypilam wypil dodalem dodalam dalem "+
+ "mialem mialam bylem bylam byl byla bylo byly jest sa mam "+
+ "dzisiaj dzis wczoraj przedwczoraj rano wieczorem poludnie noc nocy "+
+ "sniadanie sniadaniem sniadanko obiad obiadem kolacja kolacje kolacji "+
+ "przekaska przekaske podwieczorek deser drugie pierwsze").split(" ")
+ .forEach(function(w){if(w)BREAK[w]=1});
+
 /* Przymiotniki, które potrafią zmienić kalorie o połowę. Jeśli taki wyraz
    stoi obok produktu, a produkt go nie ma w nazwie, nie wolno go po cichu
    zgubić — pozycja dostaje ostrzeżenie. */
@@ -3044,6 +3061,13 @@ function parseMeal(text){
       res.items.push({f:m.f,g:g,at:a,len:m.len,qty:!!q});
       pend=null;age=0;a+=m.len-1;
       continue;
+    }
+    /* Liczba nie przechodzi przez spójnik, czasownik ani porę dnia. Wyjątek:
+       gdy zaraz po nich stoi kolejna liczba („dwa i pół banana”) — to jest
+       jedna wartość, nie dwie. */
+    if(pend&&BREAK[t.n]){
+      var nx=toks[a+1];
+      if(!(nx&&nx.num!=null))pend=null;
     }
     if(QUAL[t.n]){t.qual=1;if(pend){age++;if(age>3)pend=null}continue}
     if(!STOP[t.n]&&t.n.length>=4&&!seenSkip[t.n]&&res.skipped.length<6){

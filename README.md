@@ -61,7 +61,11 @@ do dziennika, widzisz podgląd i możesz poprawić każdą pozycję.
 Co parser rozumie:
 
 - **liczebniki** cyfrą i słowem, razem z odmianą: `4 jaj`, `dwa jajka`,
-  `ośmiu oliwek`, `półtora banana`, `1/3 pizzy`
+  `ośmiu oliwek`, `półtora banana`, `1/3 pizzy`. Liczba **nie przeskakuje na
+  inny produkt**: `5 słówek i jabłko` to jedno jabłko, choć „5" stoi obok.
+  Rozstrzyga rodzaj słowa, nie odległość — spójnik, czasownik i pora dnia
+  kończą temat (`na 5 osób zrobiłem jabłko`, `o 5 rano jabłko`), a przymiotnik
+  nie (`2 duże jabłka`, `2 średnie pomidory` to nadal dwie sztuki)
 - **jednostki domowe**: garść, łyżka, łyżeczka, szklanka, kromka, plaster,
   puszka, kostka, opakowanie, miarka, talerz — a także `200 g`, `0,5 l`, `2 dag`.
   **Łyżka waży tyle, ile to, co się nią nabiera**: 28 g gęstej sałatki, 18 g
@@ -470,7 +474,7 @@ nie zalecenie medyczne.
   deuteranopia / trytanopia) w obu motywach; kolor nigdy nie jest jedynym
   nośnikiem znaczenia — każdy pasek i słupek ma etykietę tekstową.
 - Cele tapania ≥ 44 px (minimum z wytycznych Apple, pilnowane testem), widoczny focus klawiatury, `prefers-reduced-motion`.
-- Testy: **372 przypadków** przez Playwright (headless Chromium, część na
+- Testy: **386 przypadków** przez Playwright (headless Chromium, część na
   emulowanym iPhone 13), w osiemnastu zestawach. Całość leży w `test/`
   i uruchamia się jednym poleceniem:
 
@@ -491,7 +495,7 @@ nie zalecenie medyczne.
   | zestaw | ile | co pilnuje |
   | --- | --- | --- |
   | interfejs | 21 | dodawanie, cofanie, szukanie bez polskich znaków, arkusz porcji, zestawy, kalkulator, trwałość po odświeżeniu, oba motywy, brak poziomego przewijania |
-  | opis posiłku zdaniem | 19 | rozpoznanie składników, gramatura, nazwa dania, część zjedzona, posiłek i dzień ze zdania, korekta i usuwanie pozycji, zapis zestawu, cofnięcie całego posiłku, uczciwy komunikat przy zerowym wyniku |
+  | opis posiłku zdaniem | 33 | rozpoznanie składników, gramatura, nazwa dania, część zjedzona, posiłek i dzień ze zdania, korekta i usuwanie pozycji, zapis zestawu, cofnięcie całego posiłku, uczciwy komunikat przy zerowym wyniku, oraz trzynaście przypadków na to, żeby liczba nie przeskakiwała na inny produkt — pięć zdań, w których musi zniknąć, i osiem, w których musi zostać |
   | przymiotniki i aliasy | 18 | „piwo zero" i „mleko odtłuszczone" trafiające w wariant, ostrzeżenie przy braku wariantu, „bez cukru" bez cukru, brak fałszywych trafień na zwykłych słowach, oraz przypadki, w których przymiotnik nie może sam zostać produktem (`ser wędzony`, `marchewka surowa`, `solone orzeszki`) |
   | warianty produktu | 28 | procent tłuszczu, warianty z nawiasu (suchy / ugotowany, grill / surowy), nazwy zaczynające się słowem pomijanym (`sos sojowy`), łącznik, obce znaki diakrytyczne, słowo będące zarazem miarą, całe zdanie z trzema wariantami naraz. Do tego waga łyżki zależna od tego, co się nabiera (sałatka 28 g, ugotowany ryż 18 g, płatki 6 g, oliwa po swojemu), łyżeczka jako trzecia część łyżki, oraz rząd „Na oko" dla dań — z pilnowaniem, że żadna etykieta nie jest ucięta |
   | spójność bazy | 26 | 655 produktów: unikalne identyfikatory i nazwy, znane kategorie i jednostki, porcje > 0, brak liczb ujemnych, **kcal zgodne z makro w regule 4/4/9**, alkohol liczony z 7 kcal/g, porcja poniżej 1100 kcal, owoce jako część jadalna, aliasy wskazujące na istniejące produkty i — najważniejsze — **każdy produkt osiągalny własną nazwą** |

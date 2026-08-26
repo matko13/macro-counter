@@ -82,6 +82,41 @@ await p.locator('.sheet textarea').fill('jakieś resztki z lodówki');
 await p.locator('.sheet .sheetrow .btn').nth(1).click(); await p.waitForTimeout(300);
 ok('uczciwy komunikat gdy nic nie rozpoznano', /Nie rozpoznałem/.test(await p.locator('.sheet h3').innerText()));
 
+// ── liczba nie przeskakuje na inny produkt ─────────────────────────────────
+/* „Podyktowałem 5 słówek i jabłko, a dodał 5 jabłek”. Liczba żyła przez trzy
+   kolejne słowa i łapała pierwszy rozpoznany produkt. Odległość jest tu złym
+   kryterium — rozstrzyga rodzaj słowa: spójnik, czasownik i pora dnia kończą
+   temat, przymiotnik nie. */
+const QTY = t => p.evaluate(x=>window.MAKRO.parse(x).items.map(i=>i.f.n+':'+Math.round(i.g)), t);
+const leak = [
+  ['5 słówek i jabłko','Jabłko:150'],
+  ['powtórzyłem 5 słówek i zjadłem jabłko','Jabłko:150'],
+  ['o 5 rano jabłko','Jabłko:150'],
+  ['5 minut rozgrzewki i jabłko','Jabłko:150'],
+  ['na 5 osób zrobiłem jabłko','Jabłko:150']
+];
+for (const [txt,want] of leak) {
+  const got=(await QTY(txt)).join(' + ');
+  ok('liczba dla czegoś innego nie mnoży produktu: „'+txt+'”  ['+got+']', got===want);
+}
+/* Druga strona reguły: przymiotnik między liczbą a produktem nie może jej zjeść. */
+const keep = [
+  ['2 duże jabłka','Jabłko:300'],
+  ['2 średnie pomidory','Pomidor:240'],
+  ['2 dojrzałe banany','Banan:240'],
+  ['zjadłem 3 banany','Banan:360'],
+  ['5 jabłek','Jabłko:750'],
+  ['3 kromki chleba pszennego','Chleb pszenny:105'],
+  ['4 jaj i 2 serków wiejskich','Jajko:220 + Serek wiejski:400'],
+  ['na obiad 200 g ryżu i 150 g piersi z kurczaka','Ryż biały (ugotowany):200 + Pierś z kurczaka (surowa):150']
+];
+for (const [txt,want] of keep) {
+  const got=(await QTY(txt)).join(' + ');
+  ok('a prawdziwa ilość zostaje: „'+txt+'”  ['+got+']', got===want);
+}
+const half=(await QTY('dwa i pół banana')).join(' + ');
+ok('„i” przed liczbą nie przerywa („dwa i pół banana”)  ['+half+']', /Banan/.test(half));
+
 console.log(T.join('\n'));
 console.log(errs.length?'\nBŁĘDY: '+errs.join('\n'):'\nbłędy JS: brak');
 await b.close();
