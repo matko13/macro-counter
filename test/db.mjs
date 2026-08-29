@@ -9,7 +9,7 @@ const errs=[]; p.on('pageerror',e=>errs.push(e.message));
 await p.goto(APP); await p.waitForTimeout(300);
 
 const F = await p.evaluate(()=>window.MAKRO.foods().map(f=>
-  ({id:f.id,n:f.n,cat:f.cat,k:f.k,p:f.p,c:f.c,f:f.f,s:f.s,u:f.u})));
+  ({id:f.id,n:f.n,cat:f.cat,k:f.k,p:f.p,c:f.c,f:f.f,s:f.s,u:f.u,pc:f.pc})));
 
 ok('baza ma co najmniej 600 produktów  ['+F.length+']', F.length>=600);
 
@@ -84,6 +84,22 @@ const byName = n => F.filter(f=>f.n===n)[0];
   const f=byName(x[0]);
   ok('jest w bazie: '+x[0]+'  ['+(f?f.k+' kcal/100 g':'BRAK')+']', !!f && f.k===x[1]);
 });
+/* Jedyny produkt markowy w bazie — dodany z etykiety, bo użytkownik go jada.
+   Kostka waży 250 g, więc „kostka twarogu” musi dawać 250, a nie porcję. */
+const strz=byName("Twaróg ze Strzałkowa półtłusty");
+ok('jest w bazie twaróg ze Strzałkowa  ['+(strz?strz.k+' kcal, B '+strz.p:'BRAK')+']',
+   !!strz && strz.k===122 && strz.p===19 && strz.f===3.5 && strz.c===4);
+ok('z wagą kostki 250 g  ['+(strz?strz.pc:'—')+']', !!strz && strz.pc===250);
+const strzHit = await p.evaluate(()=>[
+  window.MAKRO.parse('kostka twarogu ze Strzałkowa').items.map(i=>i.f.n+':'+Math.round(i.g))[0],
+  window.MAKRO.parse('strzałkowo').items.map(i=>i.f.n)[0],
+  window.MAKRO.parse('twaróg półtłusty').items.map(i=>i.f.n)[0]
+]);
+ok('„kostka” to cała kostka  ['+strzHit[0]+']', strzHit[0]==='Twaróg ze Strzałkowa półtłusty:250');
+ok('skrót „strzałkowo” też trafia  ['+strzHit[1]+']', strzHit[1]==='Twaróg ze Strzałkowa półtłusty');
+ok('ale rodzajowy „twaróg półtłusty” nie jest przejęty przez markę  ['+strzHit[2]+']',
+   strzHit[2]==='Twaróg półtłusty');
+
 const kk=byName("Kakao ciemne (proszek)");
 ok('kakao w proszku liczy się z łyżki, nie z 100 g  ['+(kk?kk.s+' g / '+kk.u:'—')+']',
    !!kk && kk.u==="łyżka" && kk.s<=10);

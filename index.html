@@ -467,6 +467,7 @@ var RAW=[
 ["Skyr / jogurt islandzki","nabial",63,10.5,4,0.2,150,"g"],
 ["Twaróg chudy","nabial",99,19.8,3.5,0.5,100,"g"],
 ["Twaróg półtłusty","nabial",133,18.7,3.7,4.7,100,"g"],
+["Twaróg ze Strzałkowa półtłusty","nabial",122,19,4,3.5,100,"g",250],
 ["Serek wiejski","nabial",98,12.5,3.4,4.3,200,"g"],
 ["Serek homogenizowany","nabial",145,8,14,6,150,"g"],
 ["Ser żółty (gouda)","nabial",356,25,2.2,27,30,"g"],
@@ -2618,6 +2619,7 @@ var ALIAS={
 "skyr-jogurt-islandzki":"skyr|skyru",
 "twarog-chudy":"twarog|twarogu|twarogiem|ser bialy|bialy ser|bialego sera",
 "twarog-poltlusty":"twarog poltlusty",
+"twarog-ze-strzalkowa-poltlusty":"strzalkowo|twarog strzalkowo|twarog ze strzalkowa|twarog strzalkowski|poltlusty ze strzalkowa",
 "serek-wiejski":"serkow wiejskich|serki wiejskie|serka wiejskiego|cottage|cottage cheese",
 "ser-zolty-gouda":"ser|sera|serem|sery|ser zolty|zolty ser|gouda|sera zoltego|zoltego sera",
 "feta":"ser feta",
@@ -2957,7 +2959,7 @@ function isDish(f){return f.cat==="gotowe"||!!DISHY[f.id]}
    kategorii; nazwa produktu może to nadpisać, gdy kategoria kłamie. */
 var SPOON={"salatka-jarzynowa":28,"salatka-ziemniaczana":28,"salatka-cezar":22,
   "surowka-coleslaw":22,"platki-owsiane":6,"cukier":12,"hummus":22,"tzatziki":22,
-  "twarog-chudy":25,"twarog-poltlusty":25,"serek-wiejski":25,"ryz-bialy-suchy":12};
+  "twarog-chudy":25,"twarog-poltlusty":25,"twarog-ze-strzalkowa-poltlusty":25,"serek-wiejski":25,"ryz-bialy-suchy":12};
 var SPOON_CAT={gotowe:25,nabial:22,straczkowe:22,slodycze:20,mieso:20,
   warzywa:18,owoce:18,napoje:15,tluszcze:14,zboza:10,supl:8,own:15};
 function spoonGrams(food){
