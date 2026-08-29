@@ -100,6 +100,26 @@ ok('skrót „strzałkowo” też trafia  ['+strzHit[1]+']', strzHit[1]==='Twar�
 ok('ale rodzajowy „twaróg półtłusty” nie jest przejęty przez markę  ['+strzHit[2]+']',
    strzHit[2]==='Twaróg półtłusty');
 
+/* Smażenie i panierka to trzy różne produkty, nie jeden z przymiotnikiem:
+   surowy dorsz 82 kcal, smażony 175, panierowany 200. Kolejność słów nie może
+   zmieniać wyniku, a samo „miętus” nie może oznaczać wersji smażonej. */
+[["Dorsz smażony",175],["Miętus",90],["Miętus smażony",165],["Miętus w panierce",205]].forEach(function(x){
+  const f=byName(x[0]);
+  ok('jest w bazie: '+x[0]+'  ['+(f?f.k+' kcal/100 g':'BRAK')+']', !!f && f.k===x[1]);
+});
+const fish = await p.evaluate(()=>{
+  const q=t=>{const r=window.MAKRO.parse(t);return r.items.length?r.items[0].f.n:'NIC'};
+  return {a:q('smażony miętus'),b:q('miętus smażony'),c:q('miętus w panierce'),
+          d:q('panierowany miętus'),e:q('miętus'),f:q('smażony dorsz'),g:q('dorsz w panierce'),h:q('dorsz')};
+});
+ok('kolejność słów nie zmienia wyniku  ['+fish.a+' / '+fish.b+']',
+   fish.a==='Miętus smażony' && fish.b==='Miętus smażony');
+ok('panierka to osobny produkt  ['+fish.c+' / '+fish.d+']',
+   fish.c==='Miętus w panierce' && fish.d==='Miętus w panierce');
+ok('samo „miętus” to ryba bez patelni  ['+fish.e+']', fish.e==='Miętus');
+ok('to samo dla dorsza  ['+fish.f+' / '+fish.g+' / '+fish.h+']',
+   fish.f==='Dorsz smażony' && fish.g==='Dorsz panierowany' && fish.h==='Dorsz');
+
 const kk=byName("Kakao ciemne (proszek)");
 ok('kakao w proszku liczy się z łyżki, nie z 100 g  ['+(kk?kk.s+' g / '+kk.u:'—')+']',
    !!kk && kk.u==="łyżka" && kk.s<=10);
