@@ -108,7 +108,7 @@ ok('ale rodzajowy „twaróg półtłusty” nie jest przejęty przez markę  ['
    jako pasta, nie 150 g jako danie). */
 const kisz=byName("Kiszka ziemniaczana Gzella");
 ok('jest w bazie kiszka ziemniaczana  ['+(kisz?kisz.k+' kcal, B '+kisz.p:'BRAK')+']',
-   !!kisz && kisz.k===214 && kisz.p===7.5 && kisz.c===12 && kisz.f===15);
+   !!kisz && kisz.k===180 && kisz.p===6.8 && kisz.c===12 && kisz.f===11);
 ok('z porcją 150 g, bo to danie, nie pasta  ['+(kisz?kisz.s+' '+kisz.u:'—')+']',
    !!kisz && kisz.s===150 && kisz.u==='g');
 const kiszHit = await p.evaluate(()=>[
