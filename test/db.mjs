@@ -84,8 +84,9 @@ const byName = n => F.filter(f=>f.n===n)[0];
   const f=byName(x[0]);
   ok('jest w bazie: '+x[0]+'  ['+(f?f.k+' kcal/100 g':'BRAK')+']', !!f && f.k===x[1]);
 });
-/* Jedyny produkt markowy w bazie — dodany z etykiety, bo użytkownik go jada.
-   Kostka waży 250 g, więc „kostka twarogu” musi dawać 250, a nie porcję. */
+/* Produkty markowe trafiają do bazy tylko wtedy, gdy użytkownik je jada i podał
+   etykietę. Kostka twarogu waży 250 g, więc „kostka twarogu” musi dawać 250,
+   a nie porcję. */
 const strz=byName("Twaróg ze Strzałkowa półtłusty");
 ok('jest w bazie twaróg ze Strzałkowa  ['+(strz?strz.k+' kcal, B '+strz.p:'BRAK')+']',
    !!strz && strz.k===122 && strz.p===19 && strz.f===3.5 && strz.c===4);
@@ -99,6 +100,29 @@ ok('„kostka” to cała kostka  ['+strzHit[0]+']', strzHit[0]==='Twaróg ze St
 ok('skrót „strzałkowo” też trafia  ['+strzHit[1]+']', strzHit[1]==='Twaróg ze Strzałkowa półtłusty');
 ok('ale rodzajowy „twaróg półtłusty” nie jest przejęty przez markę  ['+strzHit[2]+']',
    strzHit[2]==='Twaróg półtłusty');
+
+/* Kiszka ziemniaczana Gzella. Marka jest w nazwie, ale to jedyna kiszka
+   ziemniaczana w bazie, więc rodzajowa nazwa musi na nią trafiać — inaczej
+   trzeba by pamiętać markę, żeby cokolwiek znaleźć. Nie może za to przejmować
+   kiszki pasztetowej, która jest zupełnie innym produktem (320 kcal, porcja 30 g
+   jako pasta, nie 150 g jako danie). */
+const kisz=byName("Kiszka ziemniaczana Gzella");
+ok('jest w bazie kiszka ziemniaczana  ['+(kisz?kisz.k+' kcal, B '+kisz.p:'BRAK')+']',
+   !!kisz && kisz.k===214 && kisz.p===7.5 && kisz.c===12 && kisz.f===15);
+ok('z porcją 150 g, bo to danie, nie pasta  ['+(kisz?kisz.s+' '+kisz.u:'—')+']',
+   !!kisz && kisz.s===150 && kisz.u==='g');
+const kiszHit = await p.evaluate(()=>[
+  window.MAKRO.parse('kiszka ziemniaczana').items.map(i=>i.f.n)[0],
+  window.MAKRO.parse('kiszka ziemniaczana gzella').items.map(i=>i.f.n)[0],
+  window.MAKRO.parse('zjadłem 200 g kiszki ziemniaczanej').items.map(i=>i.f.n+':'+Math.round(i.g))[0],
+  window.MAKRO.parse('kiszka pasztetowa').items.map(i=>i.f.n)[0]
+]);
+ok('rodzajowa „kiszka ziemniaczana” trafia  ['+kiszHit[0]+']',
+   kiszHit[0]==='Kiszka ziemniaczana Gzella');
+ok('z marką też  ['+kiszHit[1]+']', kiszHit[1]==='Kiszka ziemniaczana Gzella');
+ok('odmiana „kiszki ziemniaczanej” z gramaturą  ['+kiszHit[2]+']',
+   kiszHit[2]==='Kiszka ziemniaczana Gzella:200');
+ok('a kiszka pasztetowa zostaje sobą  ['+kiszHit[3]+']', kiszHit[3]==='Kiszka pasztetowa');
 
 /* Smażenie i panierka to trzy różne produkty, nie jeden z przymiotnikiem:
    surowy dorsz 82 kcal, smażony 175, panierowany 200. Kolejność słów nie może
