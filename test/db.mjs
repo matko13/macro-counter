@@ -124,6 +124,24 @@ ok('odmiana „kiszki ziemniaczanej” z gramaturą  ['+kiszHit[2]+']',
    kiszHit[2]==='Kiszka ziemniaczana Gzella:200');
 ok('a kiszka pasztetowa zostaje sobą  ['+kiszHit[3]+']', kiszHit[3]==='Kiszka pasztetowa');
 
+/* „Humus” przez jedno m to w polszczyźnie pisownia równie częsta co „hummus”,
+   a wcześniej nie trafiała nigdzie: „zjadłem 60 g humusu” dawało pustkę,
+   a „humus z burakiem” lądował na samych burakach. Wpis w bazie jest jeden —
+   brakowało tylko drugiej pisowni. */
+const humHit = await p.evaluate(()=>[
+  window.MAKRO.parse('humus').items.map(i=>i.f.n)[0],
+  window.MAKRO.parse('zjadłem 60 g humusu').items.map(i=>i.f.n+':'+Math.round(i.g))[0],
+  window.MAKRO.parse('dwie łyżki humusu').items.map(i=>i.f.n+':'+Math.round(i.g))[0],
+  window.MAKRO.parse('humus z burakiem').items.map(i=>i.f.n)[0],
+  window.MAKRO.parse('tost z humusem').items.map(i=>i.f.n).join('+')
+]);
+ok('„humus” przez jedno m trafia  ['+humHit[0]+']', humHit[0]==='Hummus');
+ok('z gramaturą i odmianą  ['+humHit[1]+']', humHit[1]==='Hummus:60');
+ok('łyżka humusu waży 22 g, nie ogólne 15  ['+humHit[2]+']', humHit[2]==='Hummus:44');
+ok('„humus z burakiem” to nie same buraki  ['+humHit[3]+']', humHit[3]==='Hummus z buraka');
+ok('i wchodzi jako dodatek do pieczywa  ['+humHit[4]+']',
+   humHit[4]==='Chleb tostowy+Hummus');
+
 /* Smażenie i panierka to trzy różne produkty, nie jeden z przymiotnikiem:
    surowy dorsz 82 kcal, smażony 175, panierowany 200. Kolejność słów nie może
    zmieniać wyniku, a samo „miętus” nie może oznaczać wersji smażonej. */
