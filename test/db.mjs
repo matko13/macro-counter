@@ -64,9 +64,19 @@ ok('kcal zgadza się z makro (4/4/9)  ['+off.length+' odstępstw'+(off.length?':
 const alkoBad = F.filter(f=>ALKO.test(f.n)).filter(f=>f.k < 4*f.p+4*f.c+9*f.f - 5).map(f=>f.n);
 ok('alkohole: kcal nie niższe niż z samych makro  ['+(alkoBad.join(',')||'-')+']', alkoBad.length===0);
 
-/* Porcja to najczęściej jedno tapnięcie w apce, więc musi być realistyczna. */
-const wild = F.map(f=>({n:f.n,kcal:f.k*f.s/100})).filter(x=>x.kcal>1100).map(x=>x.n+':'+Math.round(x.kcal));
+/* Porcja to najczęściej jedno tapnięcie w apce, więc musi być realistyczna.
+   Wyjątki wpisane z nazwy, nie z progu: produkt, którego porcją JEST cała
+   paczka albo cały zestaw. Trzymam je jako listę, żeby barierka dalej łapała
+   literówki w porcjach, a nie została po cichu rozluźniona dla wszystkich. */
+const WIELKIE = ['Zestaw sushi 30 szt. (z tempurą i panko)'];
+const wild = F.filter(f=>WIELKIE.indexOf(f.n)<0)
+  .map(f=>({n:f.n,kcal:f.k*f.s/100})).filter(x=>x.kcal>1100).map(x=>x.n+':'+Math.round(x.kcal));
 ok('domyślna porcja nie przekracza 1100 kcal  ['+(wild.join(',')||'-')+']', wild.length===0);
+/* Wyjątki niech będą policzone, żeby nikt nie dopisywał ich bezmyślnie. */
+const wielkie = WIELKIE.map(n=>F.find(f=>f.n===n));
+ok('wyjątki od progu porcji są nazwane i policzone  ['+
+   wielkie.map((f,i)=>WIELKIE[i]+':'+(f?Math.round(f.k*f.s/100):'BRAK')).join(', ')+']',
+   wielkie.every(Boolean) && WIELKIE.length<=2);
 
 /* Owoce liczymy jako część jadalną — to był realny błąd: jabłko pokazywało
    94 kcal, bo porcja obejmowała ogryzek. */
@@ -141,6 +151,68 @@ ok('łyżka humusu waży 22 g, nie ogólne 15  ['+humHit[2]+']', humHit[2]==='Hu
 ok('„humus z burakiem” to nie same buraki  ['+humHit[3]+']', humHit[3]==='Hummus z buraka');
 ok('i wchodzi jako dodatek do pieczywa  ['+humHit[4]+']',
    humHit[4]==='Chleb tostowy+Hummus');
+
+/* Sushi. Sześć pozycji: pięć rodzajów sztuk plus cały zestaw. Rodzaje są
+   ogólne (tak nazywa je każda sushiarnia), więc policzą też inne zamówienie —
+   zestaw jest oszacowany ze składu jednego konkretnego, 30-sztukowego.
+   Najważniejsze: cały zestaw musi się zgadzać z sumą swoich sztuk, bo inaczej
+   te same 30 kawałków dają dwa różne wyniki zależnie od tego, jak je wpiszesz. */
+const SUSHI=[
+  ['Nigiri z łososiem opalanym',36,2],
+  ['Futomaki z pieczonym łososiem',44,6],
+  ['Futomaki philadelphia z łososiem',42,6],
+  ['California maki w tempurze z łososiem',48,8],
+  ['Hosomaki z pastą z łososia w panko',30,8]
+];
+SUSHI.forEach(function(x){
+  const f=byName(x[0]);
+  ok('jest w bazie: '+x[0]+'  ['+(f?f.k+' kcal/100 g, sztuka '+f.pc+' g':'BRAK')+']',
+     !!f && f.pc===x[1] && f.u==='szt');
+});
+const zestaw=byName('Zestaw sushi 30 szt. (z tempurą i panko)');
+ok('jest cały zestaw  ['+(zestaw?zestaw.s+' g, '+zestaw.k+' kcal/100 g':'BRAK')+']',
+   !!zestaw && zestaw.s===1220 && zestaw.u==='porcja');
+
+const zgoda = await p.evaluate((lista)=>{
+  const f=n=>window.MAKRO.foods().find(x=>x.n===n);
+  let k=0,pr=0,c=0,ft=0,g=0;
+  lista.forEach(function(x){
+    const m=window.MAKRO.scale(f(x[0]),x[1]*x[2]);
+    k+=m.k;pr+=m.p;c+=m.c;ft+=m.f;g+=x[1]*x[2];
+  });
+  const z=f('Zestaw sushi 30 szt. (z tempurą i panko)'), zm=window.MAKRO.scale(z,z.s);
+  return {szt:{g:g,k:k,p:pr,c:c,f:ft}, zest:{g:z.s,k:zm.k,p:zm.p,c:zm.c,f:zm.f}};
+}, SUSHI);
+const roz = Math.abs(zgoda.zest.k-zgoda.szt.k)/zgoda.szt.k*100;
+ok('zestaw = suma 30 sztuk  ['+Math.round(zgoda.szt.k)+' vs '+Math.round(zgoda.zest.k)+
+   ' kcal, '+roz.toFixed(1)+'% różnicy]', roz<3);
+ok('i waga też się spina  ['+zgoda.szt.g+' vs '+zgoda.zest.g+' g]',
+   Math.abs(zgoda.zest.g-zgoda.szt.g)<25);
+
+const suHit = await p.evaluate(()=>[
+  window.MAKRO.parse('zestaw sushi').items.map(i=>i.f.n+':'+Math.round(i.g))[0],
+  window.MAKRO.parse('special set').items.map(i=>i.f.n+':'+Math.round(i.g))[0],
+  window.MAKRO.parse('pół zestawu sushi').items.map(i=>i.f.n+':'+Math.round(i.g))[0],
+  window.MAKRO.parse('dwa nigiri').items.map(i=>i.f.n+':'+Math.round(i.g))[0],
+  window.MAKRO.parse('sześć futomaki philadelphia').items.map(i=>i.f.n+':'+Math.round(i.g))[0],
+  window.MAKRO.parse('8 california maki').items.map(i=>i.f.n+':'+Math.round(i.g))[0],
+  window.MAKRO.parse('hosomaki w panko').items.map(i=>i.f.n+':'+Math.round(i.g))[0],
+  window.MAKRO.parse('maki').items.map(i=>i.f.n)[0],
+  window.MAKRO.parse('sushi').items.map(i=>i.f.n)[0]
+]);
+ok('„zestaw sushi” to cały zestaw  ['+suHit[0]+']', suHit[0]==='Zestaw sushi 30 szt. (z tempurą i panko):1220');
+ok('nazwa z menu też trafia  ['+suHit[1]+']', suHit[1]==='Zestaw sushi 30 szt. (z tempurą i panko):1220');
+ok('„pół zestawu” to połowa, nie połowa sztuki  ['+suHit[2]+']',
+   suHit[2]==='Zestaw sushi 30 szt. (z tempurą i panko):610');
+ok('sztuki liczą się na sztuki  ['+suHit[3]+']', suHit[3]==='Nigiri z łososiem opalanym:72');
+ok('z liczbą słownie  ['+suHit[4]+']', suHit[4]==='Futomaki philadelphia z łososiem:252');
+ok('i cyfrą  ['+suHit[5]+']', suHit[5]==='California maki w tempurze z łososiem:384');
+ok('hosomaki po panko  ['+suHit[6]+']', suHit[6]==='Hosomaki z pastą z łososia w panko:240');
+/* „maki” było aliasem mąki pszennej długo przed sushi i musi nim zostać —
+   inaczej „maki” w przepisie zaczęłoby znaczyć rolkę sushi. */
+ok('„maki” to nadal mąka, nie sushi  ['+suHit[7]+']', suHit[7]==='Mąka pszenna');
+ok('a rodzajowe „sushi” nie zostało przejęte przez zestaw  ['+suHit[8]+']',
+   suHit[8]==='Sushi (rolka)');
 
 /* Smażenie i panierka to trzy różne produkty, nie jeden z przymiotnikiem:
    surowy dorsz 82 kcal, smażony 175, panierowany 200. Kolejność słów nie może
