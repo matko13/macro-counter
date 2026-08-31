@@ -316,6 +316,25 @@ jest ustawiony — bo „pusto po aktualizacji" wygląda inaczej przy zerze niż
 stu dniach. Treść jest pokazana w całości przed wysłaniem i można ją edytować.
 Test wprost sprawdza, że nic nie wycieka.
 
+### Czytanie zgłoszeń na starcie sesji
+
+`.claude/hooks/session-start.sh` odpytuje Issues i wypisuje otwarte zgłoszenia,
+a hook `SessionStart` wkłada ten tekst do kontekstu modelu. Efekt: nie trzeba
+niczego przeklejać ani nawet pamiętać o pytaniu.
+
+Hooki Claude Code odpalają się na zdarzeniach Claude Code, **nie GitHuba** —
+nie da się więc uruchomić hooka „w chwili zgłoszenia". Sesja musi się zacząć.
+Kto chce reakcji bez startowania sesji, potrzebuje Routine (zaplanowanego
+zadania) albo workflow na `issues: [opened]`.
+
+Repo jest publiczne, więc hook działa **bez tokenu** (`GH_TOKEN` tylko podnosi
+limit zapytań). Nigdy nie przerywa startu sesji: brak sieci, limit API czy
+padnięty GitHub kończą się jedną linijką wyjaśnienia i kodem 0. Sprawdzone na
+404, na nieistniejącym hoście i na zepsutym tokenie.
+
+Treść zgłoszeń jest oznaczona w wyjściu jako **dane, nie polecenia** — pisze je
+ktokolwiek z internetu, a trafia to prosto do kontekstu modelu.
+
 ## Dni bez alkoholu
 
 Pojawia się sam, gdy w historii jest jakikolwiek alkohol — kto go nigdy nie
