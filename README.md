@@ -298,6 +298,24 @@ więcej niż cała niepewność co do liczby łyżek. Mierzenie łyżek co do gr
 tam fałszywą precyzją; lepiej wziąć wyższą ze swoich ocen i pozwolić, żeby
 **bank tygodnia** rozłożył jeden wieczór na siedem dni.
 
+## Zgłaszanie problemów
+
+**Ja → Zgłoś problem**. Apka nie ma serwera, więc nie wyśle zgłoszenia sama —
+ale zbiera to, czego przy zgłoszeniu zwykle brakuje: wersję wdrożenia,
+przeglądarkę, czy działa z ekranu początkowego, czy `localStorage` w ogóle
+odpowiada, i treść ostatnich pięciu błędów. Potem albo jedno tapnięcie
+w gotowe Issue na GitHubie, albo skopiowanie tekstu — dla kogoś bez konta.
+
+Błędy łapią się same (`error` i `unhandledrejection`) do osobnego klucza
+`makro.err`, nigdy do danych. Lista jest ograniczona do pięciu wpisów
+i przeżywa przeładowanie, bo awaria zwykle kończy się właśnie odświeżeniem.
+
+Raport **nie zawiera niczego o jedzeniu**: ani nazw produktów, ani wag, ani
+celów. Tylko liczniki — ile dni w dzienniku, ile własnych produktów, czy profil
+jest ustawiony — bo „pusto po aktualizacji" wygląda inaczej przy zerze niż przy
+stu dniach. Treść jest pokazana w całości przed wysłaniem i można ją edytować.
+Test wprost sprawdza, że nic nie wycieka.
+
 ## Dni bez alkoholu
 
 Pojawia się sam, gdy w historii jest jakikolwiek alkohol — kto go nigdy nie
@@ -525,8 +543,8 @@ nie zalecenie medyczne.
   deuteranopia / trytanopia) w obu motywach; kolor nigdy nie jest jedynym
   nośnikiem znaczenia — każdy pasek i słupek ma etykietę tekstową.
 - Cele tapania ≥ 44 px (minimum z wytycznych Apple, pilnowane testem), widoczny focus klawiatury, `prefers-reduced-motion`.
-- Testy: **469 przypadków** przez Playwright (headless Chromium, część na
-  emulowanym iPhone 13), w dziewiętnastu zestawach. Całość leży w `test/`
+- Testy: **492 przypadków** przez Playwright (headless Chromium, część na
+  emulowanym iPhone 13), w dwudziestu zestawach. Całość leży w `test/`
   i uruchamia się jednym poleceniem:
 
   ```
@@ -554,6 +572,7 @@ nie zalecenie medyczne.
   | danie a składnik | 11 | burger z wołowiną kontra chleb z masłem kontra przepis z ilościami, nazwy pięciowyrazowe, porcje jadalne owoców |
   | dotyk i geometria | 18 | żadna reguła `:hover` poza `@media (hover:hover)` (na iOS pierwsze tapnięcie na takim elemencie tylko „najeżdża", a klika dopiero drugie), pojedyncze tapnięcie zatwierdza posiłek i dodaje produkt, **każdy element dotykowy ma ≥44 px** na wszystkich ekranach, oraz szerokość toastu: pełna szerokość treści zamiast połowy ekranu, równe marginesy, najwyżej dwie linijki tekstu i nieściśnięty „Cofnij". Do tego **rozmiary wszystkich ikon na każdym ekranie** — funkcja rysująca ikony nie podaje wymiarów, a bezwymiarowy SVG w gridzie rozciąga się na całe pole, a we fleksie zapada do zera i po prostu znika |
   | podgląd bez dubli | 8 | spóźnione zamknięcie sesji mowy po zatwierdzeniu, zamknięcie arkusza w trakcie dyktowania, podwójne kliknięcie w „Dodaj" |
+  | zgłaszanie problemów | 23 | treść raportu, wyłapywanie prawdziwych wyjątków i ich przetrwanie przeładowania, ograniczenie listy błędów, nietykalność dziennika, oba przyciski (GitHub i schowek) tej samej szerokości i z odstępem, oraz — najważniejsze — że **raport nie zawiera niczego o jedzeniu, wadze ani celach** |
   | dni bez alkoholu | 19 | liczenie dni od ostatniego razu i czystych dni w oknie, piwo bezalkoholowe nieprzerywające licznika, dzień bez zapisu nieliczony jako czysty, kalorie liczone z własnego spożycia sprzed rzucenia, brak licznika u kogoś, kto alkoholu nigdy nie zapisał, oraz to, że **wpadka nie kasuje dorobku** — licznik dni startuje od nowa, ale czyste dni zmieniają się o jeden |
   | tydzień i domykanie dnia | 28 | arytmetyka banku (suma odstępstw, dni zamknięte bez dzisiejszego, bank ujemny), **dzień bez zapisu pomijany a nie liczony jako zapas**, ukrycie banku w poniedziałek, rozpisanie tygodnia na siedem dni, oraz podpowiedzi domykające: budżet i luka białka, żadna nie przekracza budżetu, porcje realne, bez powtórzonych kategorii, historia podnosząca pozycje wyżej, trzy przypadki kiedy NIE podpowiadać, i odmiana jednostek. Zegar jest przypięty do znanej środy — zestaw zależny od dnia tygodnia sprawdzałby co innego każdego dnia |
   | wpisywanie liczb | 22 | gramatura wpisywana z klawiatury we wszystkich pięciu miejscach ze stepperem, **znak po znaku** (nie ustawieniem wartości na raz — to jedyny sposób, żeby złapać utratę fokusu), plus liczy dalej od wpisanej wartości, granice i śmieciowy tekst, przecinek w wadze, oraz wyłączony double-tap zoom na każdej kontrolce przy zachowanym zsuwaniu palcami |

@@ -43,10 +43,14 @@ jobs:
           done
           # Znacznik wersji w service workerze: bez zmiany tego pliku przeglądarka
           # nie rozpozna nowego wdrożenia i nie zaproponuje odświeżenia.
-          sed -i "s/__BUILD__/${GITHUB_SHA:0:7}/" _site/sw.js
-          if grep -q "__BUILD__" _site/sw.js; then
-            echo "::error::nie podmieniono znacznika __BUILD__ w sw.js"; exit 1
-          fi
+          # Ten sam znacznik trafia do index.html, bo zgłoszenie problemu bez
+          # numeru wersji jest prawie bezużyteczne.
+          sed -i "s/__BUILD__/${GITHUB_SHA:0:7}/" _site/sw.js _site/index.html
+          for f in sw.js index.html; do
+            if grep -q "__BUILD__" "_site/$f"; then
+              echo "::error::nie podmieniono znacznika __BUILD__ w $f"; exit 1
+            fi
+          done
           echo "build: $(grep -o 'makro-[0-9a-f]\{7\}' _site/sw.js | head -1)"
           ls -la _site
 

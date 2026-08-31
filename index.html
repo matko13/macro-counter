@@ -387,6 +387,10 @@ main{flex:1;padding:6px 18px 28px;display:flex;flex-direction:column;gap:26px}
 .sheet .field+.field{margin-top:16px}
 .sheetrow{display:flex;gap:10px;padding-top:16px}
 .sheetrow .btn{flex:1}
+/* <button> domyślnie kurczy się do treści i display:flex tego nie zmienia,
+   więc przyciski jeden pod drugim trzeba rozciągnąć kolumną (align-items
+   stretch) — inaczej mają różne szerokości i stykają się bez odstępu. */
+.sheetcol{display:flex;flex-direction:column;gap:10px;padding-top:16px}
 
 /* ─────────── nowa wersja i komunikaty ─────────── */
 .update{
@@ -1201,6 +1205,108 @@ var ICON={
 
 /* ═══════════════════════ 3. stan ═══════════════════════ */
 var KEY="makro.v1";
+
+/* ═══════════════════════ zgłaszanie problemów ═══════════════════════
+   Apka nie ma serwera, więc nie może wysłać zgłoszenia sama. Może jednak
+   zebrać to, czego przy zgłoszeniu zwykle brakuje — wersję, przeglądarkę
+   i treść błędu — i podać gotowy tekst. Reszta to jedno tapnięcie
+   w GitHuba albo skopiowanie na WhatsAppa.
+
+   Świadomie NIE trafia do raportu nic o jedzeniu: ani nazwy produktów,
+   ani wagi, ani cele. Tylko liczniki (ile dni, ile własnych produktów),
+   bo „pusto po aktualizacji" wygląda inaczej przy zerze niż przy stu dniach. */
+var BUILD="__BUILD__";                    /* podmieniane przy publikacji */
+var REPO="https://github.com/matko13/macro-counter";
+var ERRKEY="makro.err";                   /* osobny klucz — nigdy nie ruszy danych */
+var ERRMAX=5;
+
+function errLog(what){
+  try{
+    var a=JSON.parse(localStorage.getItem(ERRKEY)||"[]");
+    var line=new Date().toISOString().slice(0,16).replace("T"," ")+"  "+String(what).slice(0,220);
+    if(a.length&&a[a.length-1].slice(17)===line.slice(17))return;  /* nie powtarzaj tego samego */
+    a.push(line);
+    while(a.length>ERRMAX)a.shift();
+    localStorage.setItem(ERRKEY,JSON.stringify(a));
+  }catch(e){}
+}
+function errList(){
+  try{return JSON.parse(localStorage.getItem(ERRKEY)||"[]")}catch(e){return[]}
+}
+window.addEventListener("error",function(e){
+  errLog((e.message||"błąd")+"  @"+String(e.filename||"").split("/").pop()+":"+(e.lineno||"?"));
+});
+window.addEventListener("unhandledrejection",function(e){
+  errLog("nieobsłużone odrzucenie: "+((e.reason&&(e.reason.message||e.reason))||"?"));
+});
+
+function diagReport(){
+  var st="?";
+  try{localStorage.setItem("makro.probe","1");localStorage.removeItem("makro.probe");st="działa"}
+  catch(e){st="NIEDOSTĘPNY ("+(e.name||"błąd")+")"}
+  var stand=(window.matchMedia&&window.matchMedia("(display-mode: standalone)").matches)||
+            navigator.standalone===true;
+  var dni=0,wl=0,prof="brak";
+  try{
+    dni=Object.keys(S.log||{}).length;
+    wl=(S.custom||[]).length;
+    prof=S.profile?"ustawiony":"brak";
+  }catch(e){}
+  var err=errList();
+  return [
+    "## Co się stało",
+    "",
+    "(opisz tutaj: co robiłeś, co się stało, czego się spodziewałeś)",
+    "",
+    "## Dane techniczne",
+    "",
+    "- wersja: "+(BUILD==="__BUILD__"?"lokalna (niewdrożona)":BUILD),
+    "- kiedy: "+new Date().toISOString().slice(0,16).replace("T"," "),
+    "- z ekranu początkowego: "+(stand?"tak":"nie (przeglądarka)"),
+    "- przeglądarka: "+navigator.userAgent,
+    "- ekran: "+screen.width+"×"+screen.height+" @"+(window.devicePixelRatio||1)+"x",
+    "- język: "+(navigator.language||"?"),
+    "- localStorage: "+st,
+    "- dni w dzienniku: "+dni+", własnych produktów: "+wl+", profil: "+prof,
+    "",
+    "## Ostatnie błędy",
+    "",
+    err.length?err.map(function(x){return "- "+x}).join("\n"):"- brak zapisanych błędów",
+    "",
+    "<!-- Raport nie zawiera nic o jedzeniu: ani nazw produktów, ani wag, ani celów. -->"
+  ].join("\n");
+}
+
+function feedbackSheet(){
+  openSheet(function(root){
+    root.appendChild(el("h3",{id:"sheetTitle",text:"Zgłoś problem"}));
+    root.appendChild(el("div",{class:"note",text:"Apka nie ma serwera, więc nie wyśle zgłoszenia sama. Poniżej gotowy tekst — z wersją, przeglądarką i ostatnimi błędami, czyli tym, czego przy zgłaszaniu zwykle brakuje."}));
+    var ta=el("textarea",{spellcheck:"false",style:"min-height:180px"});
+    ta.value=diagReport();
+    root.appendChild(el("div",{class:"field"},[el("label",{text:"Treść zgłoszenia — dopisz na górze, co się stało"}),ta]));
+    root.appendChild(el("div",{class:"note",text:"Nie ma tu nic o Twoim jedzeniu: żadnych nazw produktów, wag ani celów. Same liczniki i dane przeglądarki."}));
+    /* Jeden pod drugim, nie obok siebie: „Wyślij na GitHuba” nie mieści się
+       w połowie szerokości i łamie się na dwie linie, rozjeżdżając wiersz. */
+    var akcje=el("div",{class:"sheetcol"});
+    akcje.appendChild(el("button",{class:"btn",text:"Wyślij na GitHuba",onclick:function(){
+      var u=REPO+"/issues/new?labels=zgloszenie&title="+
+        encodeURIComponent("Zgłoszenie z apki")+"&body="+encodeURIComponent(ta.value);
+      /* GitHub obcina bardzo długie adresy, więc jak raport spuchnie od
+         błędów, lepiej dać schowek niż ucięte zgłoszenie. */
+      if(u.length>7500){toast("Raport za długi na link — użyj „Skopiuj tekst”");return}
+      window.open(u,"_blank","noopener");
+    }}));
+    akcje.appendChild(el("button",{class:"btn alt",text:"Skopiuj tekst (bez konta GitHub)",
+      onclick:function(){
+        ta.select();
+        if(navigator.clipboard)navigator.clipboard.writeText(ta.value).then(
+          function(){toast("Skopiowane — wyślij, gdzie Ci wygodnie")},
+          function(){toast("Zaznacz i skopiuj ręcznie")});
+        else toast("Zaznacz i skopiuj ręcznie");
+      }}));
+    root.appendChild(akcje);
+  });
+}
 var S={log:{},custom:[],sets:[],usage:{},wt:{},goal:{k:2200,p:150,c:230,f:70},profile:null,theme:"auto",split:"bal"};
 var loadFailed=false;
 function load(){
@@ -2663,6 +2769,7 @@ function viewMe(){
     el("div",{class:"eyebrow",text:"Twoje dane"}),
     el("div",{class:"note",text:"Wszystko siedzi tylko w tej przeglądarce (localStorage) — nic nie wychodzi na żaden serwer. Kopia zapasowa to zwykły tekst: skopiuj go sobie gdziekolwiek."}),
     el("button",{class:"btn alt",text:"Kopia zapasowa / przywracanie",onclick:backupSheet}),
+    el("button",{class:"btn alt",text:"Zgłoś problem",onclick:feedbackSheet}),
     el("button",{class:"btn danger",text:"Wyczyść wszystko",onclick:function(){
       openSheet(function(root){
         root.appendChild(el("h3",{id:"sheetTitle",text:"Wyczyścić wszystko?"}));
@@ -3638,7 +3745,7 @@ document.getElementById("themeBtn").addEventListener("click",function(){
 
 /* uchwyt dla testów — parser bywa jedyną częścią, którą warto sprawdzić
    bez klikania po ekranach */
-window.MAKRO={parse:parseMeal,alias:ALIAS,foods:allFoods,byId:byId,scale:scale,cats:CATS,tdee:tdeeReal,toast:toast,alko:alkoStats,unitLabel:unitLabel,week:function(){return weekBank(dkey(new Date()))},close:function(){return closeDay(dkey(new Date()))},wtFit:function(){return wtFit(WT_WINDOW)},dbg:{STOP:STOP,QUAL:QUAL}};
+window.MAKRO={parse:parseMeal,alias:ALIAS,foods:allFoods,byId:byId,scale:scale,cats:CATS,tdee:tdeeReal,toast:toast,alko:alkoStats,diag:diagReport,errLog:errLog,errList:errList,unitLabel:unitLabel,week:function(){return weekBank(dkey(new Date()))},close:function(){return closeDay(dkey(new Date()))},wtFit:function(){return wtFit(WT_WINDOW)},dbg:{STOP:STOP,QUAL:QUAL}};
 
 /* Offline. Rejestrujemy service workera tylko wtedy, gdy strona jest
    hostowana i ma manifest — wersja jednoplikowa (Artifact, file://) nie ma
