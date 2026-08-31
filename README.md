@@ -235,6 +235,12 @@ oszacowany ze składu konkretnego zamówienia. Test pilnuje, żeby zestaw zgadza
 się z sumą swoich sztuk, bo inaczej te same 30 kawałków dałyby dwa różne wyniki
 zależnie od tego, jak je wpiszesz.
 
+Sushi je się na kawałki, nie na porcje, a „kawałek" i „kawałki" są na liście
+słów pomijanych — więc „30 kawałków sushi" znaczyło dla apki „30 **porcji**
+sushi", czyli 6 kg i 8700 kcal. Rodzajowe sushi ma dziś wagę kawałka (40 g)
+i wychodzi 1,2 kg. Zestaw takiej wagi mieć nie może: dostaje ją każde liczenie,
+także „pół zestawu", które spadało wtedy z 610 g na 21 g.
+
 Wartości sushi są **szacunkiem, nie etykietą** — restauracje nie podają makro.
 Liczone od dołu: każdy rodzaj sztuki rozbity na składniki o znanej gęstości
 kalorycznej (ryż z octem, łosoś, philadelphia, panko, wchłonięty olej), więc
@@ -519,7 +525,7 @@ nie zalecenie medyczne.
   deuteranopia / trytanopia) w obu motywach; kolor nigdy nie jest jedynym
   nośnikiem znaczenia — każdy pasek i słupek ma etykietę tekstową.
 - Cele tapania ≥ 44 px (minimum z wytycznych Apple, pilnowane testem), widoczny focus klawiatury, `prefers-reduced-motion`.
-- Testy: **461 przypadków** przez Playwright (headless Chromium, część na
+- Testy: **469 przypadków** przez Playwright (headless Chromium, część na
   emulowanym iPhone 13), w dziewiętnastu zestawach. Całość leży w `test/`
   i uruchamia się jednym poleceniem:
 
@@ -543,7 +549,7 @@ nie zalecenie medyczne.
   | opis posiłku zdaniem | 47 | rozpoznanie składników, gramatura, nazwa dania, część zjedzona, posiłek i dzień ze zdania, korekta i usuwanie pozycji, zapis zestawu, cofnięcie całego posiłku, uczciwy komunikat przy zerowym wyniku, oraz trzynaście przypadków na to, żeby liczba nie przeskakiwała na inny produkt — pięć zdań, w których musi zniknąć, i osiem, w których musi zostać. Do tego dopełniacz liczby mnogiej (`śliwek`, `truskawek`, `borówek`, `porzeczek`) i druga strona tej samej reguły: dwadzieścia jedno zwykłe słowo, które **nie** może udawać jedzenia — bo poluzowanie odmiany wpuszczało `pralka`→praliny, a `3 serie` na siłowni trafiały w `ser` |
   | przymiotniki i aliasy | 18 | „piwo zero" i „mleko odtłuszczone" trafiające w wariant, ostrzeżenie przy braku wariantu, „bez cukru" bez cukru, brak fałszywych trafień na zwykłych słowach, oraz przypadki, w których przymiotnik nie może sam zostać produktem (`ser wędzony`, `marchewka surowa`, `solone orzeszki`) |
   | warianty produktu | 28 | procent tłuszczu, warianty z nawiasu (suchy / ugotowany, grill / surowy), nazwy zaczynające się słowem pomijanym (`sos sojowy`), łącznik, obce znaki diakrytyczne, słowo będące zarazem miarą, całe zdanie z trzema wariantami naraz. Do tego waga łyżki zależna od tego, co się nabiera (sałatka 28 g, ugotowany ryż 18 g, płatki 6 g, oliwa po swojemu), łyżeczka jako trzecia część łyżki, oraz rząd „Na oko" dla dań — z pilnowaniem, że żadna etykieta nie jest ucięta |
-  | spójność bazy | 68 | 667 produktów: unikalne identyfikatory i nazwy, znane kategorie i jednostki, porcje > 0, brak liczb ujemnych, **kcal zgodne z makro w regule 4/4/9**, alkohol liczony z 7 kcal/g, porcja poniżej 1100 kcal, owoce jako część jadalna, aliasy wskazujące na istniejące produkty i — najważniejsze — **każdy produkt osiągalny własną nazwą** |
+  | spójność bazy | 76 | 667 produktów: unikalne identyfikatory i nazwy, znane kategorie i jednostki, porcje > 0, brak liczb ujemnych, **kcal zgodne z makro w regule 4/4/9**, alkohol liczony z 7 kcal/g, porcja poniżej 1100 kcal, owoce jako część jadalna, aliasy wskazujące na istniejące produkty i — najważniejsze — **każdy produkt osiągalny własną nazwą** |
   | dyktowanie | 18 | język i tryb nasłuchu, tekst częściowy na żywo, przejście do podglądu po stopie, zdanie bez przecinków, odmowa mikrofonu po polsku i bez pętli ponowień, samoczynny koniec frazy (iOS), wygaszenie mikrofonu przy zamknięciu arkusza, przeglądarka bez rozpoznawania mowy |
   | danie a składnik | 11 | burger z wołowiną kontra chleb z masłem kontra przepis z ilościami, nazwy pięciowyrazowe, porcje jadalne owoców |
   | dotyk i geometria | 18 | żadna reguła `:hover` poza `@media (hover:hover)` (na iOS pierwsze tapnięcie na takim elemencie tylko „najeżdża", a klika dopiero drugie), pojedyncze tapnięcie zatwierdza posiłek i dodaje produkt, **każdy element dotykowy ma ≥44 px** na wszystkich ekranach, oraz szerokość toastu: pełna szerokość treści zamiast połowy ekranu, równe marginesy, najwyżej dwie linijki tekstu i nieściśnięty „Cofnij". Do tego **rozmiary wszystkich ikon na każdym ekranie** — funkcja rysująca ikony nie podaje wymiarów, a bezwymiarowy SVG w gridzie rozciąga się na całe pole, a we fleksie zapada do zera i po prostu znika |

@@ -214,6 +214,33 @@ ok('„maki” to nadal mąka, nie sushi  ['+suHit[7]+']', suHit[7]==='Mąka psz
 ok('a rodzajowe „sushi” nie zostało przejęte przez zestaw  ['+suHit[8]+']',
    suHit[8]==='Sushi (rolka)');
 
+/* Sushi je się na kawałki, nie na porcje. „kawałek” i „kawałki” są na liście
+   słów pomijanych, więc „30 kawałków sushi” znaczyło dla apki „30 PORCJI
+   sushi” — czyli 30 × 200 g = 6 kg i 8700 kcal. Waga kawałka to naprawia.
+   Zestaw takiej wagi mieć NIE MOŻE: dostaje ją każde liczenie, także „pół
+   zestawu”, które spadało wtedy z 610 g na 21 g. */
+const rolka=byName('Sushi (rolka)');
+ok('sushi rodzajowe ma wagę kawałka  ['+(rolka?rolka.pc+' g':'BRAK')+']',
+   !!rolka && rolka.pc===40);
+ok('zestaw wagi kawałka nie ma  ['+(zestaw.pc||'brak')+']', !zestaw.pc);
+const kawHit = await p.evaluate(()=>[
+  window.MAKRO.parse('30 kawałków sushi').items.map(i=>i.f.n+':'+Math.round(i.g))[0],
+  window.MAKRO.parse('12 kawałków sushi').items.map(i=>i.f.n+':'+Math.round(i.g))[0],
+  window.MAKRO.parse('pół zestawu sushi').items.map(i=>i.f.n+':'+Math.round(i.g))[0],
+  window.MAKRO.parse('dwa zestawy sushi').items.map(i=>i.f.n+':'+Math.round(i.g))[0],
+  window.MAKRO.parse('kawałek chleba').items.map(i=>i.f.n+':'+Math.round(i.g))[0],
+  window.MAKRO.parse('dwa kawałki pizzy').items.map(i=>i.f.n+':'+Math.round(i.g))[0]
+]);
+ok('„30 kawałków sushi” to 1,2 kg, nie 6 kg  ['+kawHit[0]+']', kawHit[0]==='Sushi (rolka):1200');
+ok('i liczy się liniowo  ['+kawHit[1]+']', kawHit[1]==='Sushi (rolka):480');
+ok('„pół zestawu” dalej to połowa zestawu  ['+kawHit[2]+']',
+   kawHit[2]==='Zestaw sushi 30 szt. (z tempurą i panko):610');
+ok('„dwa zestawy” dalej to dwa zestawy  ['+kawHit[3]+']',
+   kawHit[3]==='Zestaw sushi 30 szt. (z tempurą i panko):2440');
+/* „kawałek” przy innych produktach musi działać jak dotąd. */
+ok('kawałek chleba bez zmian  ['+kawHit[4]+']', kawHit[4]==='Chleb żytni razowy:40');
+ok('dwa kawałki pizzy bez zmian  ['+kawHit[5]+']', kawHit[5]==='Pizza margherita:300');
+
 /* Smażenie i panierka to trzy różne produkty, nie jeden z przymiotnikiem:
    surowy dorsz 82 kcal, smażony 175, panierowany 200. Kolejność słów nie może
    zmieniać wyniku, a samo „miętus” nie może oznaczać wersji smażonej. */
