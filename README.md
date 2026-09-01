@@ -298,6 +298,23 @@ więcej niż cała niepewność co do liczby łyżek. Mierzenie łyżek co do gr
 tam fałszywą precyzją; lepiej wziąć wyższą ze swoich ocen i pozwolić, żeby
 **bank tygodnia** rozłożył jeden wieczór na siedem dni.
 
+## Język interfejsu
+
+Ekran podaje liczbę i tyle. Nie tłumaczy, dlaczego liczy tak, a nie inaczej —
+uzasadnienia są w tym pliku i w komentarzach w kodzie, bo tam ktoś ich szuka.
+Trzy zasady, których się trzymam:
+
+- **żadnej pierwszej osoby.** Apka nie mówi „Rozpoznałem" ani „Znalazłem Twoje
+  dane". Mówi „Sprawdź i dodaj" i „Kopia Twoich danych"
+- **brak akapitu bije krótki akapit.** Jeśli przyciski i tak mówią, co się
+  stanie, notka nad nimi jest szumem
+- **zostają tylko te zdania, które zapobiegają pomyłce**: ostrzeżenie przed
+  nieodwracalnym usunięciem, informacja co wychodzi z telefonu przy zgłoszeniu,
+  i instrukcja odzyskania danych na iOS
+
+Tekstu widocznego na ekranie jest **1922 znaki w 135 napisach** (było 4469
+w 187). Zdań dłuższych niż 45 znaków zostało osiem, każde z powyższych powodów.
+
 ## Zgłaszanie problemów
 
 **Ja → Zgłoś problem**. Apka nie ma serwera, więc nie wyśle zgłoszenia sama —
@@ -562,7 +579,7 @@ nie zalecenie medyczne.
   deuteranopia / trytanopia) w obu motywach; kolor nigdy nie jest jedynym
   nośnikiem znaczenia — każdy pasek i słupek ma etykietę tekstową.
 - Cele tapania ≥ 44 px (minimum z wytycznych Apple, pilnowane testem), widoczny focus klawiatury, `prefers-reduced-motion`.
-- Testy: **492 przypadków** przez Playwright (headless Chromium, część na
+- Testy: **493 przypadków** przez Playwright (headless Chromium, część na
   emulowanym iPhone 13), w dwudziestu zestawach. Całość leży w `test/`
   i uruchamia się jednym poleceniem:
 

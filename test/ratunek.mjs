@@ -49,10 +49,10 @@ await p.evaluate(async(snapStr)=>{
 }, JSON.stringify({at:Date.now(),data:JSON.parse(state)}));
 await p.reload(); await p.waitForTimeout(900);
 ok('apka nie udaje, że nic nie było — pyta o przeniesienie',
-   (await p.locator('#sheet.on h3').innerText())==='Znalazłem Twoje dane');
+   (await p.locator('#sheet.on h3').innerText())==='Kopia Twoich danych');
 const per = await p.locator('#sheet .per').innerText();
-ok('mówi ile wpisów i dlaczego tak jest  ['+per.slice(0,44)+'…]',
-   /1 wpis/.test(per) && /ekranu głównego/.test(per));
+ok('mówi, ile wpisów i kiedy zapisane  ['+per.slice(0,52)+'…]',
+   /1 wpis/.test(per) && /ostatni zapis/.test(per));
 ok('nic nie wczytuje się samo z siebie  ['+await entries(p)+' wpisów w tle]', await entries(p)===0);
 await p.screenshot({path:SHOTS+'/ratunek.png'});
 await p.locator('#sheet button:has-text("Przenieś tutaj")').tap(); await p.waitForTimeout(500);

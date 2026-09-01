@@ -79,7 +79,8 @@ await reload();
   ok('rozpisane wszystkie siedem dni  ['+rows+']', rows===7);
   const sheet=(await p.locator('#sheet').innerText());
   ok('widać, który dzień jest oglądany', /ten dzień/.test(sheet));
-  ok('i ile wychodzi na dzień przy równym rozłożeniu', /jeśli chcesz to rozłożyć równo/.test(sheet));
+  ok('podaje bilans i ile zostaje na dzień  ['+(sheet.match(/Bilans[^\n]*/)||[''])[0]+']',
+     /Bilans/.test(sheet) && /kcal/.test(sheet) && /\d/.test(sheet));
   await p.locator('#sheet .btn').tap(); await p.waitForTimeout(300);
 }
 

@@ -80,7 +80,7 @@ ok('Cofnij usuwa cały posiłek  ['+(await p.locator('.entry').count())+']', awa
 await p.locator('.nlcard').first().click(); await p.waitForTimeout(300);
 await p.locator('.sheet textarea').fill('jakieś resztki z lodówki');
 await p.locator('.sheet .sheetrow .btn').nth(1).click(); await p.waitForTimeout(300);
-ok('uczciwy komunikat gdy nic nie rozpoznano', /Nie rozpoznałem/.test(await p.locator('.sheet h3').innerText()));
+ok('uczciwy komunikat gdy nic nie rozpoznano', /Nic nie znaleziono/.test(await p.locator('.sheet h3').innerText()));
 
 // ── liczba nie przeskakuje na inny produkt ─────────────────────────────────
 /* „Podyktowałem 5 słówek i jabłko, a dodał 5 jabłek”. Liczba żyła przez trzy

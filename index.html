@@ -1280,11 +1280,10 @@ function diagReport(){
 function feedbackSheet(){
   openSheet(function(root){
     root.appendChild(el("h3",{id:"sheetTitle",text:"Zgłoś problem"}));
-    root.appendChild(el("div",{class:"note",text:"Apka nie ma serwera, więc nie wyśle zgłoszenia sama. Poniżej gotowy tekst — z wersją, przeglądarką i ostatnimi błędami, czyli tym, czego przy zgłaszaniu zwykle brakuje."}));
     var ta=el("textarea",{spellcheck:"false",style:"min-height:180px"});
     ta.value=diagReport();
-    root.appendChild(el("div",{class:"field"},[el("label",{text:"Treść zgłoszenia — dopisz na górze, co się stało"}),ta]));
-    root.appendChild(el("div",{class:"note",text:"Nie ma tu nic o Twoim jedzeniu: żadnych nazw produktów, wag ani celów. Same liczniki i dane przeglądarki."}));
+    root.appendChild(el("div",{class:"field"},[ta]));
+    root.appendChild(el("div",{class:"note",text:"Bez danych o jedzeniu. Tylko wersja, przeglądarka i błędy."}));
     /* Jeden pod drugim, nie obok siebie: „Wyślij na GitHuba” nie mieści się
        w połowie szerokości i łamie się na dwie linie, rozjeżdżając wiersz. */
     var akcje=el("div",{class:"sheetcol"});
@@ -1293,10 +1292,10 @@ function feedbackSheet(){
         encodeURIComponent("Zgłoszenie z apki")+"&body="+encodeURIComponent(ta.value);
       /* GitHub obcina bardzo długie adresy, więc jak raport spuchnie od
          błędów, lepiej dać schowek niż ucięte zgłoszenie. */
-      if(u.length>7500){toast("Raport za długi na link — użyj „Skopiuj tekst”");return}
+      if(u.length>7500){toast("Raport za długi na link. Użyj „Skopiuj tekst”");return}
       window.open(u,"_blank","noopener");
     }}));
-    akcje.appendChild(el("button",{class:"btn alt",text:"Skopiuj tekst (bez konta GitHub)",
+    akcje.appendChild(el("button",{class:"btn alt",text:"Skopiuj tekst",
       onclick:function(){
         ta.select();
         if(navigator.clipboard)navigator.clipboard.writeText(ta.value).then(
@@ -1927,10 +1926,12 @@ function alkoSheet(){
     ]));
     if(a.saved>=50){
       root.appendChild(el("div",{class:"note",html:
-        "Przez ten czas nie wypiłeś <b class='num'>"+fmt(a.saved)+"</b> kcal — licząc z Twojego "+
-        "własnego spożycia sprzed rzucenia (<b class='num'>"+fmt(a.perDay)+"</b> kcal dziennie), "+
-        "nie z żadnej średniej. To około <b class='num'>"+(Math.round(a.kg*10)/10).toString().replace(".",",")+
-        "</b> kg tłuszczu, jeśli reszta jedzenia została bez zmian."}));
+        "Nie wypiłeś <b class='num'>"+fmt(a.saved)+"</b> kcal"+
+        /* Przy kilkudziesięciu kcal zaokrąglenie daje 0,0 kg — „około 0 kg”
+           to nie informacja, tylko szum. Wtedy pomijamy. */
+        (a.kg>=0.1?", czyli około <b class='num'>"+
+          (Math.round(a.kg*10)/10).toString().replace(".",",")+"</b> kg tłuszczu":"")+
+        ". Twoja średnia przed rzuceniem: <b class='num'>"+fmt(a.perDay)+"</b> kcal dziennie."}));
     }
     var strip=el("div",{class:"strip"});
     a.strip.forEach(function(x,i){
@@ -1938,8 +1939,7 @@ function alkoSheet(){
     });
     root.appendChild(el("div",{class:"field"},[el("label",{text:"Ostatnie 30 dni"}),strip]));
     root.appendChild(el("div",{class:"note",html:
-      "<b class='num'>"+a.clean+"</b> z <b class='num'>"+a.logged+"</b> zapisanych dni bez alkoholu. "+
-      "Tej liczby jedna wpadka nie kasuje — zmienia ją o jeden, i tyle jest warta."}));
+      "<b class='num'>"+a.clean+"</b> z <b class='num'>"+a.logged+"</b> zapisanych dni bez alkoholu."}));
     if(a.last){
       root.appendChild(el("div",{class:"note",text:
         "Ostatnio: "+a.lastName+", "+fmt(a.lastG)+" ml, "+
@@ -1959,7 +1959,7 @@ function weightRow(){
   if(here==null&&!f){
     kids.push(el("span",{class:"tx"},[
       el("b",{text:"Dodaj wagę"}),
-      el("s",{text:"kilka pomiarów i cel policzy się z Twoich danych, nie ze wzoru"})
+      el("s",{text:"cel policzy się z pomiarów"})
     ]));
   }else{
     var sub=[];
@@ -1987,8 +1987,7 @@ function weekSheet(wb){
   openSheet(function(root){
     root.appendChild(el("h3",{id:"sheetTitle",text:"Ten tydzień"}));
     root.appendChild(el("div",{class:"per",text:
-      "Od poniedziałku. Liczą się tylko dni z zapisem — dzień, którego nie "+
-      "zapisałeś, to nie dzień, w którym nie jadłeś."}));
+      "Od poniedziałku. Dni bez zapisu się nie liczą."}));
     wb.days.forEach(function(k,i){
       var has=entries(k).length, eaten=totals(k).k, diff=S.goal.k-eaten;
       var isDay=k===day, future=k>dkey(new Date());
@@ -2003,10 +2002,10 @@ function weekSheet(wb){
       ]));
     });
     root.appendChild(el("div",{class:"note",html:
-      "Bilans: <b class='num'>"+(wb.bank>=0?"+":"−")+fmt(Math.abs(wb.bank))+"</b> kcal. "+
-      "Zostały "+wb.leftDays+" "+plural(wb.leftDays,"dzień","dni","dni")+
-      ", czyli po <b class='num'>"+fmt(wb.perDay)+"</b> kcal, jeśli chcesz to rozłożyć równo."+
-      (wb.skipped?" Dni bez zapisu pominięte: "+wb.skipped+".":"")}));
+      "Bilans <b class='num'>"+(wb.bank>=0?"+":"−")+fmt(Math.abs(wb.bank))+"</b> kcal. "+
+      "Na "+wb.leftDays+" "+plural(wb.leftDays,"pozostały dzień","pozostałe dni","pozostałych dni")+
+      ": po <b class='num'>"+fmt(wb.perDay)+"</b> kcal."+
+      (wb.skipped?" Pominięto "+wb.skipped+" bez zapisu.":"")}));
     root.appendChild(el("div",{class:"sheetrow"},[
       el("button",{class:"btn",text:"Rozumiem",onclick:closeSheet})
     ]));
@@ -2068,8 +2067,8 @@ function viewToday(){
     var plus=wb.bank>=0;
     readout.appendChild(el("button",{class:"wkbank",onclick:function(){weekSheet(wb)}},[
       el("span",{html:"Ten tydzień: <b>"+(plus?"+":"−")+fmt(Math.abs(wb.bank))+" kcal</b> "+
-        (plus?"zapasu":"do odrobienia")+" z "+wb.closed.length+" "+
-        plural(wb.closed.length,"zamkniętego dnia","zamkniętych dni","zamkniętych dni")}),
+        (plus?"zapasu":"do odrobienia")+" ("+wb.closed.length+" "+
+        plural(wb.closed.length,"dzień","dni","dni")+")"}),
       el("span",{class:"go"},[svg(ICON.right)])
     ]));
   }
@@ -2140,7 +2139,7 @@ function viewToday(){
   var sec=el("div",{class:"sec"});
   sec.appendChild(el("div",{class:"sechead"},[el("h3",{text:"Zjedzone"})]));
   if(!es.length){
-    sec.appendChild(el("div",{class:"empty",text:"Nic jeszcze nie zapisane. Tapnij coś powyżej albo wejdź w „Dodaj”."}));
+    sec.appendChild(el("div",{class:"empty",text:"Nic jeszcze nie zapisane."}));
   }else{
     var groups={},order=[];
     es.forEach(function(e){var s=slotOf(e);if(!groups[s]){groups[s]=[];order.push(s)}groups[s].push(e)});
@@ -2253,7 +2252,7 @@ function viewAdd(){
   wrap.appendChild(nlCard());
   wrap.appendChild(el("div",{class:"eyebrow",text:"albo pojedynczy produkt"}));
 
-  var inp=el("input",{type:"search",placeholder:"Szukaj — np. jajko, ryż, banan",value:q,autocomplete:"off",
+  var inp=el("input",{type:"search",placeholder:"Szukaj: jajko, ryż, banan",value:q,autocomplete:"off",
     oninput:function(){q=this.value;repaintList()}});
   var srch=el("div",{class:"search"},[svg(ICON.search),inp]);
   if(q)srch.appendChild(el("button",{class:"clear","aria-label":"Wyczyść",onclick:function(){q="";render();}},[svg(ICON.x)]));
@@ -2564,7 +2563,7 @@ function setSheet(st){
     /* Dokładanie składnika bez wychodzenia z arkusza — inaczej „edycja”
        znaczyłaby tylko „ujmowanie”. */
     var found=el("div");
-    var q=el("input",{type:"search",placeholder:"Dorzuć produkt — np. banan",autocomplete:"off",
+    var q=el("input",{type:"search",placeholder:"Dorzuć produkt",autocomplete:"off",
       oninput:function(){
         var v=norm(this.value).split(/\s+/).filter(Boolean);
         found.innerHTML="";
@@ -2596,9 +2595,8 @@ function setSheet(st){
 function viewSets(){
   var wrap=document.createDocumentFragment();
   wrap.appendChild(el("h2",{text:"Zestawy"}));
-  wrap.appendChild(el("p",{class:"note",text:"Zestaw to zapisany posiłek — cała owsianka albo cały obiad. Jedno tapnięcie i wszystko wpada do dnia. Zapisujesz je z listy „Zjedzone” na ekranie Dziś."}));
   if(!S.sets.length){
-    wrap.appendChild(el("div",{class:"empty",text:"Brak zestawów. Dodaj posiłek na ekranie Dziś, a potem tapnij „zapisz zestaw” przy jego nagłówku."}));
+    wrap.appendChild(el("div",{class:"empty",text:"Brak zestawów. Zapisz posiłek z ekranu Dziś."}));
   }
   S.sets.forEach(function(st){
     var tk=st.items.reduce(function(a,i){return a+i.k},0);
@@ -2639,7 +2637,7 @@ function viewSets(){
   });
   var y=shiftKey(day,-1);
   if(entries(y).length){
-    wrap.appendChild(el("button",{class:"btn alt",text:"↺ Skopiuj cały wczorajszy dzień",onclick:function(){copyDay(y);go("today")}}));
+    wrap.appendChild(el("button",{class:"btn alt",text:"↺ Powtórz wczorajszy dzień",onclick:function(){copyDay(y);go("today")}}));
   }
   return wrap;
 }
@@ -2684,7 +2682,7 @@ function viewMe(){
   }
   function refresh(){
     var k=calc();
-    out.innerHTML="Wyliczone zapotrzebowanie: <b class='num'>"+fmt(k)+" kcal</b> / dzień (Mifflin-St Jeor).";
+    out.innerHTML="Ze wzoru: <b class='num'>"+fmt(k)+" kcal</b> dziennie.";
   }
   refresh();
 
@@ -2715,18 +2713,16 @@ function viewMe(){
     var aimK=Math.round((R.tdee*(1+((S.profile&&S.profile.aim)||0)))/10)*10;
     kal.push(el("div",{class:"preview"},[
       el("span",{class:"v num",text:fmt(R.tdee)}),
-      el("span",{class:"u",text:"kcal · tyle realnie spalasz"})
+      el("span",{class:"u",text:"kcal · zmierzone"})
     ]));
     kal.push(el("div",{class:"note",html:
-      "Z <b class='num'>"+R.logged+"</b> "+plural(R.logged,"dnia","dni","dni")+
-      " zapisanego jedzenia (średnio <b class='num'>"+fmt(R.mean)+"</b> kcal) i tempa "+
-      "<b class='num'>"+(kw>0?"+":kw<0?"−":"±")+Math.abs(kw).toFixed(2).replace(".",",")+
-      "</b> kg na tydzień, na przestrzeni <b class='num'>"+R.span+"</b> dni."+
-      (R.miss?" Dni bez zapisu ("+R.miss+") są pominięte — jeśli w nich jadłeś, wynik jest zaniżony.":"")}));
+      "<b class='num'>"+R.logged+"</b> "+plural(R.logged,"dzień","dni","dni")+" zapisu, "+
+      "średnio <b class='num'>"+fmt(R.mean)+"</b> kcal, waga <b class='num'>"+
+      (kw>0?"+":kw<0?"−":"±")+Math.abs(kw).toFixed(2).replace(".",",")+"</b> kg/tydz."+
+      (R.miss?" Pominięto "+R.miss+" bez zapisu.":"")}));
     kal.push(el("div",{class:"note",html:
-      "Wzór daje <b class='num'>"+fmt(calc())+"</b> kcal przy Twoim celu, pomiar — "+
-      "<b class='num'>"+fmt(aimK)+"</b> kcal. Różnica to Twój metabolizm i aktywność, "+
-      "których wzór nie zna."}));
+      "Wzór: <b class='num'>"+fmt(calc())+"</b> kcal. Pomiar: <b class='num'>"+
+      fmt(aimK)+"</b> kcal."}));
     kal.push(el("button",{class:"btn",text:"Ustaw cel z pomiaru: "+fmt(aimK)+" kcal",onclick:function(){
       S.goal.k=aimK;applySplit();saveNow();render();
       toast("Cel z pomiaru: "+fmt(aimK)+" kcal");
@@ -2736,9 +2732,7 @@ function viewMe(){
               czas:"jeszcze "+R.need+" "+plural(R.need,"dzień","dni","dni")+" odstępu między pierwszym a ostatnim pomiarem",
               dni:"jeszcze "+R.need+" "+plural(R.need,"dzień","dni","dni")+" z zapisanym jedzeniem"}[R.why];
     kal.push(el("div",{class:"note",html:
-      "Zamiast wierzyć wzorowi, można to zmierzyć: przy znanym spożyciu tempo zmiany "+
-      "wagi mówi, ile realnie spalasz. Potrzebuję do tego <b>"+need+"</b>."+
-      (R.why==="dni"?" Liczą się dni, w których zapisałeś cały dzień — średnia z połowy dni to nie średnie spożycie.":"")}));
+      "Pomiar zamiast wzoru: brakuje <b>"+need+"</b>."}));
     kal.push(el("button",{class:"btn alt",text:"Wpisz wagę",onclick:function(){go("today");setTimeout(weightSheet,220)}}));
   }
   wrap.appendChild(el("div",{class:"card"},kal));
@@ -2767,13 +2761,13 @@ function viewMe(){
 
   wrap.appendChild(el("div",{class:"card"},[
     el("div",{class:"eyebrow",text:"Twoje dane"}),
-    el("div",{class:"note",text:"Wszystko siedzi tylko w tej przeglądarce (localStorage) — nic nie wychodzi na żaden serwer. Kopia zapasowa to zwykły tekst: skopiuj go sobie gdziekolwiek."}),
+    el("div",{class:"note",text:"Dane są tylko w tej przeglądarce. Nic nie wychodzi na serwer."}),
     el("button",{class:"btn alt",text:"Kopia zapasowa / przywracanie",onclick:backupSheet}),
     el("button",{class:"btn alt",text:"Zgłoś problem",onclick:feedbackSheet}),
     el("button",{class:"btn danger",text:"Wyczyść wszystko",onclick:function(){
       openSheet(function(root){
         root.appendChild(el("h3",{id:"sheetTitle",text:"Wyczyścić wszystko?"}));
-        root.appendChild(el("div",{class:"per",text:"Znikną wszystkie wpisy, zestawy i cele. Tego nie da się cofnąć."}));
+        root.appendChild(el("div",{class:"per",text:"Znikną wpisy, zestawy i cele. Nie do cofnięcia."}));
         root.appendChild(el("div",{class:"sheetrow"},[
           el("button",{class:"btn alt",text:"Zostaw",onclick:closeSheet}),
           el("button",{class:"btn danger",text:"Usuń wszystko",onclick:function(){
@@ -3421,7 +3415,7 @@ function speechCtor(){return window.SpeechRecognition||window.webkitSpeechRecogn
 var SPEECH_ERR={
   "not-allowed":"Brak zgody na mikrofon — zezwól na dostęp dla tej strony.",
   "service-not-allowed":"Przeglądarka nie pozwala tu na rozpoznawanie mowy.",
-  "audio-capture":"Nie widzę mikrofonu.",
+  "audio-capture":"Brak mikrofonu.",
   "network":"Rozpoznawanie mowy potrzebuje sieci, a jej nie ma.",
   "no-speech":"Nic nie usłyszałem.",
   "aborted":""
@@ -3475,7 +3469,6 @@ function nlSheet(prefill,autoDictate){
   function ask(){
     openSheet(function(root){
       root.appendChild(el("h3",{id:"sheetTitle",text:"Opisz posiłek"}));
-      root.appendChild(el("div",{class:"per",text:"Powiedz albo napisz zwykłym zdaniem — z czego się składał i ile z tego zjadłeś."}));
 
       var ta=el("textarea",{spellcheck:"false",placeholder:NLPH,style:"min-height:112px"});
       ta.value=text;
@@ -3505,7 +3498,7 @@ function nlSheet(prefill,autoDictate){
             if(text)review(parseMeal(text));
             /* Konkretny powód ("brak zgody na mikrofon") jest użyteczniejszy
                niż ogólne "nic nie usłyszałem" — nie nadpisujemy go. */
-            else paint(false,lastErr||"Nic nie zapisałem — spróbuj jeszcze raz.");
+            else paint(false,lastErr||"Nic nie zapisano. Spróbuj jeszcze raz.");
           }
         });
         if(!h){paint(false,"Nie udało się uruchomić mikrofonu.");return}
@@ -3558,8 +3551,8 @@ function nlSheet(prefill,autoDictate){
     function draw(){
       openSheet(function(root){
         if(!items.length){
-          root.appendChild(el("h3",{id:"sheetTitle",text:"Nie rozpoznałem produktów"}));
-          root.appendChild(el("div",{class:"per",text:"Nic z tego opisu nie pasuje do bazy. Spróbuj nazwać składniki prościej („4 jajka”, „150 g ryżu”) albo dodaj brakujący produkt raz na zawsze."}));
+          root.appendChild(el("h3",{id:"sheetTitle",text:"Nic nie znaleziono"}));
+          root.appendChild(el("div",{class:"per",text:"Nic nie pasuje do bazy. Spróbuj prościej: „4 jajka”, „150 g ryżu”."}));
           if(r.skipped.length)root.appendChild(el("div",{class:"note",text:"Pominięte słowa: "+r.skipped.join(", ")}));
           root.appendChild(el("div",{class:"sheetrow"},[
             el("button",{class:"btn alt",text:"Popraw opis",onclick:ask}),
@@ -3567,8 +3560,8 @@ function nlSheet(prefill,autoDictate){
           ]));
           return;
         }
-        root.appendChild(el("h3",{id:"sheetTitle",text:"Rozpoznałem"}));
-        root.appendChild(el("div",{class:"per",text:"Trafi do: "+dayTitle(dk).toLowerCase()+(r.dish?" · danie: "+r.dish:"")+". Popraw, co się nie zgadza."}));
+        root.appendChild(el("h3",{id:"sheetTitle",text:"Sprawdź i dodaj"}));
+        root.appendChild(el("div",{class:"per",text:"Trafi do: "+dayTitle(dk).toLowerCase()+(r.dish?" · danie: "+r.dish:"")}));
 
         var slBox=el("div",{class:"seg"});
         SLOTS.forEach(function(o){
@@ -3653,14 +3646,14 @@ function nlSheet(prefill,autoDictate){
         /* Decyzja "to jest w środku dania" musi być widoczna, bo inaczej
            wygląda jak zgubiony składnik. */
         if(r.inside&&r.inside.length)root.appendChild(el("div",{class:"note",
-          text:"Nie doliczyłem osobno: "+r.inside.join(", ")+" — to jest już w „"+items[0].f.n+"”. Jeśli dodawałeś to sam, wpisz z ilością, np. „100 g wołowiny”."}));
+          text:"Nie doliczono osobno: "+r.inside.join(", ")+" — to jest już w „"+items[0].f.n+"”. Jeśli dodawałeś to sam, wpisz z ilością, np. „100 g wołowiny”."}));
         if(r.skipped.length)root.appendChild(el("div",{class:"note",text:"Pominięte słowa: "+r.skipped.join(", ")+". Jeśli któreś z nich to jedzenie, dopisz je prościej albo dodaj jako własny produkt."}));
 
         if(items.length>1){
           var nameF=el("input",{type:"text",value:setName,oninput:function(){setName=this.value}});
           var tg=el("button",{class:"toggle","aria-pressed":asSet?"true":"false",onclick:function(){asSet=!asSet;draw()}},[
             el("span",{class:"box"},[svg(ICON.check)]),
-            el("span",{class:"lb",text:"Zapisz też jako zestaw — następny raz jedno tapnięcie"})
+            el("span",{class:"lb",text:"Zapisz jako zestaw"})
           ]);
           root.appendChild(tg);
           if(asSet)root.appendChild(el("div",{class:"field"},[el("label",{text:"Nazwa zestawu"}),nameF]));
@@ -3814,12 +3807,11 @@ function isStandalone(){
 function transferSheet(sn,n){
   openSheet(function(root){
     var at=new Date(sn.at||Date.now());
-    root.appendChild(el("h3",{id:"sheetTitle",text:"Znalazłem Twoje dane"}));
+    root.appendChild(el("h3",{id:"sheetTitle",text:"Kopia Twoich danych"}));
     root.appendChild(el("div",{class:"per",text:
-      "Ta apka jest tu pusta, ale w pamięci przeglądarki leży kopia: "+
-      n+" "+plural(n,"wpis","wpisy","wpisów")+", ostatni zapis "+
-      at.toLocaleDateString("pl-PL")+" o "+at.toLocaleTimeString("pl-PL",{hour:"2-digit",minute:"2-digit"})+
-      ". Na iOS apka z ekranu głównego ma osobną pamięć niż Safari — dlatego dzień wygląda na wyczyszczony."}));
+      "W pamięci przeglądarki leży kopia: "+n+" "+plural(n,"wpis","wpisy","wpisów")+
+      ", ostatni zapis "+at.toLocaleDateString("pl-PL")+" o "+
+      at.toLocaleTimeString("pl-PL",{hour:"2-digit",minute:"2-digit"})+"."}));
     root.appendChild(el("div",{class:"sheetrow"},[
       el("button",{class:"btn alt",text:"Nie teraz",onclick:closeSheet}),
       el("button",{class:"btn",text:"Przenieś tutaj",onclick:function(){
@@ -3840,10 +3832,8 @@ function safariHint(){
   openSheet(function(root){
     root.appendChild(el("h3",{id:"sheetTitle",text:"Dane zostały w Safari"}));
     root.appendChild(el("div",{class:"per",text:
-      "iOS trzyma pamięć apki z ekranu głównego oddzielnie od Safari, więc to, "+
-      "co zapisałeś w przeglądarce, nie przechodzi tu samo. Nic nie zginęło: "+
-      "otwórz ten sam adres w Safari, wejdź w Ja → Kopia zapasowa → Kopiuj, "+
-      "a potem wróć tutaj i wklej to w tym samym miejscu."}));
+      "Apka z ekranu głównego ma na iOS osobną pamięć niż Safari. Nic nie zginęło: "+
+      "otwórz ten adres w Safari, Ja → Kopia zapasowa → Kopiuj, wróć tutaj i wklej."}));
     root.appendChild(el("div",{class:"sheetrow"},[
       el("button",{class:"btn alt",text:"Rozumiem",onclick:closeSheet}),
       el("button",{class:"btn",text:"Otwórz kopię zapasową",onclick:function(){
@@ -3854,7 +3844,7 @@ function safariHint(){
 }
 function bootRescue(){
   if(loadFailed){
-    toast("Poprzedni zapis był uszkodzony — odłożyłem go na bok, nie nadpisuję");
+    toast("Poprzedni zapis był uszkodzony. Odłożony na bok, nie nadpisany");
   }
   if(countEntries(S.log)>0)return;
   readSnapshot().then(function(sn){

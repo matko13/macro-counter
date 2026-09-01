@@ -85,8 +85,11 @@ ok('wiersz wagi na Dziś pokazuje pomiar i trend  ['+rowTxt.replace(/\n/g,' · '
 await p.locator('.tab').nth(3).tap(); await p.waitForTimeout(500);
 const kal = (await p.locator('.card').allInnerTexts()).find(c=>/Cel z Twoich danych/.test(c))||'';
 ok('karta kalibracji podaje liczbę  ['+(kal.match(/\d{4}/)||[''])[0]+' kcal]', /2950/.test(kal));
-ok('mówi, z ilu dni i z jakiego tempa liczy', /28 dni/.test(kal) && /0,50/.test(kal) && /tydzień/.test(kal));
-ok('pokazuje też, co daje wzór — żeby było widać różnicę', /Wzór daje/.test(kal));
+/* Sprawdzamy liczby, na których stoi wynik, a nie zdania wokół nich —
+   inaczej każde skrócenie tekstu wygląda jak zepsuta funkcja. */
+ok('podaje, z ilu dni i z jakiego tempa liczy', /28 dni/.test(kal) && /0,50/.test(kal));
+ok('zestawia pomiar ze wzorem  ['+(kal.match(/Wzór[^·\n]*/)||[''])[0].trim()+']',
+   /Wzór/.test(kal) && /Pomiar/.test(kal));
 
 // ── ustawienie celu z pomiaru ──────────────────────────────────────────────
 const goalBefore = await p.evaluate(()=>JSON.parse(localStorage.getItem('makro.v1')).goal.k);

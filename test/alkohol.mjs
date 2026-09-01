@@ -93,8 +93,17 @@ ok('pasek ma 30 kropek  ['+await p.locator('#sheet .strip i').count()+']',
 ok('dni z alkoholem są oznaczone inaczej  ['+await p.locator('#sheet .strip i.alko').count()+']',
    await p.locator('#sheet .strip i.alko').count()===11);
 const sheet = await p.locator('#sheet').innerText();
-ok('arkusz mówi, skąd bierze podstawę', /własnego spożycia sprzed rzucenia/.test(sheet));
-ok('i że wpadka nie kasuje dorobku', /jedna\s+wpadka nie kasuje/.test(sheet.replace(/\n/g,' ')));
+/* Liczby, nie sformułowania: podstawa i czyste dni mają być widoczne. */
+ok('podaje podstawę z własnego spożycia  [215 kcal dziennie]', /215/.test(sheet));
+ok('i czyste dni w oknie  [19 z 30]', /19/.test(sheet) && /30/.test(sheet));
+/* Przy małych liczbach kilogramy zaokrąglają się do zera i „około 0 kg”
+   byłoby szumem — wtedy tej części ma nie być wcale. */
+const maloSheet = await p.evaluate(()=>{
+  const a=window.MAKRO.alko();
+  return {kg:a.kg, saved:a.saved};
+});
+ok('przy dużej oszczędności kilogramy są podane  ['+(Math.round(maloSheet.kg*100)/100)+' kg]',
+   maloSheet.kg>=0.1 && /kg tłuszczu/.test(sheet));
 ok('bez moralizowania — sam fakt i data', /Ostatnio: Piwo jasne/.test(sheet));
 
 console.log('\n'+T.filter(t=>t.startsWith('PASS')).length+'/'+T.length+' PASS');
