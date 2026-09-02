@@ -214,6 +214,47 @@ ok('„maki” to nadal mąka, nie sushi  ['+suHit[7]+']', suHit[7]==='Mąka psz
 ok('a rodzajowe „sushi” nie zostało przejęte przez zestaw  ['+suHit[8]+']',
    suHit[8]==='Sushi (rolka)');
 
+/* Puree i sznycel — dwa braki zgłoszone z apki.
+
+   „Puree” było wcześniej ALIASEM gotowanych ziemniaków, co jest gorsze niż
+   brak wpisu: mleko i masło dokładają ~27 kcal i 4 g tłuszczu na 100 g, więc
+   apka po cichu zaniżała każdą porcję puree o kilkadziesiąt kcal. */
+const pur=byName('Puree ziemniaczane');
+ok('jest puree  ['+(pur?pur.k+' kcal, T '+pur.f:'BRAK')+']',
+   !!pur && pur.k===113 && pur.p===1.9 && pur.c===17 && pur.f===4.2);
+ok('puree jest tłustsze i kaloryczniejsze od gotowanych ziemniaków  ['+
+   (pur.k-byName('Ziemniaki gotowane').k)+' kcal, +'+
+   (Math.round((pur.f-byName('Ziemniaki gotowane').f)*10)/10)+' g tłuszczu]',
+   pur.k>byName('Ziemniaki gotowane').k+20 && pur.f>byName('Ziemniaki gotowane').f+3);
+
+const szn=byName('Sznycel');
+ok('jest sznycel  ['+(szn?szn.k+' kcal/100 g, sztuka '+szn.s+' g':'BRAK')+']',
+   !!szn && szn.k===260 && szn.s===120 && szn.u==='szt');
+
+const dwaHit = await p.evaluate(()=>[
+  window.MAKRO.parse('sznycel').items.map(i=>i.f.n+':'+Math.round(i.g))[0],
+  window.MAKRO.parse('dwa sznycle').items.map(i=>i.f.n+':'+Math.round(i.g))[0],
+  window.MAKRO.parse('puree').items.map(i=>i.f.n+':'+Math.round(i.g))[0],
+  window.MAKRO.parse('250 g puree').items.map(i=>i.f.n+':'+Math.round(i.g))[0],
+  window.MAKRO.parse('tłuczone ziemniaki').items.map(i=>i.f.n)[0],
+  window.MAKRO.parse('łyżka puree').items.map(i=>i.f.n+':'+Math.round(i.g))[0],
+  window.MAKRO.parse('ziemniaki gotowane').items.map(i=>i.f.n)[0],
+  window.MAKRO.parse('kartofle').items.map(i=>i.f.n)[0],
+  window.MAKRO.parse('sznycel i puree').items.map(i=>i.f.n).join('+')
+]);
+ok('„sznycel” trafia  ['+dwaHit[0]+']', dwaHit[0]==='Sznycel:120');
+ok('i liczy się na sztuki  ['+dwaHit[1]+']', dwaHit[1]==='Sznycel:240');
+ok('„puree” to już puree, nie gotowane ziemniaki  ['+dwaHit[2]+']',
+   dwaHit[2]==='Puree ziemniaczane:200');
+ok('z gramaturą  ['+dwaHit[3]+']', dwaHit[3]==='Puree ziemniaczane:250');
+ok('„tłuczone ziemniaki” też  ['+dwaHit[4]+']', dwaHit[4]==='Puree ziemniaczane');
+ok('łyżka puree waży 18 g, nie ogólne 15  ['+dwaHit[5]+']', dwaHit[5]==='Puree ziemniaczane:18');
+/* Zabranie aliasu „puree” nie może zabrać ziemniakom ich własnych nazw. */
+ok('gotowane ziemniaki zostały sobą  ['+dwaHit[6]+']', dwaHit[6]==='Ziemniaki gotowane');
+ok('i „kartofle” nadal na nie trafiają  ['+dwaHit[7]+']', dwaHit[7]==='Ziemniaki gotowane');
+ok('obiad wpisany przez „i” daje dwie pozycje  ['+dwaHit[8]+']',
+   dwaHit[8]==='Sznycel+Puree ziemniaczane');
+
 /* Sushi je się na kawałki, nie na porcje. „kawałek” i „kawałki” są na liście
    słów pomijanych, więc „30 kawałków sushi” znaczyło dla apki „30 PORCJI
    sushi” — czyli 30 × 200 g = 6 kg i 8700 kcal. Waga kawałka to naprawia.
