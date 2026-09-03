@@ -255,6 +255,44 @@ ok('i „kartofle” nadal na nie trafiają  ['+dwaHit[7]+']', dwaHit[7]==='Ziem
 ok('obiad wpisany przez „i” daje dwie pozycje  ['+dwaHit[8]+']',
    dwaHit[8]==='Sznycel+Puree ziemniaczane');
 
+/* Mleko proteinowe Łaciate (Protein+ UHT odtłuszczone). Etykieta: 227 kJ /
+   54 kcal, B 8,0 / W 4,7 / T <0,5 na 100 ml. Szklanka 250 ml ma dać 20 g
+   białka — dokładnie to, co producent obiecuje na opakowaniu, więc ta liczba
+   jest niezależnym sprawdzeniem, że wpis jest przepisany poprawnie. */
+const mlp=byName('Mleko proteinowe Łaciate');
+ok('jest mleko proteinowe  ['+(mlp?mlp.k+' kcal, B '+mlp.p:'BRAK')+']',
+   !!mlp && mlp.k===54 && mlp.p===8 && mlp.c===4.7 && mlp.f===0.5);
+ok('porcja to szklanka 250 ml  ['+(mlp?mlp.s+' '+mlp.u:'—')+']',
+   !!mlp && mlp.s===250 && mlp.u==='ml');
+const szkl = await p.evaluate(()=>{
+  const f=window.MAKRO.foods().find(x=>x.n==='Mleko proteinowe Łaciate');
+  const m=window.MAKRO.scale(f,f.s);
+  return {k:Math.round(m.k), p:Math.round(m.p)};
+});
+ok('szklanka daje 20 g białka, jak na opakowaniu  ['+szkl.p+' g, '+szkl.k+' kcal]',
+   szkl.p===20);
+ok('i ma ponad dwa razy więcej białka niż mleko 2%  ['+mlp.p+' vs '+byName('Mleko 2%').p+' g]',
+   mlp.p > byName('Mleko 2%').p*2);
+
+const mlHit = await p.evaluate(()=>[
+  window.MAKRO.parse('mleko proteinowe').items.map(i=>i.f.n)[0],
+  window.MAKRO.parse('łaciate protein').items.map(i=>i.f.n)[0],
+  window.MAKRO.parse('500 ml mleka proteinowego').items.map(i=>i.f.n+':'+Math.round(i.g))[0],
+  window.MAKRO.parse('mleko wysokobiałkowe').items.map(i=>i.f.n)[0],
+  window.MAKRO.parse('mleko').items.map(i=>i.f.n)[0],
+  window.MAKRO.parse('mleko odtłuszczone').items.map(i=>i.f.n)[0],
+  window.MAKRO.parse('napój proteinowy').items.map(i=>i.f.n)[0]
+]);
+ok('trafia po nazwie rodzajowej  ['+mlHit[0]+']', mlHit[0]==='Mleko proteinowe Łaciate');
+ok('i po marce  ['+mlHit[1]+']', mlHit[1]==='Mleko proteinowe Łaciate');
+ok('z gramaturą i odmianą  ['+mlHit[2]+']', mlHit[2]==='Mleko proteinowe Łaciate:500');
+ok('„mleko wysokobiałkowe” też  ['+mlHit[3]+']', mlHit[3]==='Mleko proteinowe Łaciate');
+/* Marka nie może przejąć rodzajowego „mleka” ani innych mlek — tu jest
+   pięć wpisów zaczynających się od tego samego słowa. */
+ok('samo „mleko” zostaje przy Mleku 2%  ['+mlHit[4]+']', mlHit[4]==='Mleko 2%');
+ok('„mleko odtłuszczone” przy Mleku 0%  ['+mlHit[5]+']', mlHit[5]==='Mleko 0%');
+ok('a „napój proteinowy” zostaje sobą  ['+mlHit[6]+']', mlHit[6]==='Napój proteinowy');
+
 /* Sushi je się na kawałki, nie na porcje. „kawałek” i „kawałki” są na liście
    słów pomijanych, więc „30 kawałków sushi” znaczyło dla apki „30 PORCJI
    sushi” — czyli 30 × 200 g = 6 kg i 8700 kcal. Waga kawałka to naprawia.
