@@ -293,6 +293,40 @@ ok('samo „mleko” zostaje przy Mleku 2%  ['+mlHit[4]+']', mlHit[4]==='Mleko 2
 ok('„mleko odtłuszczone” przy Mleku 0%  ['+mlHit[5]+']', mlHit[5]==='Mleko 0%');
 ok('a „napój proteinowy” zostaje sobą  ['+mlHit[6]+']', mlHit[6]==='Napój proteinowy');
 
+/* Pinsa Margherita z Lidla. To jedyny wpis w bazie, który jest SZACUNKIEM
+   mimo istnienia etykiety: producent nie udostępnia jej w sieci, a dane
+   społecznościowe rozjeżdżają się o 30% (199 / 236 / 262 kcal na 100 g).
+   Rozstrzygnięte składem — spód + sos + mozzarella dają 204-208 kcal/100 g
+   niezależnie od proporcji, co wyklucza 262. Test pilnuje, żeby wartość
+   została w przedziale, który skład dopuszcza; gdyby ktoś wpisał tu 262,
+   powinno zapłonąć. */
+const pin=byName('Pinsa Margherita (Lidl)');
+ok('jest pinsa  ['+(pin?pin.k+' kcal/100 g, opakowanie '+pin.s+' g':'BRAK')+']',
+   !!pin && pin.s===385 && pin.u==='porcja');
+ok('gęstość mieści się w tym, co dopuszcza skład (190-215)  ['+pin.k+' kcal]',
+   pin.k>=190 && pin.k<=215);
+ok('i jest chudsza od pizzy margherity z bazy  ['+pin.k+' vs '+byName('Pizza margherita').k+']',
+   pin.k < byName('Pizza margherita').k);
+
+const pinHit = await p.evaluate(()=>[
+  window.MAKRO.parse('pinsa').items.map(i=>i.f.n+':'+Math.round(i.g))[0],
+  window.MAKRO.parse('pinsa z lidla').items.map(i=>i.f.n)[0],
+  window.MAKRO.parse('pół pinsy').items.map(i=>i.f.n+':'+Math.round(i.g))[0],
+  window.MAKRO.parse('dwie pinsy').items.map(i=>i.f.n+':'+Math.round(i.g))[0],
+  window.MAKRO.parse('pizza margherita').items.map(i=>i.f.n)[0],
+  window.MAKRO.parse('focaccia').items.map(i=>i.f.n)[0]
+]);
+ok('„pinsa” to całe opakowanie  ['+pinHit[0]+']', pinHit[0]==='Pinsa Margherita (Lidl):385');
+ok('z marką też  ['+pinHit[1]+']', pinHit[1]==='Pinsa Margherita (Lidl)');
+/* Połowa to najczęstsza porcja i musi dawać połowę, nie połowę sztuki. */
+ok('„pół pinsy” to połowa opakowania  ['+pinHit[2]+']',
+   pinHit[2]==='Pinsa Margherita (Lidl):193');
+ok('„dwie pinsy” to dwa opakowania  ['+pinHit[3]+']',
+   pinHit[3]==='Pinsa Margherita (Lidl):770');
+/* Nie może przejąć pizzy ani focacci — to trzy różne wypieki. */
+ok('pizza margherita zostaje sobą  ['+pinHit[4]+']', pinHit[4]==='Pizza margherita');
+ok('focaccia też  ['+pinHit[5]+']', pinHit[5]==='Focaccia');
+
 /* Sushi je się na kawałki, nie na porcje. „kawałek” i „kawałki” są na liście
    słów pomijanych, więc „30 kawałków sushi” znaczyło dla apki „30 PORCJI
    sushi” — czyli 30 × 200 g = 6 kg i 8700 kcal. Waga kawałka to naprawia.
