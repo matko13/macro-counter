@@ -327,6 +327,34 @@ ok('„dwie pinsy” to dwa opakowania  ['+pinHit[3]+']',
 ok('pizza margherita zostaje sobą  ['+pinHit[4]+']', pinHit[4]==='Pizza margherita');
 ok('focaccia też  ['+pinHit[5]+']', pinHit[5]==='Focaccia');
 
+/* Pad thai z kurczakiem. Wersja ogólna była w bazie od dawna (190 kcal, B 8)
+   i obsługuje tofu, krewetki i warzywa. Z kurczakiem talerz ma MNIEJ kalorii,
+   bo mniej na nim makaronu, ale wyraźnie więcej białka — i to jest jedyny
+   powód, dla którego to osobny wpis, a nie alias. */
+const pt=byName('Pad thai z kurczakiem'), ptO=byName('Pad thai');
+ok('jest pad thai z kurczakiem  ['+(pt?pt.k+' kcal/100 g':'BRAK')+']',
+   !!pt && pt.k===175 && pt.p===10 && pt.c===18 && pt.f===7);
+ok('ma więcej białka niż wersja ogólna  ['+pt.p+' vs '+ptO.p+' g/100 g]', pt.p>ptO.p);
+ok('i mniej kalorii  ['+pt.k+' vs '+ptO.k+']', pt.k<ptO.k);
+ok('obie mają porcję 350 g  ['+pt.s+' i '+ptO.s+']', pt.s===350 && ptO.s===350);
+
+const ptHit = await p.evaluate(()=>[
+  window.MAKRO.parse('pad thai z kurczakiem').items.map(i=>i.f.n+':'+Math.round(i.g))[0],
+  window.MAKRO.parse('pad thai').items.map(i=>i.f.n)[0],
+  window.MAKRO.parse('padthai').items.map(i=>i.f.n)[0],
+  window.MAKRO.parse('pad thai z krewetkami').items.map(i=>i.f.n)[0],
+  window.MAKRO.parse('pół pad thaia').items.map(i=>i.f.n+':'+Math.round(i.g))[0]
+]);
+ok('„z kurczakiem” trafia na wersję z kurczakiem  ['+ptHit[0]+']',
+   ptHit[0]==='Pad thai z kurczakiem:350');
+/* Dopisanie wariantu nie może przejąć nazwy ogólnej — inaczej każdy pad thai
+   zaczyna liczyć się jak ten z kurczakiem. */
+ok('samo „pad thai” zostaje ogólne  ['+ptHit[1]+']', ptHit[1]==='Pad thai');
+ok('„padthai” jednym słowem też trafia  ['+ptHit[2]+']', ptHit[2]==='Pad thai');
+ok('a krewetkowy spada na ogólny, bo takiego wpisu nie ma  ['+ptHit[3]+']',
+   ptHit[3]==='Pad thai');
+ok('„pół pad thaia” to połowa porcji  ['+ptHit[4]+']', ptHit[4]==='Pad thai:175');
+
 /* Sushi je się na kawałki, nie na porcje. „kawałek” i „kawałki” są na liście
    słów pomijanych, więc „30 kawałków sushi” znaczyło dla apki „30 PORCJI
    sushi” — czyli 30 × 200 g = 6 kg i 8700 kcal. Waga kawałka to naprawia.
