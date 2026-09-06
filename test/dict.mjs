@@ -65,7 +65,9 @@ const STUB = () => {
   await p.evaluate(()=>window.__rec.emit('na śniadanie zapiekanka z 4 jaj 2 serków wiejskich i 8 oliwek zjadłem połowę',true));
   await p.locator('.dictate').click(); await p.waitForTimeout(400);
   const n = await p.locator('.nlrow').count();
-  const part = await p.locator('.sheet .field').nth(1).locator('button[aria-pressed="true"]').innerText();
+  /* Po etykiecie, nie po indeksie — patrz komentarz w nl.mjs. */
+  const part = await p.locator('.sheet .field').filter({hasText:'Ile z tego zjadłeś'})
+    .locator('button[aria-pressed="true"]').innerText();
   ok('bez przecinków nadal 3 składniki  ['+n+']', n===3);
   ok('„zjadłem połowę” z mowy → ½  ['+part+']', part==='½');
   await ctx.close();

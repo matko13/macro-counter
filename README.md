@@ -588,8 +588,8 @@ nie zalecenie medyczne.
   deuteranopia / trytanopia) w obu motywach; kolor nigdy nie jest jedynym
   nośnikiem znaczenia — każdy pasek i słupek ma etykietę tekstową.
 - Cele tapania ≥ 44 px (minimum z wytycznych Apple, pilnowane testem), widoczny focus klawiatury, `prefers-reduced-motion`.
-- Testy: **534 przypadków** przez Playwright (headless Chromium, część na
-  emulowanym iPhone 13), w dwudziestu zestawach. Całość leży w `test/`
+- Testy: **549 przypadków** przez Playwright (headless Chromium, część na
+  emulowanym iPhone 13), w dwudziestu jeden zestawach. Całość leży w `test/`
   i uruchamia się jednym poleceniem:
 
   ```
@@ -617,6 +617,7 @@ nie zalecenie medyczne.
   | danie a składnik | 11 | burger z wołowiną kontra chleb z masłem kontra przepis z ilościami, nazwy pięciowyrazowe, porcje jadalne owoców |
   | dotyk i geometria | 18 | żadna reguła `:hover` poza `@media (hover:hover)` (na iOS pierwsze tapnięcie na takim elemencie tylko „najeżdża", a klika dopiero drugie), pojedyncze tapnięcie zatwierdza posiłek i dodaje produkt, **każdy element dotykowy ma ≥44 px** na wszystkich ekranach, oraz szerokość toastu: pełna szerokość treści zamiast połowy ekranu, równe marginesy, najwyżej dwie linijki tekstu i nieściśnięty „Cofnij". Do tego **rozmiary wszystkich ikon na każdym ekranie** — funkcja rysująca ikony nie podaje wymiarów, a bezwymiarowy SVG w gridzie rozciąga się na całe pole, a we fleksie zapada do zera i po prostu znika |
   | podgląd bez dubli | 8 | spóźnione zamknięcie sesji mowy po zatwierdzeniu, zamknięcie arkusza w trakcie dyktowania, podwójne kliknięcie w „Dodaj" |
+  | dokładanie do podyktowanego | 15 | pole „Dorzuć produkt” w podglądzie po dyktowaniu: podpowiedzi z bazy, czyszczenie pola po dołożeniu, zmiana gramatury i usuwanie dołożonej pozycji, jej obecność w sumie, w dzienniku i w zapisanym zestawie, oraz to, że **ułamek „ile z tego zjadłeś" obejmuje także dołożone** |
   | zgłaszanie problemów | 23 | treść raportu, wyłapywanie prawdziwych wyjątków i ich przetrwanie przeładowania, ograniczenie listy błędów, nietykalność dziennika, oba przyciski (GitHub i schowek) tej samej szerokości i z odstępem, oraz — najważniejsze — że **raport nie zawiera niczego o jedzeniu, wadze ani celach** |
   | dni bez alkoholu | 19 | liczenie dni od ostatniego razu i czystych dni w oknie, piwo bezalkoholowe nieprzerywające licznika, dzień bez zapisu nieliczony jako czysty, kalorie liczone z własnego spożycia sprzed rzucenia, brak licznika u kogoś, kto alkoholu nigdy nie zapisał, oraz to, że **wpadka nie kasuje dorobku** — licznik dni startuje od nowa, ale czyste dni zmieniają się o jeden |
   | tydzień i domykanie dnia | 28 | arytmetyka banku (suma odstępstw, dni zamknięte bez dzisiejszego, bank ujemny), **dzień bez zapisu pomijany a nie liczony jako zapas**, ukrycie banku w poniedziałek, rozpisanie tygodnia na siedem dni, oraz podpowiedzi domykające: budżet i luka białka, żadna nie przekracza budżetu, porcje realne, bez powtórzonych kategorii, historia podnosząca pozycje wyżej, trzy przypadki kiedy NIE podpowiadać, i odmiana jednostek. Zegar jest przypięty do znanej środy — zestaw zależny od dnia tygodnia sprawdzałby co innego każdego dnia |

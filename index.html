@@ -3630,6 +3630,25 @@ function nlSheet(prefill,autoDictate){
           root.appendChild(el("div",{class:"nlrow"},kids));
         });
 
+        /* Dyktowanie nie złapie wszystkiego: jedna rzecz spoza bazy albo
+           zwyczajnie zapomniana i cały opis trzeba było powtarzać. Tu da się
+           ją dołożyć na miejscu, tym samym sposobem co przy edycji zestawu. */
+        var found=el("div");
+        var addQ=el("input",{type:"search",placeholder:"Dorzuć produkt",autocomplete:"off",
+          oninput:function(){
+            var v=norm(this.value).split(/\s+/).filter(Boolean);
+            found.innerHTML="";
+            if(!v.length)return;
+            allFoods().filter(function(f){return searchHit(f,v)}).slice(0,6).forEach(function(f){
+              found.appendChild(el("button",{class:"chip ghost",onclick:function(){
+                items.push({f:f,g:f.s});
+                draw();
+              }},[el("span",{class:"n",text:f.n+" · "+addLabel(f)})]));
+            });
+          }});
+        root.appendChild(el("div",{class:"field",style:"margin-top:14px"},[
+          el("label",{text:"Dorzuć produkt"}),addQ,found]));
+
         var pBox=el("div",{class:"seg"});
         PARTS.forEach(function(o){
           pBox.appendChild(el("button",{text:o[0],"aria-pressed":Math.abs(part-o[1])<0.02?"true":"false",

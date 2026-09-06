@@ -29,8 +29,11 @@ const slotPressed = await p.locator('.sheet .field .seg button[aria-pressed="tru
 ok('posiłek = Śniadanie ze zdania  ['+slotPressed+']', slotPressed === 'Śniadanie');
 
 // "zjadłem połowę" -> ½ zaznaczone
-const parts = p.locator('.sheet .field').nth(1).locator('button');
-const pressedPart = await p.locator('.sheet .field').nth(1).locator('button[aria-pressed="true"]').innerText();
+/* Po etykiecie, nie po indeksie: dołożenie dowolnego pola wyżej w arkuszu
+   przesuwało nth() i test wywalał się na timeoucie zamiast na FAIL. */
+const czesc = p.locator('.sheet .field').filter({hasText:'Ile z tego zjadłeś'});
+const parts = czesc.locator('button');
+const pressedPart = await czesc.locator('button[aria-pressed="true"]').innerText();
 ok('zjedzona część = ½  ['+pressedPart+']', pressedPart === '½');
 
 const totalHalf = parseInt((await p.locator('.nltot .v').innerText()).replace(/\D/g,''),10);
