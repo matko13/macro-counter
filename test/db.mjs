@@ -355,6 +355,44 @@ ok('a krewetkowy spada na ogólny, bo takiego wpisu nie ma  ['+ptHit[3]+']',
    ptHit[3]==='Pad thai');
 ok('„pół pad thaia” to połowa porcji  ['+ptHit[4]+']', ptHit[4]==='Pad thai:175');
 
+/* Pałka z kurczaka z rosołu. Gotowana, bez skóry — bo „mięso z rosołu” to
+   mięso ściągnięte z kości, a rozmiękłą skórę zwykle się zostawia.
+
+   Polskie serwisy podają dla pałki ~125 kcal, ale to wartości SUROWEGO mięsa.
+   Gotowanie odparowuje ~28% wody i zagęszcza: 119 kcal surowego → 165 po
+   ugotowaniu, co zgadza się z USDA dla duszonego podudzia bez skóry (172).
+   Sztuka to mięso z jednej pałki po ugotowaniu, bez kości: ~60 g. */
+const pal=byName('Pałka z kurczaka (gotowana)');
+ok('jest pałka  ['+(pal?pal.k+' kcal/100 g, B '+pal.p:'BRAK')+']',
+   !!pal && pal.k===165 && pal.p===27 && pal.c===0 && pal.f===6);
+ok('sztuka to mięso z jednej pałki, bez kości  ['+(pal?pal.s+' '+pal.u:'—')+']',
+   !!pal && pal.s===60 && pal.u==='szt');
+/* Porządek w bazie jest sam w sobie kontrolą: gotowana pałka bez skóry musi
+   wypaść chudziej niż udko i niż kurczak pieczony ze skórą. */
+ok('chudsza od udka  ['+pal.k+' vs '+byName('Udko z kurczaka').k+']',
+   pal.k < byName('Udko z kurczaka').k);
+ok('i od pieczonego ze skórą  ['+pal.k+' vs '+byName('Kurczak pieczony ze skórą').k+']',
+   pal.k < byName('Kurczak pieczony ze skórą').k);
+ok('ale bogatsza w białko niż udko  ['+pal.p+' vs '+byName('Udko z kurczaka').p+' g]',
+   pal.p > byName('Udko z kurczaka').p);
+
+const palHit = await p.evaluate(()=>[
+  window.MAKRO.parse('pałka').items.map(i=>i.f.n+':'+Math.round(i.g))[0],
+  window.MAKRO.parse('dwie pałki').items.map(i=>i.f.n+':'+Math.round(i.g))[0],
+  window.MAKRO.parse('mięso z rosołu').items.map(i=>i.f.n)[0],
+  window.MAKRO.parse('podudzie').items.map(i=>i.f.n)[0],
+  window.MAKRO.parse('rosół z makaronem').items.map(i=>i.f.n)[0],
+  window.MAKRO.parse('udko z kurczaka').items.map(i=>i.f.n)[0]
+]);
+ok('„pałka” to jedna sztuka  ['+palHit[0]+']', palHit[0]==='Pałka z kurczaka (gotowana):60');
+ok('i liczy się na sztuki  ['+palHit[1]+']', palHit[1]==='Pałka z kurczaka (gotowana):120');
+ok('„mięso z rosołu” trafia tam samo  ['+palHit[2]+']',
+   palHit[2]==='Pałka z kurczaka (gotowana)');
+ok('„podudzie” też  ['+palHit[3]+']', palHit[3]==='Pałka z kurczaka (gotowana)');
+/* Alias „mięso z rosołu” nie może przejąć samego rosołu ani udka. */
+ok('rosół zostaje zupą  ['+palHit[4]+']', palHit[4]==='Rosół z makaronem');
+ok('a udko zostaje udkiem  ['+palHit[5]+']', palHit[5]==='Udko z kurczaka');
+
 /* Sushi je się na kawałki, nie na porcje. „kawałek” i „kawałki” są na liście
    słów pomijanych, więc „30 kawałków sushi” znaczyło dla apki „30 PORCJI
    sushi” — czyli 30 × 200 g = 6 kg i 8700 kcal. Waga kawałka to naprawia.
