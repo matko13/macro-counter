@@ -393,6 +393,62 @@ ok('„podudzie” też  ['+palHit[3]+']', palHit[3]==='Pałka z kurczaka (gotow
 ok('rosół zostaje zupą  ['+palHit[4]+']', palHit[4]==='Rosół z makaronem');
 ok('a udko zostaje udkiem  ['+palHit[5]+']', palHit[5]==='Udko z kurczaka');
 
+/* Makaron mie z Lidla (Vitasia) i stir fry na nim.
+
+   Etykieta z opakowania 250 g jest wewnętrznie spójna, co sprawdziłem czterema
+   sposobami przed wpisaniem: 1530 kJ ÷ 4,184 = 366 kcal wobec 361; reguła
+   4/4/9 daje 354; 361 × 0,625 = 225,6 wobec podanych 226 na porcję; 4 × 62,5
+   = 250 g masy netto. Wersja ugotowana wyprowadzona z JEJ WŁASNEJ przeliczki:
+   62,5 g suchego ≈ 170 g ugotowanego przy 226 kcal, czyli 133 kcal/100 g. */
+const mieU=byName('Makaron mie (ugotowany)'), mieS=byName('Makaron mie (suchy)');
+ok('jest mie suchy, wprost z etykiety  ['+(mieS?mieS.k+' kcal, B '+mieS.p:'BRAK')+']',
+   !!mieS && mieS.k===361 && mieS.p===11.1 && mieS.c===74.8 && mieS.f===1.2);
+ok('porcja suchego jak na opakowaniu  ['+(mieS?mieS.s+' g':'—')+']', !!mieS && mieS.s===62.5);
+ok('jest mie ugotowany  ['+(mieU?mieU.k+' kcal':'BRAK')+']',
+   !!mieU && mieU.k===133 && mieU.s===170);
+/* Ugotowany musi zgadzać się z suchym przez przeliczkę z opakowania —
+   to jest kontrola, że nie przepisałem jednej kolumny w miejsce drugiej. */
+const zSuchego = mieS.k*0.625;            // 62,5 g suchego
+const zUgot    = mieU.k*1.70;             // 170 g ugotowanego
+ok('porcja suchego i ugotowanego to te same kalorie  ['+Math.round(zSuchego)+
+   ' vs '+Math.round(zUgot)+' kcal]', Math.abs(zSuchego-zUgot)<8);
+/* Porządek wśród makaronów: mie wypada między soba a udon. */
+ok('mie mieści się między soba a udonem  ['+byName('Makaron soba').k+' < '+mieU.k+
+   ' < '+byName('Makaron udon').k+']',
+   byName('Makaron soba').k < mieU.k && mieU.k < byName('Makaron udon').k);
+
+const sf=byName('Stir fry z kurczakiem i makaronem');
+ok('jest stir fry  ['+(sf?sf.k+' kcal/100 g, talerz '+sf.s+' g':'BRAK')+']',
+   !!sf && sf.k===120 && sf.s===460);
+ok('talerz daje ponad 40 g białka  ['+Math.round(sf.p*4.6)+' g]', sf.p*4.6>40);
+
+const sfHit = await p.evaluate(()=>[
+  window.MAKRO.parse('stir fry').items.map(i=>i.f.n+':'+Math.round(i.g))[0],
+  window.MAKRO.parse('makaron z kurczakiem').items.map(i=>i.f.n)[0],
+  window.MAKRO.parse('pół stir fry').items.map(i=>i.f.n+':'+Math.round(i.g))[0],
+  window.MAKRO.parse('makaron mie').items.map(i=>i.f.n)[0],
+  window.MAKRO.parse('noodle').items.map(i=>i.f.n)[0],
+  window.MAKRO.parse('makaron').items.map(i=>i.f.n)[0],
+  window.MAKRO.parse('makaron udon').items.map(i=>i.f.n)[0],
+  window.MAKRO.parse('makaron z pesto').items.map(i=>i.f.n)[0]
+]);
+ok('„stir fry” to cały talerz  ['+sfHit[0]+']',
+   sfHit[0]==='Stir fry z kurczakiem i makaronem:460');
+ok('„makaron z kurczakiem” też  ['+sfHit[1]+']',
+   sfHit[1]==='Stir fry z kurczakiem i makaronem');
+ok('„pół stir fry” to połowa  ['+sfHit[2]+']',
+   sfHit[2]==='Stir fry z kurczakiem i makaronem:230');
+/* Samo „makaron mie” ma dawać UGOTOWANY — tak samo jak samo „makaron”.
+   Oba wpisy mają tę frazę w nazwie, więc o remis decyduje kolejność w bazie
+   i ugotowany musi tam stać pierwszy. */
+ok('„makaron mie” to ugotowany, nie suchy  ['+sfHit[3]+']',
+   sfHit[3]==='Makaron mie (ugotowany)');
+ok('„noodle” też  ['+sfHit[4]+']', sfHit[4]==='Makaron mie (ugotowany)');
+/* Trzy nowe pozycje nie mogą przejąć makaronów, które już były. */
+ok('samo „makaron” zostaje pszennym  ['+sfHit[5]+']', sfHit[5]==='Makaron (ugotowany)');
+ok('udon zostaje udonem  ['+sfHit[6]+']', sfHit[6]==='Makaron udon');
+ok('a makaron z pesto sobą  ['+sfHit[7]+']', sfHit[7]==='Makaron z pesto');
+
 /* Sushi je się na kawałki, nie na porcje. „kawałek” i „kawałki” są na liście
    słów pomijanych, więc „30 kawałków sushi” znaczyło dla apki „30 PORCJI
    sushi” — czyli 30 × 200 g = 6 kg i 8700 kcal. Waga kawałka to naprawia.
