@@ -449,6 +449,66 @@ ok('samo „makaron” zostaje pszennym  ['+sfHit[5]+']', sfHit[5]==='Makaron (u
 ok('udon zostaje udonem  ['+sfHit[6]+']', sfHit[6]==='Makaron udon');
 ok('a makaron z pesto sobą  ['+sfHit[7]+']', sfHit[7]==='Makaron z pesto');
 
+/* Łosoś pieczony w sosie sojowym z musztardą i szpinak z masłem oraz serkiem.
+   Oba policzone ze SKŁADNIKÓW, które już są w bazie — czyli z tych samych
+   liczb, jakie apka dałaby przy wpisaniu ich osobno. Dzięki temu da się je
+   sprawdzić w drugą stronę i to właśnie robią poniższe testy. */
+const lo=byName('Łosoś pieczony w sosie sojowym');
+const sz=byName('Szpinak z masłem i serkiem');
+ok('jest łosoś pieczony  ['+(lo?lo.k+' kcal/100 g, porcja '+lo.s+' g':'BRAK')+']',
+   !!lo && lo.k===238 && lo.s===165);
+ok('jest szpinak z masłem  ['+(sz?sz.k+' kcal/100 g, porcja '+sz.s+' g':'BRAK')+']',
+   !!sz && sz.k===113 && sz.s===150);
+
+/* Pieczenie zabiera wodę, więc gotowy łosoś musi być GĘSTSZY od surowego.
+   Gdyby ktoś wpisał tu wartości surowego, ten test by padł. */
+ok('pieczony gęstszy od surowego  ['+lo.k+' vs '+byName('Łosoś').k+' kcal/100 g]',
+   lo.k > byName('Łosoś').k);
+
+/* Rachunek w drugą stronę: 180 g surowego łososia + 15 g sosu + 15 g musztardy
+   ma dać tyle kalorii, ile deklaruje porcja gotowego dania. To wyłapie zarówno
+   błąd w gęstości, jak i w masie porcji. */
+const zeSkladnikow = await p.evaluate(()=>{
+  const f=n=>window.MAKRO.foods().find(x=>x.n===n);
+  const s=(n,g)=>window.MAKRO.scale(f(n),g);
+  const a=s('Łosoś',180), b=s('Sos sojowy',15), c=s('Musztarda',15);
+  const d=s('Szpinak',200), e=s('Masło',10), g=s('Serek śmietankowy',20);
+  const lo=f('Łosoś pieczony w sosie sojowym'), sz=f('Szpinak z masłem i serkiem');
+  return {losos:{skl:a.k+b.k+c.k, danie:window.MAKRO.scale(lo,lo.s).k},
+          szpinak:{skl:d.k+e.k+g.k, danie:window.MAKRO.scale(sz,sz.s).k}};
+});
+ok('łosoś: suma składników = porcja dania  ['+Math.round(zeSkladnikow.losos.skl)+
+   ' vs '+Math.round(zeSkladnikow.losos.danie)+' kcal]',
+   Math.abs(zeSkladnikow.losos.skl-zeSkladnikow.losos.danie)<15);
+ok('szpinak: suma składników = porcja dania  ['+Math.round(zeSkladnikow.szpinak.skl)+
+   ' vs '+Math.round(zeSkladnikow.szpinak.danie)+' kcal]',
+   Math.abs(zeSkladnikow.szpinak.skl-zeSkladnikow.szpinak.danie)<15);
+/* W szpinaku prawie wszystkie kalorie są z masła i serka, nie z warzywa. */
+ok('w szpinaku tłuszcz daje większość kalorii  ['+Math.round(sz.f*9/sz.k*100)+'%]',
+   sz.f*9/sz.k > 0.6);
+
+const loHit = await p.evaluate(()=>[
+  window.MAKRO.parse('łosoś pieczony').items.map(i=>i.f.n)[0],
+  window.MAKRO.parse('łosoś w sosie sojowym').items.map(i=>i.f.n)[0],
+  window.MAKRO.parse('szpinak gotowany').items.map(i=>i.f.n)[0],
+  window.MAKRO.parse('szpinak z masłem').items.map(i=>i.f.n)[0],
+  window.MAKRO.parse('łosoś').items.map(i=>i.f.n)[0],
+  window.MAKRO.parse('łosoś wędzony').items.map(i=>i.f.n)[0],
+  window.MAKRO.parse('szpinak').items.map(i=>i.f.n)[0],
+  window.MAKRO.parse('łosoś pieczony i szpinak z masłem').items.map(i=>i.f.n).join('+')
+]);
+ok('„łosoś pieczony” trafia  ['+loHit[0]+']', loHit[0]==='Łosoś pieczony w sosie sojowym');
+ok('„łosoś w sosie sojowym” też  ['+loHit[1]+']', loHit[1]==='Łosoś pieczony w sosie sojowym');
+ok('„szpinak gotowany” trafia na danie  ['+loHit[2]+']', loHit[2]==='Szpinak z masłem i serkiem');
+ok('„szpinak z masłem” też  ['+loHit[3]+']', loHit[3]==='Szpinak z masłem i serkiem');
+/* Dania nie mogą przejąć surowych składników — wszystkie trzy są w bazie
+   i logują się osobno. */
+ok('samo „łosoś” zostaje surowe  ['+loHit[4]+']', loHit[4]==='Łosoś');
+ok('wędzony zostaje wędzonym  ['+loHit[5]+']', loHit[5]==='Łosoś wędzony');
+ok('samo „szpinak” zostaje warzywem  ['+loHit[6]+']', loHit[6]==='Szpinak');
+ok('cały obiad jednym zdaniem daje dwie pozycje  ['+loHit[7]+']',
+   loHit[7]==='Łosoś pieczony w sosie sojowym+Szpinak z masłem i serkiem');
+
 /* Sushi je się na kawałki, nie na porcje. „kawałek” i „kawałki” są na liście
    słów pomijanych, więc „30 kawałków sushi” znaczyło dla apki „30 PORCJI
    sushi” — czyli 30 × 200 g = 6 kg i 8700 kcal. Waga kawałka to naprawia.
