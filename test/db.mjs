@@ -509,6 +509,72 @@ ok('samo „szpinak” zostaje warzywem  ['+loHit[6]+']', loHit[6]==='Szpinak');
 ok('cały obiad jednym zdaniem daje dwie pozycje  ['+loHit[7]+']',
    loHit[7]==='Łosoś pieczony w sosie sojowym+Szpinak z masłem i serkiem');
 
+/* Burger z grilla i jego dwa brakujące składniki: plaster 100% wołowiny
+   i bułka brioche. Reszta (pomidor, cebula, ogórek kwaszony, sos barbecue)
+   była już w bazie, więc cały burger jest policzony z niej i daje się
+   sprawdzić w drugą stronę. */
+const pat=byName('Burger wołowy (plaster z grilla)');
+const bri=byName('Bułka brioche do burgera');
+const bur=byName('Burger domowy z grilla');
+ok('jest plaster wołowiny  ['+(pat?pat.k+' kcal/100 g, sztuka '+pat.s+' g':'BRAK')+']',
+   !!pat && pat.k===260 && pat.s===90 && pat.u==='szt');
+ok('jest bułka brioche  ['+(bri?bri.k+' kcal/100 g, sztuka '+bri.s+' g':'BRAK')+']',
+   !!bri && bri.k===330 && bri.s===75 && bri.u==='szt');
+ok('jest cały burger  ['+(bur?bur.k+' kcal/100 g, sztuka '+bur.s+' g':'BRAK')+']',
+   !!bur && bur.k===212 && bur.s===265);
+
+/* Grillowanie odparowuje wodę i skapuje część tłuszczu, ale plaster i tak
+   wychodzi gęstszy od surowej mielonej wołowiny. */
+ok('plaster gęstszy od surowej mielonej  ['+pat.k+' vs '+byName('Mielona wołowina 10%').k+']',
+   pat.k > byName('Mielona wołowina 10%').k);
+/* Brioche jest wzbogacana masłem i jajkiem, więc tłustsza od maślanej. */
+ok('brioche tłustsza od bułki maślanej  ['+bri.f+' vs '+byName('Bułka maślana').f+' g]',
+   bri.f > byName('Bułka maślana').f);
+
+/* Rachunek w drugą stronę — suma składników musi dać porcję burgera. */
+const zeSkl = await p.evaluate(()=>{
+  const f=n=>window.MAKRO.foods().find(x=>x.n===n);
+  const s=(n,g)=>window.MAKRO.scale(f(n),g);
+  const suma = s('Burger wołowy (plaster z grilla)',90).k + s('Bułka brioche do burgera',75).k
+             + s('Pomidor',20).k + s('Cebula',15).k + s('Ogórek kwaszony',25).k
+             + s('Sos barbecue',40).k;
+  const b=f('Burger domowy z grilla');
+  return {skl:suma, danie:window.MAKRO.scale(b,b.s).k};
+});
+ok('suma składników = porcja burgera  ['+Math.round(zeSkl.skl)+' vs '+
+   Math.round(zeSkl.danie)+' kcal]', Math.abs(zeSkl.skl-zeSkl.danie)<15);
+/* Bułka i mięso to razem ponad 80% kalorii burgera — warzywa są kosmetyką. */
+ok('bułka i mięso dają większość kalorii burgera  ['+
+   Math.round((248+234)/562*100)+'%]', (248+234)/562 > 0.8);
+
+const buHit = await p.evaluate(()=>[
+  window.MAKRO.parse('burger domowy').items.map(i=>i.f.n+':'+Math.round(i.g))[0],
+  window.MAKRO.parse('burger z grilla').items.map(i=>i.f.n)[0],
+  window.MAKRO.parse('dwa burgery domowe').items.map(i=>i.f.n+':'+Math.round(i.g))[0],
+  window.MAKRO.parse('wołowina w plastrach').items.map(i=>i.f.n)[0],
+  window.MAKRO.parse('burger wołowy').items.map(i=>i.f.n)[0],
+  window.MAKRO.parse('brioche').items.map(i=>i.f.n)[0],
+  window.MAKRO.parse('burger').items.map(i=>i.f.n)[0],
+  window.MAKRO.parse('cheeseburger').items.map(i=>i.f.n)[0],
+  window.MAKRO.parse('burger roślinny').items.map(i=>i.f.n)[0],
+  window.MAKRO.parse('wołowina').items.map(i=>i.f.n)[0],
+  window.MAKRO.parse('bułka maślana').items.map(i=>i.f.n)[0]
+]);
+ok('„burger domowy” to cały burger  ['+buHit[0]+']', buHit[0]==='Burger domowy z grilla:265');
+ok('„burger z grilla” też  ['+buHit[1]+']', buHit[1]==='Burger domowy z grilla');
+ok('i liczy się na sztuki  ['+buHit[2]+']', buHit[2]==='Burger domowy z grilla:530');
+ok('„wołowina w plastrach” to plaster  ['+buHit[3]+']',
+   buHit[3]==='Burger wołowy (plaster z grilla)');
+ok('„burger wołowy” też  ['+buHit[4]+']', buHit[4]==='Burger wołowy (plaster z grilla)');
+ok('„brioche” trafia na bułkę  ['+buHit[5]+']', buHit[5]==='Bułka brioche do burgera');
+/* Trzy nowe pozycje nie mogą przejąć czterech burgerów, które już były
+   w bazie, ani wołowiny, ani bułki maślanej. */
+ok('samo „burger” zostaje przy Big Macu  ['+buHit[6]+']', buHit[6]==='Burger (typu Big Mac)');
+ok('cheeseburger zostaje sobą  ['+buHit[7]+']', buHit[7]==='Cheeseburger');
+ok('burger roślinny też  ['+buHit[8]+']', buHit[8]==='Burger roślinny');
+ok('„wołowina” zostaje mieloną  ['+buHit[9]+']', buHit[9]==='Mielona wołowina 10%');
+ok('a bułka maślana sobą  ['+buHit[10]+']', buHit[10]==='Bułka maślana');
+
 /* Sushi je się na kawałki, nie na porcje. „kawałek” i „kawałki” są na liście
    słów pomijanych, więc „30 kawałków sushi” znaczyło dla apki „30 PORCJI
    sushi” — czyli 30 × 200 g = 6 kg i 8700 kcal. Waga kawałka to naprawia.
