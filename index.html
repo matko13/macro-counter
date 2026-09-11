@@ -686,6 +686,7 @@ var RAW=[
 ["Kaszanka","mieso",250,12,10,18,150,"g"],
 ["Wątróbka drobiowa","mieso",128,20,1,5,150,"g"],
 ["Mielony indyk","mieso",150,20,0,7,150,"g"],
+["Mielony indyk pieczony","mieso",194,27.8,0,9.2,150,"g"],
 ["Kurczak pieczony ze skórą","mieso",220,25,0,13,150,"g"],
 ["Skrzydełka z kurczaka","mieso",250,22,0,18,150,"g"],
 ["Łosoś wędzony","mieso",180,22,0,10,50,"g"],
@@ -702,7 +703,7 @@ var RAW=[
 ["Chleb bezglutenowy","zboza",250,3,48,4,40,"kromka"],
 ["Bułka grahamka","zboza",260,9,48,2,60,"szt"],
 ["Pumpernikiel","zboza",250,6,50,1.5,35,"kromka"],
-["Chleb pita","zboza",275,9,55,1.2,60,"szt"],
+["Chleb pita (Lidl)","zboza",243,8.4,48.5,1,80,"szt"],
 ["Croissant","zboza",400,8,45,21,60,"szt"],
 ["Sucharki","zboza",380,12,73,4,20,"g"],
 ["Grzanki","zboza",400,10,65,12,25,"g"],
@@ -2886,6 +2887,8 @@ var ALIAS={
 "makaron-mie-ugotowany":"makaron mie|noodle|noodles|makaron noodle|mie noodles|makaron chinski",
 "makaron-mie-suchy":"makaron mie suchy|mie suchy|noodle suchy|suchy makaron mie",
 "stir-fry-z-kurczakiem-i-makaronem":"stir fry|stirfry|stir fry z kurczakiem|makaron z kurczakiem|kurczak z makaronem|chow mein",
+"mielony-indyk-pieczony":"pieczony mielony indyk|indyk pieczony|pieczony indyk|mielony indyk z piekarnika|indyk mielony pieczony|mieso na kebaba|mieso z indyka do kebaba",
+"chleb-pita-lidl":"pita|pity|pite|pitta|chlebek pita|pita z lidla|pita lidl",
 "losos-pieczony-w-sosie-sojowym":"losos pieczony|losos w sosie sojowym|losos z musztarda|pieczony losos|losos sojowy",
 "burger-wolowy-plaster-z-grilla":"wolowina w plastrach|kotlet wolowy|burger wolowy|kotlet z wolowiny",
 "bulka-brioche-do-burgera":"brioche|bulka brioche|bulka do burgera",
@@ -3075,7 +3078,9 @@ var QUAL={};
  "odtluszczone odtluszczony odtluszczona pelnotluste pelnotlusty nieslodzony nieslodzone "+
  "weganski weganska weganskie wegetarianski wegetarianska roslinny roslinne wege "+
  "smazony smazona smazone panierowany panierowana panierowane wedzony wedzona "+
- "surowy surowa surowe mrozony mrozona kiszony solony").split(" ").forEach(function(w){if(w)QUAL[w]=1});
+ "surowy surowa surowe mrozony mrozona kiszony solony "+
+ "pieczony pieczona pieczone pieczonego pieczonej gotowany gotowana gotowane "+
+ "gotowanego gotowanej grillowany grillowana grillowane duszony duszona duszone").split(" ").forEach(function(w){if(w)QUAL[w]=1});
 
 /* Ile znaków wspólnego prefiksu wystarczy, by uznać dwie formy za to samo
    słowo. Progi zależą od długości: "fety"≈"feta" tak, ale "ser"≉"sernik". */

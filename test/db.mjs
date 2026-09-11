@@ -633,6 +633,89 @@ ok('„kakao na mleku” to nadal napój  ['+kakaoDrink.join(',')+']', kakaoDrin
 const orkisz = await p.evaluate(()=>window.MAKRO.parse('100 g mąki orkiszowej').items.map(i=>i.f.n));
 ok('„mąki orkiszowej” trafia w mąkę orkiszową  ['+orkisz.join(',')+']', orkisz[0]==='Mąka orkiszowa');
 
+/* ── Domowy kebab: pieczony mielony indyk + pita z Lidla ────────────────────
+
+   Pita w bazie była ogólna (275 kcal/100 g — tyle ma typowa pita z tabel
+   żywieniowych), a nie ta, którą się faktycznie kupuje. Etykieta z Lidla
+   (opakowanie 400 g, 5 sztuk) daje 243 kcal — 32 kcal na 100 g mniej.
+
+   Indyk pieczony to osobny produkt, nie surowy z przymiotnikiem: pieczenie
+   odparowuje ~28% wody, więc ta sama porcja waży mniej, a 100 g jest gęstsze.
+   Białka nie ubywa — i to jest sprawdzian, czy liczby trzymają się kupy. */
+const pita = byName('Chleb pita (Lidl)');
+ok('pita z bazy to etykieta z Lidla, nie wartość ogólna  ['+
+   (pita ? pita.k+' kcal B'+pita.p+' W'+pita.c+' T'+pita.f : 'BRAK')+']',
+   !!pita && pita.k===243 && pita.p===8.4 && pita.c===48.5 && pita.f===1);
+ok('sztuka pity to 80 g (400 g ÷ 5 szt z opakowania)  ['+
+   (pita ? pita.s+' '+pita.u : '—')+']', !!pita && pita.s===80 && pita.u==='szt');
+
+const ind = byName('Mielony indyk pieczony'), sur = byName('Mielony indyk');
+ok('pieczony mielony indyk jest w bazie  ['+
+   (ind ? ind.k+' kcal B'+ind.p+' W'+ind.c+' T'+ind.f : 'BRAK')+']',
+   !!ind && ind.k===194 && ind.p===27.8 && ind.c===0 && ind.f===9.2);
+ok('pieczony jest gęstszy od surowego  ['+(sur?sur.k:'?')+' → '+(ind?ind.k:'?')+' kcal/100 g]',
+   !!ind && !!sur && ind.k > sur.k);
+ok('i ma więcej białka w 100 g  ['+(sur?sur.p:'?')+' → '+(ind?ind.p:'?')+' g]',
+   !!ind && !!sur && ind.p > sur.p);
+
+/* Odwrotny rachunek: 100 g surowego mięsa daje ~72 g pieczonego. Białko
+   nie wyparowuje, więc 0,72 × (białko pieczonego) musi wyjść na białko
+   surowego. Jeśli się nie zgadza, któraś z dwóch pozycji jest zmyślona. */
+const wydajnosc = 0.72;
+ok('białko się zgadza po odparowaniu  [0,72 × '+ind.p+' = '+
+   (wydajnosc*ind.p).toFixed(1)+' vs '+sur.p+' g surowego]',
+   Math.abs(wydajnosc*ind.p - sur.p) <= 1.5);
+ok('tłuszczu trochę ubywa, ale nie przybywa  [0,72 × '+ind.f+' = '+
+   (wydajnosc*ind.f).toFixed(1)+' vs '+sur.f+' g surowego]',
+   wydajnosc*ind.f <= sur.f && wydajnosc*ind.f >= 0.85*sur.f);
+
+/* Każde sensowne sformułowanie ma dać JEDNĄ pozycję — pieczoną. Zanim
+   powstał osobny wpis, „mielony indyk pieczony” zwracał surowego indyka
+   ORAZ pieczonego kurczaka ze skórą: 555 kcal zamiast 291. */
+const kebab = await p.evaluate(()=>{
+  const q=t=>window.MAKRO.parse(t).items.map(i=>i.f.n+':'+Math.round(i.g));
+  return {a:q('mielony indyk pieczony'), b:q('pieczony mielony indyk'),
+          c:q('150 g pieczonego mielonego indyka'), d:q('mielonego indyka pieczonego'),
+          e:q('indyk pieczony'), f:q('mielony indyk'),
+          g:q('pita'), h:q('dwie pity'), i:q('pita z lidla'),
+          j:q('pita i 150 g pieczonego mielonego indyka')};
+});
+['a','b','c','d','e'].forEach(function(k){
+  ok('„'+{a:'mielony indyk pieczony',b:'pieczony mielony indyk',
+          c:'150 g pieczonego mielonego indyka',d:'mielonego indyka pieczonego',
+          e:'indyk pieczony'}[k]+'” to jedna pozycja  ['+(kebab[k].join(' + ')||'NIC')+']',
+     kebab[k].length===1 && kebab[k][0]==='Mielony indyk pieczony:150');
+});
+ok('samo „mielony indyk” to nadal surowy — ten, który się kupuje  ['+
+   (kebab.f.join(' + ')||'NIC')+']',
+   kebab.f.length===1 && kebab.f[0]==='Mielony indyk:150');
+/* Samo „pita” nie trafiało w nic — produkt był w bazie i nie dało się go
+   wpisać inaczej niż pełną nazwą. */
+ok('samo „pita” trafia w pitę  ['+(kebab.g.join(' + ')||'NIC')+']',
+   kebab.g.length===1 && kebab.g[0]==='Chleb pita (Lidl):80');
+ok('„dwie pity” to dwie sztuki  ['+(kebab.h.join(' + ')||'NIC')+']',
+   kebab.h.length===1 && kebab.h[0]==='Chleb pita (Lidl):160');
+ok('„pita z lidla” też  ['+(kebab.i.join(' + ')||'NIC')+']',
+   kebab.i.length===1 && kebab.i[0]==='Chleb pita (Lidl):80');
+ok('cały kebab to dokładnie dwie pozycje  ['+(kebab.j.join(' + ')||'NIC')+']',
+   kebab.j.length===2 && kebab.j[0]==='Chleb pita (Lidl):80' &&
+   kebab.j[1]==='Mielony indyk pieczony:150');
+
+/* „pieczony”/„gotowany” dołączyły do przymiotników, które same z siebie nie
+   są produktem — wcześniej samo „pieczony” w zdaniu doklejało pieczonego
+   kurczaka ze skórą (330 kcal) do czegokolwiek innego. */
+const przym = await p.evaluate(()=>{
+  const q=t=>window.MAKRO.parse(t).items.map(i=>i.f.n);
+  return {a:q('pieczony'), b:q('gotowany'),
+          d:q('kurczak pieczony'), e:q('pałka z kurczaka gotowana')};
+});
+ok('samo „pieczony” nie jest produktem  ['+(przym.a.join(',')||'NIC')+']', przym.a.length===0);
+ok('samo „gotowany” też nie  ['+(przym.b.join(',')||'NIC')+']', przym.b.length===0);
+ok('ale „kurczak pieczony” dalej działa  ['+(przym.d.join(',')||'NIC')+']',
+   przym.d.length===1 && /Kurczak pieczony/.test(przym.d[0]));
+ok('i „pałka z kurczaka gotowana”  ['+(przym.e.join(',')||'NIC')+']',
+   przym.e.length===1 && /Pałka z kurczaka/.test(przym.e[0]));
+
 /* Aliasy: każdy musi wskazywać na istniejący produkt i nie może być pusty. */
 const AL = await p.evaluate(()=>window.MAKRO.alias);
 const orphan = Object.keys(AL).filter(k=>!ids[k]);
