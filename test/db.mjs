@@ -646,8 +646,11 @@ const pita = byName('Chleb pita (Lidl)');
 ok('pita z bazy to etykieta z Lidla, nie wartość ogólna  ['+
    (pita ? pita.k+' kcal B'+pita.p+' W'+pita.c+' T'+pita.f : 'BRAK')+']',
    !!pita && pita.k===243 && pita.p===8.4 && pita.c===48.5 && pita.f===1);
-ok('sztuka pity to 80 g (400 g ÷ 5 szt z opakowania)  ['+
-   (pita ? pita.s+' '+pita.u : '—')+']', !!pita && pita.s===80 && pita.u==='szt');
+/* Zważona, nie policzona: arytmetyka z opakowania (400 g ÷ 5 szt) dawała
+   80 g, a waga kuchenna 75 g. Etykieta mówi o zawartości opakowania, nie
+   o sztuce — 5 g na pitę to 12 kcal, czyli tyle, ile warto mieć dobrze. */
+ok('sztuka pity to 75 g — zważone  ['+
+   (pita ? pita.s+' '+pita.u : '—')+']', !!pita && pita.s===75 && pita.u==='szt');
 
 const ind = byName('Mielony indyk pieczony'), sur = byName('Mielony indyk');
 ok('pieczony mielony indyk jest w bazie  ['+
@@ -692,13 +695,13 @@ ok('samo „mielony indyk” to nadal surowy — ten, który się kupuje  ['+
 /* Samo „pita” nie trafiało w nic — produkt był w bazie i nie dało się go
    wpisać inaczej niż pełną nazwą. */
 ok('samo „pita” trafia w pitę  ['+(kebab.g.join(' + ')||'NIC')+']',
-   kebab.g.length===1 && kebab.g[0]==='Chleb pita (Lidl):80');
+   kebab.g.length===1 && kebab.g[0]==='Chleb pita (Lidl):75');
 ok('„dwie pity” to dwie sztuki  ['+(kebab.h.join(' + ')||'NIC')+']',
-   kebab.h.length===1 && kebab.h[0]==='Chleb pita (Lidl):160');
+   kebab.h.length===1 && kebab.h[0]==='Chleb pita (Lidl):150');
 ok('„pita z lidla” też  ['+(kebab.i.join(' + ')||'NIC')+']',
-   kebab.i.length===1 && kebab.i[0]==='Chleb pita (Lidl):80');
+   kebab.i.length===1 && kebab.i[0]==='Chleb pita (Lidl):75');
 ok('cały kebab to dokładnie dwie pozycje  ['+(kebab.j.join(' + ')||'NIC')+']',
-   kebab.j.length===2 && kebab.j[0]==='Chleb pita (Lidl):80' &&
+   kebab.j.length===2 && kebab.j[0]==='Chleb pita (Lidl):75' &&
    kebab.j[1]==='Mielony indyk pieczony:150');
 
 /* „pieczony”/„gotowany” dołączyły do przymiotników, które same z siebie nie
