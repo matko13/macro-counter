@@ -104,7 +104,10 @@ ok('karta pokazuje nowy stan  ['+card.slice(0,52)+'…]',
 ok('mililitry nie są pokazywane jako gramy  ['+card+']', /250 ml/.test(card));
 
 // ── dodanie poprawionego zestawu do dnia liczy nowe wartości ───────────────
-await p.locator('.card .btn').first().tap(); await p.waitForTimeout(600);
+/* Przycisk na karcie otwiera teraz arkusz z ułamkiem zamiast dodawać od razu.
+   Domyślnie zaznaczona jest całość, więc zatwierdzenie daje to, co dawniej. */
+await p.locator('.card .btn').first().tap(); await p.waitForTimeout(450);
+await p.getByRole('button',{name:/^Dodaj \d/}).tap(); await p.waitForTimeout(600);
 const day = await p.evaluate(()=>{
   const L=JSON.parse(localStorage.getItem('makro.v1')).log;
   return Object.values(L).flat().map(e=>e.n+' '+Math.round(e.g)+'g');
@@ -145,6 +148,88 @@ const orphG = await p.locator('#sheet .nlrow .g .v input').first().inputValue();
 const orph = (await p.locator('#sheet .nlrow').first().innerText()).replace(/\n/g,' ');
 ok('składnik po usuniętym produkcie nadal skaluje się proporcjonalnie  ['+orphG+' g / '+orph+']',
    orphG==='110' && /220 kcal/.test(orph));
+
+/* ── ile z zestawu zjadłeś ─────────────────────────────────────────────────
+
+   Zestaw jest definicją posiłku i zostaje pełny. Zjeść można połowę — i to
+   jest właściwość JEDNEGO dodania, nie zestawu. Gdyby ułamek zapisywał się
+   w zestawie, „pół owsianki" na raz psułoby wszystkie następne dni. */
+await p.evaluate(()=>{
+  const d=JSON.parse(localStorage.getItem('makro.v1'));
+  d.log={};
+  d.sets=[{id:'sf',n:'Owsianka nocna',items:[
+    {fid:'platki-owsiane',n:'Płatki owsiane',g:80,u:'g',s:50,k:297.6,p:10.4,c:48,f:5.6},
+    {fid:'mleko-2',n:'Mleko 2%',g:150,u:'ml',s:250,k:75,p:4.95,c:7.2,f:3},
+    {fid:'borowki',n:'Borówki',g:100,u:'g',s:100,k:57,p:0.7,c:14,f:0.3}]}];
+  localStorage.setItem('makro.v1',JSON.stringify(d));
+});
+await p.reload(); await p.waitForTimeout(600);
+await p.locator('.tab').nth(2).tap(); await p.waitForTimeout(400);
+const CALOSC = 297.6+75+57;
+
+await p.locator('.card .btn').first().tap(); await p.waitForTimeout(450);
+ok('dodanie zestawu otwiera arkusz, a nie wrzuca od razu',
+   await p.locator('#sheet.on').count()===1);
+const dom = await p.locator('#sheet .seg button[aria-pressed="true"]').innerText();
+ok('domyślnie zaznaczona jest całość  ['+dom+']', dom==='całość');
+ok('arkusz pokazuje pełną sumę zestawu  ['+await p.locator('#sheet .nltot .v').innerText()+']',
+   (await p.locator('#sheet .nltot .v').innerText())===String(Math.round(CALOSC)));
+ok('i wszystkie składniki  ['+(await p.locator('#sheet .nlrow').count())+']',
+   await p.locator('#sheet .nlrow').count()===3);
+
+await p.locator('#sheet .seg button',{hasText:'½'}).tap(); await p.waitForTimeout(350);
+ok('½ połowi sumę  ['+await p.locator('#sheet .nltot .v').innerText()+']',
+   (await p.locator('#sheet .nltot .v').innerText())===String(Math.round(CALOSC/2)));
+ok('i mówi, ile było w całości  ['+await p.locator('#sheet .nltot .u').innerText()+']',
+   /z całości\s+430/.test(await p.locator('#sheet .nltot .u').innerText()));
+const polowaRzedy = await p.locator('#sheet .nlrow').allInnerTexts();
+ok('gramatury też są połówkowe  ['+polowaRzedy.map(r=>r.split('\n')[1]).join(', ')+']',
+   /40 g/.test(polowaRzedy[0]) && /75 ml/.test(polowaRzedy[1]) && /50 g/.test(polowaRzedy[2]));
+/* Mililitry nie mogą zamienić się w gramy przy skalowaniu. */
+ok('mililitry zostają mililitrami  ['+polowaRzedy[1].replace(/\n/g,' ')+']',
+   /75 ml/.test(polowaRzedy[1]) && !/75 g/.test(polowaRzedy[1]));
+
+await p.getByRole('button',{name:/^Dodaj \d/}).tap(); await p.waitForTimeout(650);
+const wpisy = await p.evaluate(()=>{
+  const S=JSON.parse(localStorage.getItem('makro.v1'));
+  const d=new Date(),k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  return (S.log[k]||[]).map(e=>({n:e.n,g:e.g,k:e.k,u:e.u}));
+});
+const suma = wpisy.reduce((a,e)=>a+e.k,0);
+ok('do dziennika trafia połowa, pozycja po pozycji  ['+
+   wpisy.map(e=>e.n+' '+e.g+(e.u==='ml'?'ml':'g')).join(', ')+']',
+   wpisy.length===3 && wpisy[0].g===40 && wpisy[1].g===75 && wpisy[2].g===50);
+ok('suma zgadza się z połową zestawu  ['+Math.round(suma)+' vs '+Math.round(CALOSC/2)+']',
+   Math.abs(suma-CALOSC/2)<1);
+
+/* To jest sedno prośby: definicja ma przetrwać dodanie ułamka nietknięta. */
+const defPo = await p.evaluate(()=>JSON.parse(localStorage.getItem('makro.v1')).sets[0]);
+const sumaDef = defPo.items.reduce((a,i)=>a+i.k,0);
+ok('definicja zestawu zostaje pełna  ['+Math.round(sumaDef)+' kcal, '+
+   defPo.items.map(i=>i.g).join('/')+' g]',
+   Math.abs(sumaDef-CALOSC)<1 && defPo.items[0].g===80 && defPo.items[1].g===150);
+
+/* I następne dodanie znowu startuje od całości, a nie od ostatniego ułamka. */
+await p.locator('.tab').nth(2).tap(); await p.waitForTimeout(400);
+await p.locator('.card .btn').first().tap(); await p.waitForTimeout(450);
+ok('następne dodanie znów startuje od całości  ['+
+   await p.locator('#sheet .seg button[aria-pressed="true"]').innerText()+']',
+   (await p.locator('#sheet .seg button[aria-pressed="true"]').innerText())==='całość');
+ok('i pokazuje pełną sumę  ['+await p.locator('#sheet .nltot .v').innerText()+']',
+   (await p.locator('#sheet .nltot .v').innerText())===String(Math.round(CALOSC)));
+/* Anuluj nie może niczego dopisać. */
+const przed = await p.evaluate(()=>{
+  const S=JSON.parse(localStorage.getItem('makro.v1'));
+  const d=new Date(),k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  return (S.log[k]||[]).length;
+});
+await p.getByRole('button',{name:'Anuluj'}).tap(); await p.waitForTimeout(450);
+const po = await p.evaluate(()=>{
+  const S=JSON.parse(localStorage.getItem('makro.v1'));
+  const d=new Date(),k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  return (S.log[k]||[]).length;
+});
+ok('Anuluj nic nie dopisuje  ['+przed+' → '+po+']', przed===po && po===3);
 
 console.log('\n'+T.filter(t=>t.startsWith('PASS')).length+'/'+T.length+' PASS');
 console.log(errs.length?'błędy JS: '+errs.join('; '):'błędy JS: brak');

@@ -391,6 +391,18 @@ main{flex:1;padding:6px 18px 28px;display:flex;flex-direction:column;gap:26px}
    więc przyciski jeden pod drugim trzeba rozciągnąć kolumną (align-items
    stretch) — inaczej mają różne szerokości i stykają się bez odstępu. */
 .sheetcol{display:flex;flex-direction:column;gap:10px;padding-top:16px}
+/* Przy otwartej klawiaturze arkusz jest przycięty i przewijalny, a wiersz
+   przycisków stoi na samym końcu treści — czyli poza kadrem. Przypięcie go do
+   dołu trzyma „Zapisz" w zasięgu kciuka bez zgadywania, że trzeba przewinąć.
+
+   Tylko wtedy: przypięty wiersz pływa nad treścią, dopóki nie przewinie się
+   arkusza do końca, więc w normalnym stanie zasłaniałby to, co pod nim — a tam
+   bywają rzeczy do tapnięcia. Klasę nakłada fitSheet(), gdy klawiatura realnie
+   zabiera miejsce. */
+.sheet.squeezed .sheetrow,.sheet.squeezed .sheetcol{
+  position:sticky;bottom:0;z-index:1;
+  background:var(--bg);padding-bottom:6px;
+}
 
 /* ─────────── nowa wersja i komunikaty ─────────── */
 .update{
@@ -1761,11 +1773,50 @@ function openSheet(build){
   sheetEl.appendChild(el("div",{class:"grab"}));
   build(sheetEl);
   sheetEl.classList.add("on");scrimEl.classList.add("on");
+  fitSheet();
 }
 function closeSheet(){
   if(DICT){DICT.stop();DICT=null}
   sheetEl.classList.remove("on");scrimEl.classList.remove("on");
+  fitSheet();
 }
+/* ═══════════ arkusz a klawiatura ═══════════
+   iOS nie zmniejsza okna, kiedy wyjeżdża klawiatura — nakrywa nią dolną część
+   ekranu. Arkusz jest przyklejony do dołu (position:fixed; bottom:0), więc
+   KRÓTKI arkusz z polami do wpisania chował się pod klawiaturą w całości.
+   Najgorszy przypadek to „Cel ręcznie": cztery pola i Zapisz na samym dole.
+   Przewinięcie nie pomagało, bo arkusz mieścił się w swojej wysokości i nie
+   miał czego przewijać — po prostu nie dało się go zatwierdzić.
+
+   visualViewport podaje, ile miejsca ZOSTAŁO naprawdę (window.innerHeight
+   tego nie wie). Podnosimy arkusz nad klawiaturę i przycinamy mu wysokość,
+   żeby treść dała się przewinąć zamiast wystawać poza ekran. */
+function fitSheet(){
+  var vv=window.visualViewport;
+  if(!vv)return;
+  if(!sheetEl.classList.contains("on")){
+    sheetEl.style.bottom="";sheetEl.style.maxHeight="";
+    sheetEl.classList.remove("squeezed");return;
+  }
+  var pod=Math.max(0,Math.round(window.innerHeight-vv.height-vv.offsetTop));
+  sheetEl.style.bottom=pod+"px";
+  sheetEl.style.maxHeight=Math.round(vv.height*0.92)+"px";
+  /* Próg, a nie zero: pasek adresu potrafi zmienić visualViewport o kilka
+     pikseli, a to nie jest klawiatura. */
+  sheetEl.classList.toggle("squeezed",pod>60);
+}
+if(window.visualViewport){
+  window.visualViewport.addEventListener("resize",fitSheet);
+  window.visualViewport.addEventListener("scroll",fitSheet);
+}
+/* Samo podniesienie nie wystarczy: pole, w które właśnie tapnąłeś, może zostać
+   poza przyciętą wysokością. Zwłoka czeka na animację klawiatury. */
+sheetEl.addEventListener("focusin",function(e){
+  if(!/^(INPUT|TEXTAREA)$/.test(e.target.tagName))return;
+  setTimeout(function(){
+    try{e.target.scrollIntoView({block:"center",behavior:"smooth"})}catch(err){}
+  },320);
+});
 scrimEl.addEventListener("click",closeSheet);
 document.addEventListener("keydown",function(e){if(e.key==="Escape")closeSheet()});
 
@@ -2607,6 +2658,85 @@ function setSheet(st){
   });
 }
 
+/* ═══════ dodanie zestawu do dnia ═══════
+   Zestaw jest DEFINICJĄ posiłku i zostaje pełny — ćwiartka owsianki nie jest
+   innym zestawem, tylko innym śniadaniem. Ułamek należy więc do dodania, nie
+   do zestawu: wybierasz go tutaj, a zapisana definicja pozostaje nietknięta.
+   To ten sam zestaw ułamków co przy dyktowaniu — „Ile z tego zjadłeś" znaczy
+   wszędzie to samo. */
+function partLabel(x){
+  for(var i=0;i<PARTS.length;i++)if(Math.abs(PARTS[i][1]-x)<0.02)return PARTS[i][0];
+  return Math.round(x*100)+"%";
+}
+function addSetSheet(st){
+  var part=1;
+  draw();
+  /* Skalujemy wartości ZAPISANE w zestawie, a nie liczymy od nowa z bazy:
+     „połowa" ma być dokładnie połową tego, co pokazuje karta. Gdyby produkt
+     w bazie zmienił się od zapisania zestawu, przeliczanie dawałoby liczbę,
+     która nie zgadza się z niczym na ekranie. */
+  function skala(){
+    return st.items.map(function(i){
+      return {src:i,g:Math.max(1,Math.round(i.g*part)),
+              k:i.k*part,p:i.p*part,c:i.c*part,f:i.f*part};
+    });
+  }
+  function draw(){
+    openSheet(function(root){
+      var it=skala(),t={k:0,p:0,c:0,f:0};
+      it.forEach(function(x){t.k+=x.k;t.p+=x.p;t.c+=x.c;t.f+=x.f});
+      root.appendChild(el("h3",{id:"sheetTitle",text:st.n}));
+      root.appendChild(el("div",{class:"per",text:"Trafi do: "+dayTitle(day).toLowerCase()}));
+
+      var pBox=el("div",{class:"seg"});
+      PARTS.forEach(function(o){
+        pBox.appendChild(el("button",{text:o[0],
+          "aria-pressed":Math.abs(part-o[1])<0.02?"true":"false",
+          onclick:function(){part=o[1];draw()}}));
+      });
+      root.appendChild(el("div",{class:"field"},[el("label",{text:"Ile z tego zjadłeś"}),pBox]));
+
+      root.appendChild(el("div",{class:"nltot"},[
+        el("span",{class:"v num",text:fmt(t.k)}),
+        el("span",{class:"u",text:part<1?"kcal — z całości "+fmt(t.k/part):"kcal"})
+      ]));
+      root.appendChild(el("div",{class:"pvmac",html:
+        "<span style='color:var(--p);font-weight:700'>B</span> <i class='num'>"+fmt(t.p)+" g</i>"+
+        "<span style='color:var(--c);font-weight:700'>W</span> <i class='num'>"+fmt(t.c)+" g</i>"+
+        "<span style='color:var(--f);font-weight:700'>T</span> <i class='num'>"+fmt(t.f)+" g</i>"}));
+
+      /* Widać, co faktycznie wyląduje w dzienniku — przy zestawie z dziewięciu
+         rzeczy sama suma nie wystarcza, żeby złapać pomyłkę. */
+      it.forEach(function(x){
+        root.appendChild(el("div",{class:"nlrow"},[
+          el("span",{class:"n"},[el("b",{text:x.src.n}),
+            el("s",{text:fmt(x.g)+" "+(x.src.u==="ml"?"ml":"g")})]),
+          el("span",{class:"kc num",text:fmt(x.k)+" kcal"})
+        ]));
+      });
+
+      root.appendChild(el("div",{class:"sheetrow"},[
+        el("button",{class:"btn alt",text:"Anuluj",onclick:closeSheet}),
+        el("button",{class:"btn",text:"Dodaj "+it.length+" "+
+          plural(it.length,"pozycję","pozycje","pozycji"),onclick:function(){commit(it,t)}})
+      ]));
+    });
+  }
+  function commit(it,t){
+    if(!S.log[day])S.log[day]=[];
+    var added=[];
+    it.forEach(function(x,ix){
+      var c={};for(var k in x.src)c[k]=x.src[k];
+      c.g=x.g;c.k=x.k;c.p=x.p;c.c=x.c;c.f=x.f;c.t=Date.now()+ix;
+      S.log[day].push(c);added.push(c);bump(x.src.fid);
+    });
+    save();closeSheet();go("today");
+    toast("Dodano „"+st.n+"”"+(part<1?" · "+partLabel(part):"")+
+      " · "+fmt(t.k)+" kcal","Cofnij",function(){
+      S.log[day]=S.log[day].filter(function(e){return added.indexOf(e)<0});save();render();
+    });
+  }
+}
 function viewSets(){
   var wrap=document.createDocumentFragment();
   wrap.appendChild(el("h2",{text:"Zestawy"}));
@@ -2628,20 +2758,8 @@ function viewSets(){
       }).join(" · ")}),
       el("div",{class:"pvmac",style:"padding:0",html:"<span style='color:var(--p);font-weight:700'>B</span> <i class='num'>"+fmt(tp)+" g</i><span style='color:var(--c);font-weight:700'>W</span> <i class='num'>"+fmt(tc)+" g</i><span style='color:var(--f);font-weight:700'>T</span> <i class='num'>"+fmt(tf)+" g</i>"}),
       el("div",{class:"sheetrow",style:"padding-top:0"},[
-        el("button",{class:"btn",text:"Dodaj do "+dayTitle(day).toLowerCase(),onclick:function(){
-          if(!S.log[day])S.log[day]=[];
-          var added=[];
-          st.items.forEach(function(i){
-            var copy={};for(var k in i)copy[k]=i[k];
-            copy.t=Date.now()+added.length;
-            S.log[day].push(copy);added.push(copy);
-            bump(i.fid);
-          });
-          save();go("today");
-          toast("Dodano „"+st.n+"”","Cofnij",function(){
-            S.log[day]=S.log[day].filter(function(e){return added.indexOf(e)<0});save();render();
-          });
-        }}),
+        el("button",{class:"btn",text:"Dodaj do "+dayTitle(day).toLowerCase(),
+          onclick:function(){addSetSheet(st)}}),
         el("button",{class:"edit","aria-label":"Popraw zestaw "+st.n,onclick:function(){setSheet(st)}},[svg(ICON.pen)]),
         el("button",{class:"edit danger","aria-label":"Usuń zestaw "+st.n,onclick:function(){
           var i=S.sets.indexOf(st);S.sets.splice(i,1);save();render();

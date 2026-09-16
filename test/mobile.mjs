@@ -128,6 +128,62 @@ const b=await chromium.launch();
   await ctx.close();
 }
 
+
+/* ── arkusz a klawiatura iOS ───────────────────────────────────────────────
+
+   iOS NIE zmniejsza okna, kiedy wyjeżdża klawiatura — nakrywa nią dolną część
+   ekranu. Arkusz jest przyklejony do dołu, więc krótki arkusz z polami do
+   wpisania chował się pod klawiaturą w całości i nie dało się go zatwierdzić:
+   „Cel ręcznie" miał cztery pola i Zapisz na samym dole, a przewinięcie nie
+   pomagało, bo arkusz mieścił się w swojej (zasłoniętej) wysokości.
+
+   Test udaje dokładnie ten stan: visualViewport kurczy się, window.innerHeight
+   zostaje. */
+{
+  const ctx = await b.newContext({viewport:{width:390,height:664},
+    isMobile:true, hasTouch:true, deviceScaleFactor:3, locale:'pl-PL'});
+  const p = await ctx.newPage();
+  await p.goto(APP); await p.waitForTimeout(400);
+  await p.locator('.tab').nth(3).tap(); await p.waitForTimeout(400);
+  const btn = p.getByRole('button',{name:'Ustaw ręcznie'});
+  await btn.scrollIntoViewIfNeeded(); await btn.tap(); await p.waitForTimeout(400);
+  const zap = p.locator('#sheet').getByRole('button',{name:'Zapisz'});
+
+  let box = await zap.boundingBox();
+  ok('bez klawiatury Zapisz jest w kadrze  [y do '+Math.round(box.y+box.height)+' / 664]',
+     box.y+box.height <= 664);
+
+  const KLAW = 364;   // tyle zostaje nad klawiaturą numeryczną na iPhonie 13
+  await p.evaluate(h => {
+    Object.defineProperty(window.visualViewport,'height',{get:()=>h,configurable:true});
+    window.visualViewport.dispatchEvent(new Event('resize'));
+  }, KLAW);
+  await p.waitForTimeout(300);
+
+  const st = await p.locator('#sheet').evaluate(e => ({b:e.style.bottom, m:e.style.maxHeight}));
+  ok('arkusz podnosi się nad klawiaturę  [bottom '+st.b+']', st.b === (664-KLAW)+'px');
+  ok('i przycina wysokość do widocznej części  [maxHeight '+st.m+']',
+     parseInt(st.m,10) > 0 && parseInt(st.m,10) <= KLAW);
+
+  box = await zap.boundingBox();
+  ok('Zapisz zostaje nad klawiaturą  [y '+Math.round(box.y)+'..'+Math.round(box.y+box.height)+
+     ' / '+KLAW+']', box.y+box.height <= KLAW);
+
+  /* i faktycznie da się zatwierdzić w tym stanie */
+  await p.locator('#sheet input').nth(0).fill('2750');
+  await zap.tap(); await p.waitForTimeout(500);
+  const cel = await p.evaluate(()=>JSON.parse(localStorage.getItem('makro.v1')).goal.k);
+  ok('cel da się zapisać przy otwartej klawiaturze  ['+cel+' kcal]', cel===2750);
+
+  /* po zamknięciu arkusz wraca do swojej geometrii — inaczej następny
+     otwarty arkusz startowałby przesunięty o wysokość klawiatury */
+  await p.evaluate(()=>document.getElementById('scrim').click());
+  await p.waitForTimeout(450);
+  const po = await p.locator('#sheet').evaluate(e => e.style.bottom+'|'+e.style.maxHeight);
+  ok('po zamknięciu geometria wraca do domyślnej  ['+JSON.stringify(po)+']', po==='|');
+  await ctx.close();
+}
+
 console.log('\n'+T.filter(t=>t.startsWith('PASS')).length+'/'+T.length+' PASS');
 await b.close();
 process.exit(T.some(t=>t.startsWith('FAIL'))?1:0);

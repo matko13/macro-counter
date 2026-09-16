@@ -79,8 +79,10 @@ await p.waitForTimeout(250);
 await p.locator('.tab').nth(2).click();
 await p.waitForTimeout(200);
 ok('zestaw zapisany', await p.locator('.card h3').count() >= 1);
-await p.locator('.card .btn').first().click();  // dodaj zestaw do dnia
-await p.waitForTimeout(300);
+await p.locator('.card .btn').first().click();  // otwiera arkusz z ułamkiem
+await p.waitForTimeout(400);
+await p.getByRole('button',{name:/^Dodaj \d/}).click();   // domyślnie całość
+await p.waitForTimeout(450);
 ok('zestaw dodany do dnia  ['+(await p.locator('.entry').count())+' wpisów]', await p.locator('.entry').count() === 4);
 
 // 8) kalkulator celu
