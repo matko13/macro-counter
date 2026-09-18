@@ -719,6 +719,65 @@ ok('ale „kurczak pieczony” dalej działa  ['+(przym.d.join(',')||'NIC')+']',
 ok('i „pałka z kurczaka gotowana”  ['+(przym.e.join(',')||'NIC')+']',
    przym.e.length===1 && /Pałka z kurczaka/.test(przym.e[0]));
 
+/* ── Odżywka Vilgain ──────────────────────────────────────────
+
+   Etykieta zgadza się trzema drogami naraz, więc przepisujemy ją wprost:
+   4/4/9 daje 388 wobec deklarowanych 390, 1647 kJ ÷ 4,184 daje 394, a kolumna
+   porcji (30 g → 117 kcal, B 23, W 2,0, T 1,9) wychodzi z kolumny setki co do
+   dziesiątej. Trzy niezależne sprawdziany na tej samej etykiecie. */
+const vil = byName('Odżywka Vilgain (czekolada-orzech)');
+ok('odżywka Vilgain jest w bazie  ['+
+   (vil ? vil.k+' kcal B'+vil.p+' W'+vil.c+' T'+vil.f : 'BRAK')+']',
+   !!vil && vil.k===390 && vil.p===76 && vil.c===6.7 && vil.f===6.4);
+ok('miarka to 30 g  ['+(vil ? vil.s+' '+vil.u : '—')+']',
+   !!vil && vil.s===30 && vil.u==='miarka');
+/* Kolumna „30 g" z opakowania musi wyjść z kolumny „100 g" — gdyby producent
+   zaokrąglił inaczej albo gdybym przepisał liczbę z innego smaku, to by się
+   rozjechało. */
+const por = {k:vil.k*0.3, p:vil.p*0.3, c:vil.c*0.3, f:vil.f*0.3};
+ok('porcja 30 g odtwarza etykietę  ['+Math.round(por.k)+' kcal, B '+por.p.toFixed(1)+
+   ', W '+por.c.toFixed(1)+', T '+por.f.toFixed(1)+' vs 117 / 23 / 2,0 / 1,9]',
+   Math.round(por.k)===117 && Math.abs(por.p-23)<=0.3 &&
+   Math.abs(por.c-2.0)<=0.1 && Math.abs(por.f-1.9)<=0.1);
+/* Koncentrat nie może mieć więcej białka na kalorię niż izolat — izolat jest
+   z definicji czystszy i to jest twarda granica.
+
+   Napisałem tu najpierw, że Vilgain wypadnie NAD ogólnym WPC z bazy, i test to
+   wywalił: 0,195 wobec 0,205. Nie ma błędu w żadnej z liczb — ogólny wpis
+   (78 g białka) to wartość z tabel, a Vilgain niesie prawdziwe kakao, które
+   dokłada tłuszcz i węgle bez białka. Smakowy koncentrat BĘDZIE rzadszy od
+   idealizowanego. Stąd sprawdzian z drugiej strony: skład ma tłumaczyć różnicę. */
+const wpi = byName('Izolat białka (WPI)');
+ok('koncentrat ma mniej białka na kalorię niż izolat  ['+
+   (vil.p/vil.k).toFixed(3)+' vs '+(wpi.p/wpi.k).toFixed(3)+']',
+   vil.p/vil.k < wpi.p/wpi.k);
+ok('i to kakao tłumaczy różnicę: więcej tłuszczu i węgli niż izolat  [T '+
+   vil.f+' vs '+wpi.f+', W '+vil.c+' vs '+wpi.c+']',
+   vil.f > wpi.f && vil.c > wpi.c);
+ok('białko w paśmie smakowego koncentratu (70–80 g/100 g)  ['+vil.p+' g]',
+   vil.p >= 70 && vil.p <= 80);
+
+const vh = await p.evaluate(()=>{
+  const q=t=>window.MAKRO.parse(t).items.map(i=>i.f.n+':'+Math.round(i.g));
+  return {a:q('vilgain'), b:q('odżywka vilgain'), c:q('dwie miarki vilgain'),
+          d:q('odżywka'), e:q('izolat'), f:q('whey')};
+});
+['a','b'].forEach(function(k){
+  ok('„'+{a:'vilgain',b:'odżywka vilgain'}[k]+'" to jedna miarka Vilgaina  ['+
+     (vh[k].join(' + ')||'NIC')+']',
+     vh[k].length===1 && vh[k][0]==='Odżywka Vilgain (czekolada-orzech):30');
+});
+ok('„dwie miarki vilgain" to 60 g  ['+(vh.c.join(' + ')||'NIC')+']',
+   vh.c.length===1 && vh.c[0]==='Odżywka Vilgain (czekolada-orzech):60');
+/* Nowa marka nie może przejąć ogólnych słów — kto pisze „odżywka", ma dostać
+   ogólny koncentrat, a nie cudzy kubeł. */
+ok('samo „odżywka" to nadal ogólny WPC  ['+(vh.d.join(' + ')||'NIC')+']',
+   vh.d.length===1 && vh.d[0]==='Odżywka białkowa (WPC):30');
+ok('„whey" też  ['+(vh.f.join(' + ')||'NIC')+']',
+   vh.f.length===1 && vh.f[0]==='Odżywka białkowa (WPC):30');
+ok('„izolat" bez zmian  ['+(vh.e.join(' + ')||'NIC')+']',
+   vh.e.length===1 && vh.e[0]==='Izolat białka (WPI):30');
+
 /* Aliasy: każdy musi wskazywać na istniejący produkt i nie może być pusty. */
 const AL = await p.evaluate(()=>window.MAKRO.alias);
 const orphan = Object.keys(AL).filter(k=>!ids[k]);

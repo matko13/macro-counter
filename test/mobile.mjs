@@ -1,7 +1,9 @@
 import { chromium, devices, APP, SHOTS } from './lib.mjs';
 import { readFileSync } from 'fs';
 const T=[],ok=(n,c)=>{T.push((c?'PASS':'FAIL')+'  '+n);console.log(T[T.length-1])};
-const src=readFileSync('/workspace/macro-counter/index.html','utf8');
+/* Wyliczane z położenia samego testu, nie zaszyte: repo bywa klonowane
+   w różne miejsca i zaszyta ścieżka wywracała cały zestaw na ENOENT. */
+const src=readFileSync(new URL('../index.html',import.meta.url),'utf8');
 
 // 1. statycznie: żadna reguła :hover nie może wisieć poza media query
 const css=src.split('<style>')[1].split('</style>')[0].replace(/\/\*[\s\S]*?\*\//g,'');  // komentarze też zawierają słowo :hover
