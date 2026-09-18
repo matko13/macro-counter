@@ -778,6 +778,75 @@ ok('„whey" też  ['+(vh.f.join(' + ')||'NIC')+']',
 ok('„izolat" bez zmian  ['+(vh.e.join(' + ')||'NIC')+']',
    vh.e.length===1 && vh.e[0]==='Izolat białka (WPI):30');
 
+/* ── Pizza Caramel Picante (Forno Rosso) ──────────────────────────
+
+   Pizza z pizzerii nie ma etykiety, więc jedyne, co można sprawdzić, to czy
+   liczby dają się złożyć ze składników — i ten rachunek trzymamy w teście, a nie
+   w pamięci. Skład z profilu lokalu: mozzarella fior di latte, salami spianata,
+   karmelizowana czerwona cebula, rukola; neapolitana ~33 cm. */
+const PIZZA = [
+  /* ciasto: kula ~260 g surowego (AVPN: 180–250 g na 22–35 cm), hydratacja ~62%
+     → ~155 g mąki; pieczenie odparowuje ~13% wody */
+  {n:'ciasto upieczone',        g:225, k:241, p:7.6,  c:49.8, f:0.85},
+  {n:'fior di latte',           g:85,  k:250, p:18,   c:1,    f:19},
+  {n:'salami spianata',         g:45,  k:430, p:22,   c:1,    f:37},
+  {n:'cebula karmelizowana',    g:40,  k:130, p:1.5,  c:20,   f:5},
+  {n:'rukola',                  g:15,  k:25,  p:2.6,  c:3.7,  f:0.7},
+  {n:'grana',                   g:10,  k:392, p:35,   c:4.1,  f:26},
+];
+const sum = PIZZA.reduce((a,x)=>({g:a.g+x.g, k:a.k+x.k*x.g/100, p:a.p+x.p*x.g/100,
+  c:a.c+x.c*x.g/100, f:a.f+x.f*x.g/100}), {g:0,k:0,p:0,c:0,f:0});
+
+const cp = byName('Pizza Caramel Picante (Forno Rosso)');
+ok('pizza Caramel Picante jest w bazie  ['+
+   (cp ? cp.k+' kcal B'+cp.p+' W'+cp.c+' T'+cp.f : 'BRAK')+']',
+   !!cp && cp.k===248 && cp.p===11.1 && cp.c===29.1 && cp.f===9.4);
+ok('porcja to cała pizza  ['+(cp ? cp.s+' '+cp.u : '—')+']',
+   !!cp && cp.s===420 && cp.u==='szt');
+/* Sedno: wpis ma być sumą składników, a nie liczbą z sufitu. */
+ok('gramatura zgadza się ze składnikami  ['+sum.g+' g vs '+(cp?cp.s:'—')+']',
+   !!cp && sum.g===cp.s);
+[['kcal','k',2],['białko','p',0.3],['węgle','c',0.3],['tłuszcz','f',0.3]].forEach(function(x){
+  const zeSkl = sum[x[1]]/sum.g*100;
+  ok('składniki odtwarzają '+x[0]+' na 100 g  ['+zeSkl.toFixed(1)+' vs '+cp[x[1]]+']',
+     Math.abs(zeSkl-cp[x[1]]) <= x[2]);
+});
+/* Ciasto od drugiej strony: 155 g mąki po ~350 kcal to te same ~542 kcal,
+   które siedzą w upieczonej bazie. Gdyby ktłóraś z tych dwóch liczb była
+   zmyślona, nie schodziłyby się. */
+ok('ciasto zgadza się z wagą mąki  [155 g × 350 = 542 vs '+
+   Math.round(241*225/100)+' kcal w bazie]',
+   Math.abs(155*3.5 - 241*225/100) < 15);
+
+/* Neapolitana jest RZADSZA na 100 g od grubszej pizzy ogólnej: mokra baza
+   i świeża mozzarella to głównie woda. Gdyby wyszła gęstsza, coś jest nie tak
+   albo z nią, albo z tamtymi. */
+const marg = byName('Pizza margherita'), pep = byName('Pizza pepperoni');
+ok('neapolitana rzadsza na 100 g niż pizza ogólna  ['+cp.k+' vs '+marg.k+' / '+pep.k+']',
+   cp.k < marg.k && cp.k < pep.k);
+/* ...ale cała waży swoje: 420 g to nie kawałek. */
+ok('cała pizza to ponad 900 kcal  ['+Math.round(cp.k*cp.s/100)+' kcal]',
+   cp.k*cp.s/100 > 900 && cp.k*cp.s/100 < 1100);
+
+const ph = await p.evaluate(()=>{
+  const q=t=>window.MAKRO.parse(t).items.map(i=>i.f.n+':'+Math.round(i.g));
+  return {a:q('caramel picante'), b:q('forno rosso'), c:q('pół pizzy caramel picante'),
+          d:q('pizza'), e:q('pizza margherita'), f:q('pizza pepperoni'), g:q('pinsa')};
+});
+ok('„caramel picante" to cała pizza  ['+(ph.a.join(' + ')||'NIC')+']',
+   ph.a.length===1 && ph.a[0]==='Pizza Caramel Picante (Forno Rosso):420');
+ok('„forno rosso" też  ['+(ph.b.join(' + ')||'NIC')+']',
+   ph.b.length===1 && ph.b[0]==='Pizza Caramel Picante (Forno Rosso):420');
+ok('„pół pizzy caramel picante" to połowa  ['+(ph.c.join(' + ')||'NIC')+']',
+   ph.c.length===1 && ph.c[0]==='Pizza Caramel Picante (Forno Rosso):210');
+/* Konkretna pizza z konkretnego lokalu nie może przejąć słowa „pizza". */
+ok('samo „pizza" to nadal margherita  ['+(ph.d.join(' + ')||'NIC')+']',
+   ph.d.length===1 && ph.d[0]==='Pizza margherita:150');
+ok('margherita i pepperoni bez zmian  ['+ph.e.join(',')+' / '+ph.f.join(',')+']',
+   ph.e[0]==='Pizza margherita:150' && ph.f[0]==='Pizza pepperoni:150');
+ok('pinsa bez zmian  ['+(ph.g.join(' + ')||'NIC')+']',
+   ph.g.length===1 && /^Pinsa Margherita/.test(ph.g[0]));
+
 /* Aliasy: każdy musi wskazywać na istniejący produkt i nie może być pusty. */
 const AL = await p.evaluate(()=>window.MAKRO.alias);
 const orphan = Object.keys(AL).filter(k=>!ids[k]);
