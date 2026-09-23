@@ -629,6 +629,9 @@ var RAW=[
 ["Sernik","slodycze",321,6,26,21,100,"g"],
 ["Chipsy","slodycze",536,6.6,53,34,30,"g"],
 ["Krakersy","slodycze",480,9,60,22,30,"g"],
+["Chrupki Loopea's z grochu (śmietanka-cebulka)","slodycze",396,13,61,9.3,50,"g"],
+["Chrupki Loopea's z soczewicy (papryka)","slodycze",400,17,63,8.3,50,"g"],
+["Chrupki Loopea's z gryki (sól morska)","slodycze",369,12,73,2.1,42,"g"],
 ["Popcorn","slodycze",387,12,78,4.5,30,"g"],
 ["Żelki","slodycze",340,6.9,77,0.2,50,"g"],
 ["Miód","slodycze",304,0.3,82,0,15,"łyżka"],
@@ -3081,6 +3084,9 @@ var ALIAS={
 "croissant":"rogalik|rogalika|rogaliki",
 "platki-kukurydziane":"kukurydziane|cornflakes|corn flakes",
 "granola":"granoli",
+"chrupki-loopea-s-z-grochu-smietanka-cebulka":"loopies|loopeas|loopea|chrupki z grochu|loopeas z grochu|loopies z grochu|loopies grochowe|loopeas groch",
+"chrupki-loopea-s-z-soczewicy-papryka":"loopies papryka|loopeas papryka|chrupki z soczewicy|loopeas z soczewicy|loopies soczewica|loopies z soczewicy",
+"chrupki-loopea-s-z-gryki-sol-morska":"loopies gryka|loopeas gryka|chrupki z gryki|loopeas z gryki|loopies naturalne|loopies z gryki|loopeas natural",
 "pizza-caramel-picante-forno-rosso":"caramel picante|karmel picante|pizza caramel|caramel|picante|forno rosso|pizza z forno rosso",
 "pizza-pepperoni":"pepperoni",
 "barszcz-czerwony":"barszcz|barszczu",
@@ -3160,7 +3166,8 @@ var STOP={};
  "jakis jaka jakie ok razem lacznie gora gorze gore wierzchu wierzch srodku srodka spodu posypane posypana polane "+
  "polana dodatkowo jako typu rodzaju swoj swoja moj moja mojej mojego dzisiaj dzis wczoraj przedwczoraj rano "+
  "wieczorem poludnie noc nocy sniadanie sniadaniem sniadanko obiad obiadem kolacja kolacje kolacji przekaska "+
- "przekaske podwieczorek deser drugie pierwsze topping dressing sos sosem lekki lekka duzy duza duze maly mala male "+
+ "przekaske podwieczorek deser drugie pierwsze topping dressing sos sosem chrupki chrupek chrupkami "+
+ "lekki lekka duzy duza duze maly mala male "+
  "male swieze swieza swiezy suszony suszona goracy gorace zimne zimny domowa domowy domowe wlasnej roboty ale bo "+
  "wiec no cos duzo malo troche sporo kawalek kawalki reszta pozniej wczesniej caly dzien nie tak owszem").split(" ")
  .forEach(function(w){if(w)STOP[w]=1});
@@ -3244,8 +3251,11 @@ function buildIdx(){
        "ryż suchy" dawał ugotowany — a to różnica 350 do 130 kcal. */
     if(f.n.indexOf("(")>-1)phr.push(f.n.replace(/[()\/,]/g," "));
     /* Tokenizer rozbija "pszenno-żytni" na dwa wyrazy, więc nazwa musi
-       być rozbita tak samo — inaczej chleb pszenno-żytni był nieosiągalny. */
-    phr=phr.map(function(x){return x.replace(/[-\u2011\u2013]/g," ")});
+       być rozbita tak samo — inaczej chleb pszenno-żytni był nieosiągalny.
+       To samo dotyczy apostrofu: tokenizer bierze tylko ciągi liter, więc
+       "Loopea's" czyta jako "loopea"+"s", a indeks trzymał to jako JEDEN wyraz
+       — i produkt nie trafiał sam w siebie po pełnej nazwie. */
+    phr=phr.map(function(x){return x.replace(/[-\u2011\u2013'\u2018\u2019\u02bc`]/g," ")});
     if(ALIAS[f.id])ALIAS[f.id].split("|").forEach(function(a){phr.push(a)});
     var seen={};
     phr.forEach(function(x){

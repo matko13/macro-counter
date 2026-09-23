@@ -847,6 +847,66 @@ ok('margherita i pepperoni bez zmian  ['+ph.e.join(',')+' / '+ph.f.join(',')+']'
 ok('pinsa bez zmian  ['+(ph.g.join(' + ')||'NIC')+']',
    ph.g.length===1 && /^Pinsa Margherita/.test(ph.g[0]));
 
+/* ── Chrupki Loopea's („Loopies") ────────────────────────────────
+
+   Trzy osobne produkty, nie jeden z przymiotnikiem: gryka, groch i soczewica
+   mają inną bazę i inne makro (tłuszcz 2,1 vs 9,3 g — czterokrotnie).
+
+   Każda etykieta domyka się tak samo: luka między 4/4/9 a deklarowanymi kcal
+   równa się deklarowanemu błonnikowi razy ~2 kcal/g. Trzy niezależne etykiety,
+   ten sam wzorzec — to nie przypadek, tylko dowód, że przepisałem je dobrze. */
+const LOOP = [
+  {n:"Chrupki Loopea's z grochu (śmietanka-cebulka)", k:396, p:13, c:61, f:9.3, s:50, bl:7.5},
+  {n:"Chrupki Loopea's z soczewicy (papryka)",          k:400, p:17, c:63, f:8.3, s:50, bl:3.4},
+  {n:"Chrupki Loopea's z gryki (sól morska)",           k:369, p:12, c:73, f:2.1, s:42, bl:5.0},
+];
+LOOP.forEach(function(x){
+  const e = byName(x.n);
+  ok('jest w bazie: '+x.n.replace(/^Chrupki Loopea's /,'')+'  ['+
+     (e ? e.k+' kcal B'+e.p+' W'+e.c+' T'+e.f : 'BRAK')+']',
+     !!e && e.k===x.k && e.p===x.p && e.c===x.c && e.f===x.f);
+  ok('   paczka '+x.s+' g  ['+(e ? e.s+' '+e.u : '—')+']', !!e && e.s===x.s && e.u==='g');
+  /* Błonnik tłumaczy lukę 4/4/9 — przy ~2 kcal/g. */
+  const luka = x.k - (x.p*4 + x.c*4 + x.f*9);
+  ok('   błonnik tłumaczy lukę 4/4/9  [luka '+luka.toFixed(0)+' kcal vs błonnik '+
+     x.bl+' g × 2 = '+(x.bl*2).toFixed(0)+']', Math.abs(luka - x.bl*2) <= 6);
+});
+/* Warianty muszą się różnić tam, gdzie różni je surowiec — gdyby wyszły
+   identyczne, któraś etykieta została przepisana z innej. */
+const [gro, soc, gry] = LOOP.map(x=>byName(x.n));
+ok('gryczane są najchudsze  [T '+gry.f+' vs '+gro.f+' / '+soc.f+']',
+   gry.f < gro.f && gry.f < soc.f);
+ok('soczewicowe mają najwięcej białka  [B '+soc.p+' vs '+gro.p+' / '+gry.p+']',
+   soc.p > gro.p && soc.p > gry.p);
+ok('gryczane mają najwięcej węgli  [W '+gry.c+' vs '+gro.c+' / '+soc.c+']',
+   gry.c > gro.c && gry.c > soc.c);
+
+const lh = await p.evaluate(()=>{
+  const q=t=>window.MAKRO.parse(t).items.map(i=>i.f.n+':'+Math.round(i.g));
+  return {a:q('loopies'), b:q('loopeas'), c:q('loopies papryka'), d:q('loopies gryka'),
+          e:q('loopies naturalne'), f:q('dwie paczki loopies'), g:q('chrupki'),
+          h:q('chipsy'), i:q('krakersy')};
+});
+ok('„loopies" — tak jak się je nazywa — trafia w bazie  ['+(lh.a.join(' + ')||'NIC')+']',
+   lh.a.length===1 && /Loopea/.test(lh.a[0]));
+ok('„loopeas" — pisownia z opakowania — też  ['+(lh.b.join(' + ')||'NIC')+']',
+   lh.b.length===1 && lh.b[0]===lh.a[0]);
+ok('smak rozstrzyga wariant: papryka → soczewica  ['+(lh.c.join(' + ')||'NIC')+']',
+   lh.c.length===1 && /soczewicy/.test(lh.c[0]));
+ok('...gryka → gryka, 42 g a nie 50  ['+(lh.d.join(' + ')||'NIC')+']',
+   lh.d.length===1 && lh.d[0]==="Chrupki Loopea's z gryki (sól morska):42");
+ok('...„naturalne" też znaczy grykę  ['+(lh.e.join(' + ')||'NIC')+']',
+   lh.e.length===1 && /gryki/.test(lh.e[0]));
+ok('„dwie paczki" to dwie paczki  ['+(lh.f.join(' + ')||'NIC')+']',
+   lh.f.length===1 && lh.f[0]==="Chrupki Loopea's z grochu (śmietanka-cebulka):100");
+
+/* Marka nie przejmuje słowa ogólnego: samo „chrupki" nie wskazuje niczego,
+   dopóki w bazie nie ma pozycji ogólnej. Lepsze pytanie niż cicha odpowiedź
+   z konkretnego kubła. */
+ok('samo „chrupki" nie łapie marki  ['+(lh.g.join(' + ')||'NIC')+']', lh.g.length===0);
+ok('chipsy i krakersy bez zmian  ['+lh.h.join(',')+' / '+lh.i.join(',')+']',
+   lh.h[0]==='Chipsy:30' && lh.i[0]==='Krakersy:30');
+
 /* Aliasy: każdy musi wskazywać na istniejący produkt i nie może być pusty. */
 const AL = await p.evaluate(()=>window.MAKRO.alias);
 const orphan = Object.keys(AL).filter(k=>!ids[k]);
@@ -864,8 +924,48 @@ const unreachable = await p.evaluate(()=>{
   });
   return out;
 });
+/* Próg był na 3 i to był błąd: luz przepuścił dwa produkty z apostrofem
+   w nazwie, które nie trafiały same w siebie (tokenizer czyta "Loopea's" jako
+   dwa wyrazy, indeks trzymał jeden). Test przeszedł i nikt by się nie dowiedział.
+   Zero znaczy zero. */
 ok('każdy produkt trafia sam w siebie po nazwie  ['+unreachable.length+' nietrafionych'+
-   (unreachable.length?': '+unreachable.slice(0,5).join(', '):'')+']', unreachable.length<=3);
+   (unreachable.length?': '+unreachable.slice(0,5).join(', '):'')+']', unreachable.length===0);
+
+/* Regresja na sam mechanizm: nazwa z apostrofem musi dać się wpisać w każdej
+   pisowni, którą człowiek wystuka — z apostrofem prostym, typograficznym
+   i bez niego. */
+const apo = await p.evaluate(()=>{
+  const q=t=>window.MAKRO.parse(t).items.map(i=>i.f.n);
+  return {prosty:q("chrupki loopea's z gryki"), typo:q('chrupki loopea\u2019s z gryki'),
+          bez:q('loopeas z gryki'), pelna:q("Chrupki Loopea's z soczewicy (papryka)"),
+          ogolne:q('chrupki'), zGrochu:q('chrupki z grochu'), dwa:q('chrupki loopies')};
+});
+ok('apostrof prosty nie psuje nazwy  ['+(apo.prosty.join(',')||'NIC')+']',
+   apo.prosty.length===1 && /gryki/.test(apo.prosty[0]));
+ok('apostrof typograficzny też  ['+(apo.typo.join(',')||'NIC')+']',
+   apo.typo.length===1 && /gryki/.test(apo.typo[0]));
+ok('i pisownia bez apostrofu  ['+(apo.bez.join(',')||'NIC')+']',
+   apo.bez.length===1 && /gryki/.test(apo.bez[0]));
+ok('pełna nazwa z nawiasem trafia sama w siebie  ['+(apo.pelna.join(',')||'NIC')+']',
+   apo.pelna.length===1 && /soczewicy/.test(apo.pelna[0]));
+
+/* „Chrupki" to słowo ogólne, które zaczyna nazwy produktów — ta sama klasa co
+   „sos" i „deser", które leżą w STOP od dawna. Liczy się więc tylko jako początek
+   dłuższej frazy. Bez tego „chrupki loopies" dawało TEN SAM produkt dwa razy:
+   raz z częściowego trafienia w „chrupki z grochu", raz z „loopies". */
+ok('samo „chrupki" nie jest produktem  ['+(apo.ogolne.join(',')||'NIC')+']',
+   apo.ogolne.length===0);
+ok('ale „chrupki z grochu" już tak  ['+(apo.zGrochu.join(',')||'NIC')+']',
+   apo.zGrochu.length===1 && /grochu/.test(apo.zGrochu[0]));
+ok('„chrupki loopies" to JEDNA pozycja, nie dwie  ['+(apo.dwa.join(' + ')||'NIC')+']',
+   apo.dwa.length===1 && /grochu/.test(apo.dwa[0]));
+
+/* Znana granica, świadomie niezasypana: „chrupki loopeas z gryki” (ogólne słowo
+   + marka bez apostrofu + smak) gubi smak, bo „chrupki loopeas” rozmyto trafia
+   w „Chrupki Loopea's z grochu” i wygrywa na pozycji 0, zanim smak dojdzie do
+   głosu. Każde naturalne sformułowanie działa („loopeas z gryki”, „loopies
+   gryka”, „chrupki loopea's z gryki”), a naprawa wymagałaby przebudowy
+   rozstrzygania remisów w matchAt — nie warta jednego wymyślonego zdania. */
 
 console.log('\n'+T.filter(t=>t.startsWith('PASS')).length+'/'+T.length+' PASS');
 console.log(errs.length?'błędy JS: '+errs.join('; '):'błędy JS: brak');
