@@ -907,6 +907,73 @@ ok('samo „chrupki" nie łapie marki  ['+(lh.g.join(' + ')||'NIC')+']', lh.g.le
 ok('chipsy i krakersy bez zmian  ['+lh.h.join(',')+' / '+lh.i.join(',')+']',
    lh.h[0]==='Chipsy:30' && lh.i[0]==='Krakersy:30');
 
+/* ── Stir fry z tofu ─────────────────────────────────────────
+
+   Ten sam układ co wersja z kurczakiem, wymienione białko — i składniki brane
+   wprost z bazy, żeby obie pozycje dało się porównywać, a nie żeby zestawiać
+   dwa niezależne szacunki. */
+const SF = [
+  {n:'Makaron mie (ugotowany)', g:150}, {n:'Tofu',             g:160},
+  {n:'Papryka czerwona',        g:80},  {n:'Cukinia',          g:70},
+  {n:'Olej rzepakowy',          g:10},  {n:'Sos sojowy',       g:20},
+];
+const sfSum = SF.reduce(function(a,x){
+  const e = byName(x.n);
+  return {g:a.g+x.g, k:a.k+e.k*x.g/100, p:a.p+e.p*x.g/100,
+          c:a.c+e.c*x.g/100, f:a.f+e.f*x.g/100};
+}, {g:0,k:0,p:0,c:0,f:0});
+
+const tof = byName('Stir fry z tofu i makaronem');
+ok('stir fry z tofu jest w bazie  ['+
+   (tof ? tof.k+' kcal B'+tof.p+' W'+tof.c+' T'+tof.f : 'BRAK')+']',
+   !!tof && tof.k===116 && tof.p===6.7 && tof.c===11.1 && tof.f===5.2);
+ok('porcja zgadza się ze składnikami  ['+sfSum.g+' g vs '+(tof?tof.s:'—')+']',
+   !!tof && sfSum.g===tof.s && tof.u==='porcja');
+[['kcal','k',1.5],['białko','p',0.2],['węgle','c',0.2],['tłuszcz','f',0.2]].forEach(function(x){
+  const zeSkl = sfSum[x[1]]/sfSum.g*100;
+  ok('składniki z bazy odtwarzają '+x[0]+'  ['+zeSkl.toFixed(1)+' vs '+tof[x[1]]+']',
+     Math.abs(zeSkl-tof[x[1]]) <= x[2]);
+});
+
+/* Porównanie z wersją mięsną musi iść w stronę, którą tłumaczy surowiec:
+   tofu ma 15 g białka na 100 g, pierś 31 — więc mniej białka; i jest tłustsze
+   na gram białka, więc więcej tłuszczu. Gdyby wyszło odwrotnie, któraś z tych
+   dwóch pozycji jest zmyślona. */
+const kur = byName('Stir fry z kurczakiem i makaronem');
+ok('tofu ma mniej białka niż kurczak  [B '+tof.p+' vs '+kur.p+']', tof.p < kur.p);
+ok('i więcej tłuszczu  [T '+tof.f+' vs '+kur.f+']', tof.f > kur.f);
+ok('a kalorie podobne  ['+tof.k+' vs '+kur.k+' kcal/100 g]',
+   Math.abs(tof.k-kur.k) <= 10);
+
+const sfh = await p.evaluate(()=>{
+  const q=t=>window.MAKRO.parse(t).items.map(i=>i.f.n+':'+Math.round(i.g));
+  return {a:q('stir fry z tofu'), b:q('stirfry z tofu'), c:q('makaron z tofu'),
+          d:q('stir fry wege'), e:q('pół stir fry z tofu'), f:q('stir fry'),
+          g:q('stir fry z kurczakiem'), h:q('tofu'), i:q('tofu wędzone')};
+});
+/* Sedno: „X z Y" przy daniach gotowych potrafi zgubić Y — gdyby „stir fry"
+   wygrało na pozycji 0, zostałaby wersja Z KURCZAKIEM, a tofu przepadłoby po
+   cichu. Czterowyrazowa fraza musi wygrać z dwuwyrazową. */
+ok('„stir fry z tofu" to danie z tofu, nie z kurczakiem  ['+(sfh.a.join(' + ')||'NIC')+']',
+   sfh.a.length===1 && sfh.a[0]==='Stir fry z tofu i makaronem:490');
+ok('...bez spacji też  ['+(sfh.b.join(' + ')||'NIC')+']',
+   sfh.b.length===1 && /z tofu/.test(sfh.b[0]));
+ok('„makaron z tofu" też  ['+(sfh.c.join(' + ')||'NIC')+']',
+   sfh.c.length===1 && /z tofu/.test(sfh.c[0]));
+ok('„stir fry wege" też  ['+(sfh.d.join(' + ')||'NIC')+']',
+   sfh.d.length===1 && /z tofu/.test(sfh.d[0]));
+ok('„pół stir fry z tofu" to połowa  ['+(sfh.e.join(' + ')||'NIC')+']',
+   sfh.e.length===1 && sfh.e[0]==='Stir fry z tofu i makaronem:245');
+/* Nowa wersja nie przejmuje samego „stir fry" ani surowego tofu. */
+ok('samo „stir fry" to nadal kurczak  ['+(sfh.f.join(' + ')||'NIC')+']',
+   sfh.f.length===1 && /kurczakiem/.test(sfh.f[0]));
+ok('„stir fry z kurczakiem" bez zmian  ['+(sfh.g.join(' + ')||'NIC')+']',
+   sfh.g.length===1 && /kurczakiem/.test(sfh.g[0]));
+ok('samo „tofu" to nadal kostka tofu  ['+(sfh.h.join(' + ')||'NIC')+']',
+   sfh.h.length===1 && sfh.h[0]==='Tofu:100');
+ok('„tofu wędzone" bez zmian  ['+(sfh.i.join(' + ')||'NIC')+']',
+   sfh.i.length===1 && sfh.i[0]==='Tofu wędzone:100');
+
 /* Aliasy: każdy musi wskazywać na istniejący produkt i nie może być pusty. */
 const AL = await p.evaluate(()=>window.MAKRO.alias);
 const orphan = Object.keys(AL).filter(k=>!ids[k]);
